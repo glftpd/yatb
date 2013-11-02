@@ -365,6 +365,9 @@ void CControlThread::mainloop(void)
 		return;
 	}
 	
+	printsockopt(site_sock,"site_sock");
+	printsockopt(client_sock,"client_sock");
+	
 	if (!using_entry)
 	{
 	
@@ -1602,16 +1605,16 @@ int CControlThread::Read(int sock,SSL *ssl,string &s)
 	rwlock.Lock();
 	if(sock == client_sock)
 	{
-		debugmsg(username,"[Read] read from client");
+		debugmsg(username,"[ControlRead] read from client");
 	}
 	else if(sock == site_sock)
 	{
-		debugmsg(username,"[Read] read from site");
+		debugmsg(username,"[ControlRead] read from site");
 	}
 	
 	if(!control_read(sock ,ssl,s))
 	{
-		debugmsg(username,"[Read] read failed");
+		debugmsg(username,"[ControlRead] read failed");
 		rwlock.UnLock();
 		return 0;
 	}
@@ -1634,16 +1637,16 @@ int CControlThread::Write(int sock,string s,SSL *ssl)
 	rwlock.Lock();
 	if(sock == client_sock)
 	{
-		debugmsg(username,"[Write] write to client");
+		debugmsg(username,"[ControlWrite] write to client");
 	}
 	else if(sock == site_sock)
 	{
-		debugmsg(username,"[write] write to site");
+		debugmsg(username,"[ControlWrite] write to site");
 	}
 	
 	if(!control_write(sock ,s ,ssl))
 	{
-		debugmsg(username,"[Write] write failed");
+		debugmsg(username,"[ControlWrite] write failed");
 		rwlock.UnLock();
 		return 0;
 	}

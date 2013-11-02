@@ -197,6 +197,7 @@ int Bind(int &sock,string ip,int port)
 int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 {
 	debugmsg("-SYSTEM-","[Connect] start");
+	
 	struct sockaddr_in adr;
 	adr = GetIp(host,port);
 	if(!setnonblocking(sock))
@@ -911,21 +912,10 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 	int bytesleft = nrbytes;
 	int rc,len;
 	len = nrbytes;
-	fd_set writefds;
-	FD_ZERO(&writefds);
-	FD_SET(sock,&writefds);
-	struct timeval tv;
+	int count = 0;
 	while(total < nrbytes)
 	{
-		tv.tv_sec = config.read_write_timeout;
-		tv.tv_usec = 0;
-		if (select(sock+1, NULL, &writefds, NULL, &tv) < 1)
-		{
-			debugmsg("-SYSTEM-","[data_write] select error!",errno);
-			return 0;
-		}
-		if (FD_ISSET(sock, &writefds))
-		{	
+		
 			if(ssl == NULL)
 			{		
 				rc = send(sock,data+total,bytesleft,0);
@@ -947,25 +937,22 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 			{
 				if (ssl != NULL)
 				{
+					if(count == 3) return 0; // not more then 3 retries
 					int err = SSL_get_error(ssl,rc);
 					
-					if (err == SSL_ERROR_WANT_READ) { continue; }
-					if (err == SSL_ERROR_WANT_WRITE) { continue; }
-					if (err == SSL_ERROR_WANT_X509_LOOKUP) { continue; }					
+					if (err == SSL_ERROR_WANT_READ) { count++; continue; }
+					if (err == SSL_ERROR_WANT_WRITE) { count++; continue; }
+					if (err == SSL_ERROR_WANT_X509_LOOKUP) { count++; continue; }					
 					
 				}
 				debugmsg("-SYSTEM-","[data_write] error!");  
 				return 0; 
 			}
 		}
-		else
-		{
-			debugmsg("-SYSTEM-","[data_write] FD_ISSET error!",errno);
-			return 0;
-		}
 		
 		
-	}
+		
+	
 	return 1;	
 	
 }
@@ -974,19 +961,6 @@ int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 {
 	while(1)
 	{
-		fd_set readfds;
-		FD_ZERO(&readfds);
-		FD_SET(sock,&readfds);
-		struct timeval tv;
-		tv.tv_sec = config.read_write_timeout;
-		tv.tv_usec = 0;
-		if (select(sock+1, &readfds, NULL, NULL, &tv) < 1)
-		{
-			debugmsg("-SYSTEM-","[data_read] select error!",errno);
-			return 0;
-		}
-		if (FD_ISSET(sock, &readfds))
-		{	
 			int rc;		
 			if (ssl == NULL)
 			{
@@ -1024,14 +998,58 @@ int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 				return 0; 
 			}
 		}
-		else
-		{
-			debugmsg("-SYSTEM-","[data_read] FD_ISSET error!",errno);
-			return 0;
-		}
-	}	
   	
 		
 	return 0;
 }
 
+int printsockopt(int sock,string name)
+{
+	debugmsg("SOCKOPT","----- options for " + name + "  -----------");
+	int optval;
+	socklen_t optlen = sizeof(int);
+	optval = 0;
+	getsockopt(sock,SOL_SOCKET,SO_KEEPALIVE,(char *) &optval, &optlen);
+	if(optval)
+	{
+		debugmsg("SOCKOPT","socket is set to keepalive");
+	}
+	else
+	{
+		debugmsg("SOCKOPT","socket is not set to keepalive");
+	}
+	
+	getsockopt(sock,SOL_SOCKET,SO_LINGER,(char *) &optval, &optlen);
+	if(optval)
+	{
+		debugmsg("SOCKOPT","socket is set to linger");
+	}
+	else
+	{
+		debugmsg("SOCKOPT","socket is not set to linger");
+	}
+	
+	getsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char *) &optval, &optlen);
+	if(optval)
+	{
+		debugmsg("SOCKOPT","socket is set to reuse adr");
+	}
+	else
+	{
+		debugmsg("SOCKOPT","socket is not set to reuse adr");
+	}
+	int flags;
+	if((flags = fcntl(sock, F_GETFL, 0)) == -1)
+	{ 
+		return 0;
+	}
+	if(flags & O_NONBLOCK)
+	{
+		debugmsg("SOCKOPT","sock set to non blocking");
+	}
+	else
+	{
+		debugmsg("SOCKOPT","sock set to blocking");
+	}
+	return 1;
+}

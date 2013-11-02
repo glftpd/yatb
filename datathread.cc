@@ -259,6 +259,9 @@ void CDataThread::dataloop(void)
 		}
 	}
 	
+	printsockopt(datasite_sock,"datasite_sock");
+	printsockopt(dataclient_sock,"dataclient_sock");
+	
 /*
 	stringstream ss;
 	ss << "active port: " << activeport << " passiveport: " << passiveport;

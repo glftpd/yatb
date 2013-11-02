@@ -266,7 +266,7 @@ int main(int argc,char *argv[])
 		
 		if (Accept(listen_sock,tmp_sock,clientip,clientport,0,shouldquit))
 		{
-			
+			printsockopt(listen_sock,"listen_sock");
 				debugmsg("-SYSTEM-","[main] list create start");
 				// create a new connection and put it into the list
 				list_lock.Lock();

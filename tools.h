@@ -40,6 +40,8 @@ int DataRead(int  ,char *,int &,SSL *);
 
 string traffic2str(double);
 
+int printsockopt(int, string );
+
 struct sockaddr_in GetIp(string,int);
 
 #endif
