@@ -64,6 +64,10 @@ CConfig::CConfig()
 	pidfile = "";
 	connectfailmsg = "";
 	syslog = 0;
+	use_forwarder=0;
+	forwarder_sport=0;
+	forwarder_dport=0;
+	forwarder_ip="";
 }
 
 CConfig::~CConfig()
@@ -822,6 +826,50 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "ssl_forward missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	if ((val=getkey("use_forwarder",daten)) != "ERROR")
+   	{
+   		use_forwarder = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "use_forwarder missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	if ((val=getkey("forwarder_sport",daten)) != "ERROR")
+   	{
+   		forwarder_sport = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "forwarder_sport missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	if ((val=getkey("forwarder_dport",daten)) != "ERROR")
+   	{
+   		forwarder_dport = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "forwarder_dport missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	if ((val=getkey("forwarder_ip",daten)) != "ERROR")
+   	{
+   		forwarder_ip = val;
+   	}
+   	else
+   	{
+   		cout << "forwarder_ip missing\n";
    		
    		return 0;
    	}

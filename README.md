@@ -401,6 +401,30 @@ if enabled encrypted packets are passed to client
 else they are decrypted and encrypted again
 
 --------------------------------------------------------
+
+- use_forwarder=0;
+
+if enabled yatb forwards a single port (webserver for example)
+
+--------------------------------------------------------
+
+- forwarder_sport=81;
+
+source port for forwarding
+
+--------------------------------------------------------
+
+- forwarder_dport=80;
+
+destination port for forwarding
+
+--------------------------------------------------------
+
+- forwarder_ip=www.heise.de;
+
+ip to forward to
+
+--------------------------------------------------------
 special bnc commands:
 ---------------------
 

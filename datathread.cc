@@ -514,7 +514,10 @@ void CDataThread::dataloop(void)
 		FD_ZERO(&data_readfds);
 		FD_SET(dataclient_sock,&data_readfds);
 		FD_SET(datasite_sock,&data_readfds);
-
+		struct timeval tv;
+		tv.tv_sec = config.read_write_timeout;
+		tv.tv_usec = 0;
+			
 		int tmpsock;
 
 		if (datasite_sock > dataclient_sock)
@@ -526,7 +529,7 @@ void CDataThread::dataloop(void)
 			tmpsock = dataclient_sock;
 		}
 		
-		if (select(tmpsock+1, &data_readfds, NULL, NULL, NULL) < 1)
+		if (select(tmpsock+1, &data_readfds, NULL, NULL, &tv) < 1)
 		{
 			debugmsg(username,"[datathread] read timeout",errno);
 			return;

@@ -9,6 +9,7 @@
 #include "stringlist.h"
 #include "tools.h"
 #include "tls.h"
+#include "forward.h"
 
 CConfig config;
 list<CControlThread*> conlist;
@@ -219,6 +220,18 @@ int main(int argc,char *argv[])
 		pidfile.close();
 	}
 	
+	if(config.use_forwarder)
+	{
+		// start forward thread
+		CForward *fw;
+		fw = new CForward(config.forwarder_sport,config.forwarder_dport,config.forwarder_ip);
+		if(pthread_create(&fw->tid,&threadattr,makeforwardthread,fw) != 0)
+		{
+			debugmsg("-SYSTEM-","[main] error creating forward thread",errno);	
+			delete fw;	
+		}
+	}
+	
 	if(setuid(config.uid) < 0)
 	{
 		debugmsg("-SYSTEM-"," - WARNING: - Could not set uid!");
@@ -241,6 +254,8 @@ int main(int argc,char *argv[])
 		if (clientsslctx != NULL) { SSL_CTX_free(clientsslctx); }
 		return -1;
 	}
+	
+	
 	
 	while(1)
 	{				

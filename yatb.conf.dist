@@ -56,3 +56,7 @@ pidfile=yatb.pid;
 connectfailmsg=427 Connection failed!;
 syslog=1;
 ssl_forward=0;
+use_forwarder=0;
+forwarder_sport=81;
+forwarder_dport=80;
+forwarder_ip=www.heise.de;

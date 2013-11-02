@@ -86,6 +86,10 @@ class CConfig
 	string pidfile;
 	string connectfailmsg;
 	int syslog;
+	int use_forwarder;
+	int forwarder_sport;
+	int forwarder_dport;
+	string forwarder_ip;
 };
 
 extern CConfig config;

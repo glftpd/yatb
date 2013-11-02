@@ -11,68 +11,68 @@ all:
 	@echo "  - or 'make solaris' (solaris-debug,solaris-static,solaris-debug-static) to compile under solaris"
 	@echo "  - or 'make clean'"
 
-linux: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb; strip yatb
+linux: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb; strip yatb
 	g++ -W -Wall -g blowcrypt.cc -o blowcrypt -lssl -lcrypto; strip blowcrypt
 	
-linux-debug: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb-debug
+linux-debug: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb-debug
 	g++ -W -Wall -g blowcrypt.cc -o blowcrypt-debug -lssl -lcrypto
 
-linux-static: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ -static yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb-static; strip yatb-static
+linux-static: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ -static yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb-static; strip yatb-static
 	g++ -static -W -Wall -g blowcrypt.cc -o blowcrypt-static -lssl -lcrypto; strip blowcrypt-static
 
-linux-debug-static: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ -static yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb-static-debug
+linux-debug-static: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ -static yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb-static-debug
 	g++ -static -W -Wall -g blowcrypt.cc -o blowcrypt-static-debug -lssl -lcrypto
 
-bsd: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -pthread -lcrypto -o yatb; strip yatb
+bsd: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -pthread -lcrypto -o yatb; strip yatb
 	g++ -W -Wall -g blowcrypt.cc -o blowcrypt -lssl -lcrypto; strip blowcrypt
 
-bsd-debug: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ -g yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -pthread -lcrypto -o yatb-debug
+bsd-debug: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ -g yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -pthread -lcrypto -o yatb-debug
 	g++ -W -Wall -g blowcrypt.cc -o blowcrypt-debug -lssl -lcrypto
 
-bsd-static: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ -static yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -pthread -lcrypto -o yatb-static; strip yatb-static
+bsd-static: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ -static yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -pthread -lcrypto -o yatb-static; strip yatb-static
 	g++ -static -W -Wall -g blowcrypt.cc -o blowcrypt-static -lssl -lcrypto; strip blowcrypt-static
 
-bsd-debug-static: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ -static yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -pthread -lcrypto -o yatb-static-debug
+bsd-debug-static: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ -static yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -pthread -lcrypto -o yatb-static-debug
 	g++ -static -W -Wall -g blowcrypt.cc -o blowcrypt-static-debug -lssl -lcrypto
 
-cygwin: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb; strip yatb.exe
+cygwin: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb; strip yatb.exe
 	g++ -W -Wall -g blowcrypt.cc -o blowcrypt -lssl -lcrypto; strip blowcrypt.exe
 	
-cygwin-debug: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ -g yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb-debug
+cygwin-debug: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ -g yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb-debug
 	g++ -W -Wall -g blowcrypt.cc -o blowcrypt-debug -lssl -lcrypto
 
-cygwin-static: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ -static yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb-static; strip yatb-static.exe
+cygwin-static: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ -static yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb-static; strip yatb-static.exe
 	g++ -static -W -Wall -g blowcrypt.cc -o blowcrypt-static -lssl -lcrypto; strip blowcrypt-static.exe
 
-cygwin-debug-static: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ -static yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb-static-debug
+cygwin-debug-static: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ -static yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -o yatb-static-debug
 	g++ -static -W -Wall -g blowcrypt.cc -o blowcrypt-static-debug -lssl -lcrypto	
 
-solaris: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -o yatb; strip yatb
+solaris: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -o yatb; strip yatb
 	g++ -W -Wall -g -I/usr/local/ssl/include blowcrypt.cc -o blowcrypt -lssl -lcrypto; strip blowcrypt
 
-solaris-debug: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -o yatb-debug
+solaris-debug: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -o yatb-debug
 	g++ -W -Wall -g -I/usr/local/ssl/include blowcrypt.cc -o blowcrypt-debug -lssl -lcrypto
 
-solaris-static: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ -static yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -o yatb; strip yatb
+solaris-static: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ -static yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -o yatb; strip yatb
 	g++ -static -W -Wall -g -I/usr/local/ssl/include blowcrypt.cc -o blowcrypt -lssl -lcrypto; strip blowcrypt
 
-solaris-debug-static: yatb.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ -static yatb.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -o yatb
+solaris-debug-static: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
+	g++ -static yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -o yatb
 	g++ -static -W -Wall -g -I/usr/local/ssl/include blowcrypt.cc -o blowcrypt -lssl -lcrypto
 			
 clean:

@@ -154,7 +154,7 @@ void CControlThread::deletedatathread(void)
 	{	
 		debugmsg(username,"[deletedatathread] set shouldquit=1");
 		datathread->shouldquit = 1;
-		
+		datathread->closeconnection();
 		debugmsg(username,"[deletedatathread] join datathread");
 				
 		if(pthread_join(datathread->tid,NULL) != 0)

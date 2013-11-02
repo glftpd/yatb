@@ -16,6 +16,7 @@ class CDataThread
 	pthread_t tid; // thread id
 	
 	int shouldquit;	
+	void closeconnection();
 	
 	private:
 	
@@ -23,7 +24,7 @@ class CDataThread
 	
 	void dataloop(void);
 	
-	void closeconnection();
+	
 	
 	int Write(int ,char *,int ,SSL *);
 	int Read(int  ,char *,int &,SSL *);
