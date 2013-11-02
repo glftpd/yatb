@@ -284,7 +284,14 @@ void CDataThread::dataloop(void)
 			return;
 		}
 	}
-	
+	if(transfertype == 1)
+	{
+		debugmsg(username, "[datathread] ascii transfer");
+	}
+	else
+	{
+		debugmsg(username, "[datathread] binary transfer");
+	}
 	
 	printsockopt(datasite_sock,"datasite_sock");
 	printsockopt(dataclient_sock,"dataclient_sock");
@@ -416,29 +423,35 @@ void CDataThread::dataloop(void)
 	debugmsg(username,"[datathread] entering dataloop");
 	while (!shouldquit)
 	{
-
-		FD_ZERO(&data_readfds);
-		FD_SET(dataclient_sock,&data_readfds);
-		FD_SET(datasite_sock,&data_readfds);
-		struct timeval tv;
-		tv.tv_sec = config.read_write_timeout;
-		tv.tv_usec = 0;
+		for(int i=0; i < config.read_write_timeout * 2;i++)
+		{
+			FD_ZERO(&data_readfds);
+			FD_SET(dataclient_sock,&data_readfds);
+			FD_SET(datasite_sock,&data_readfds);
+			struct timeval tv;
+			tv.tv_sec = 0;
+			tv.tv_usec = 500000;
+				
+			int tmpsock;
+	
+			if (datasite_sock > dataclient_sock)
+			{
+				tmpsock = datasite_sock;
+			}
+			else
+			{
+				tmpsock = dataclient_sock;
+			}
 			
-		int tmpsock;
-
-		if (datasite_sock > dataclient_sock)
-		{
-			tmpsock = datasite_sock;
-		}
-		else
-		{
-			tmpsock = dataclient_sock;
-		}
-		
-		if (select(tmpsock+1, &data_readfds, NULL, NULL, &tv) < 1)
-		{
-			debugmsg(username,"[datathread] read timeout",errno);
-			break;
+			if (select(tmpsock+1, &data_readfds, NULL, NULL, &tv) > 1)
+			{
+				break;
+			}
+			if (shouldquit) 
+			{
+				closeconnection();
+				return;
+			}
 		}
 		// just to make sure - should not happen
 		if(datasite_sock < 0 || dataclient_sock < 0) break;
@@ -502,7 +515,7 @@ void CDataThread::dataloop(void)
 
 int CDataThread::Read(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 {
-	if(!DataRead(sock ,buffer,nrbytes,ssl))
+	if(!DataRead(sock ,buffer,nrbytes,ssl,transfertype,usingssl))
 	{
 		debugmsg(username,"[DataRead] read failed!",errno);
 		return 0;

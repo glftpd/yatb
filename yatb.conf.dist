@@ -79,3 +79,4 @@ read_write_timeout=15;
 uid=1;
 pidfile=yatb.pid;
 retry_count=10;
+ssl_ascii_cache=0;

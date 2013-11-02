@@ -119,7 +119,7 @@ class CFwData
 				memset(buffer,'\0',1);
 		
 				int rc;
-				if(!DataRead(server_sock,buffer,rc,sitessl))
+				if(!DataRead(server_sock,buffer,rc,sitessl,2,0))
 				{					
 					break;
 				}
@@ -139,7 +139,7 @@ class CFwData
 				memset(buffer,'\0',1);
 	
 				int rc;
-				if(!DataRead(client_sock,buffer,rc,clientssl))
+				if(!DataRead(client_sock,buffer,rc,clientssl,2,0))
 				{					
 					break;
 				}

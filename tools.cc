@@ -1,12 +1,13 @@
 #include "tools.h"
 #include "global.h"
 #include "config.h"
+
+
 #include "lock.h"
 
 // print debug msg
 void debugmsg(string un,string s,int err)
 {
-	
 	if (config.debug)
 	{
 		#if defined(__linux__) && defined(__i386__)
@@ -47,7 +48,6 @@ void debugmsg(string un,string s,int err)
 		
 		config_lock.UnLock();
 	}
-	
 }
 
 string ltrim( const string &str, const string &whitespace)
@@ -1114,7 +1114,7 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 	}
 }
 
-int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
+int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl,int tt,int ussl)
 {
 	int count = 0;
 	while(1)
@@ -1122,6 +1122,46 @@ int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 			int rc;		
 			if (ssl == NULL)
 			{
+				if((tt == 1) && config.ssl_ascii_cache && ussl)
+				{
+					int sslasciiread = 0;
+		      int rc = 1;
+		      while (rc > 0 && (sslasciiread < config.buffersize))
+		      {  
+		      	debugmsg("DATAREAD","[data_read] ssl_ascii_cache mode");    	
+		        fd_set readfds;
+		        FD_ZERO(&readfds);
+		        FD_SET(sock,&readfds);
+		        struct timeval tv;
+		        tv.tv_sec = 0;
+		        tv.tv_usec = 5;
+		        if (select(sock+1, &readfds, NULL, NULL, &tv) < 1)
+		        {
+		                break;
+		        }
+		        if (FD_ISSET(sock, &readfds))
+		        {
+		        	rc = recv(sock,buffer + sslasciiread,config.buffersize - sslasciiread,0);
+		         }
+		        else
+		        {
+		                break;
+		        }
+              
+		        if (rc > 0) 
+		        { 
+		           sslasciiread += rc;                
+		        }
+		        else
+		        {
+		                break;
+		        }
+      		}
+                        
+		      if (sslasciiread > 0) { nrbytes = sslasciiread; return 1; }
+		      else if (sslasciiread == 0) { nrbytes=0; return 0; }
+				}
+				
 				rc = recv(sock,buffer,config.buffersize,0);
 			}
 			else
@@ -1136,7 +1176,7 @@ int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 			}
 			else  if(rc == 0)
 			{			
-				debugmsg("-SYSTEM-","[data_read] connection closed",errno);
+				debugmsg("DATAREAD","[data_read] connection closed",errno);
 				nrbytes=0; 
 				return 0; 
 			}

@@ -70,6 +70,7 @@ CConfig::CConfig()
 	forwarder_ip="";
 	retry_count = 0;
 	no_idnt_cmd = 0;
+	ssl_ascii_cache = 0;
 }
 
 CConfig::~CConfig()
@@ -896,6 +897,17 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "no_idnt_cmd missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	if ((val=getkey("ssl_ascii_cache",daten)) != "ERROR")
+   	{
+   		ssl_ascii_cache = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "ssl_ascii_cache missing\n";
    		
    		return 0;
    	}

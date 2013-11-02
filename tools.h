@@ -36,7 +36,7 @@ int ParsePortCommand(string,string &,int &);
 int ParsePsvCommand(string ,string &, int &);
 
 int DataWrite(int ,char *,int ,SSL *);
-int DataRead(int  ,char *,int &,SSL *);
+int DataRead(int  ,char *,int &,SSL *,int,int);
 int Close(int &,string);
 int GetSock(int &);
 void PrintSock(int ,string );

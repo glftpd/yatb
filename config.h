@@ -92,6 +92,7 @@ class CConfig
 	string forwarder_ip;
 	int retry_count;
 	int no_idnt_cmd;
+	int ssl_ascii_cache;
 };
 
 extern CConfig config;
