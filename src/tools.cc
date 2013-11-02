@@ -80,8 +80,8 @@ void cmddebugmsg(string un,string s)
 string ltrim( const string &str, const string &whitespace)
 {
 
-   unsigned int idx = str.find_first_not_of(whitespace);
-   if( idx != string::npos )
+   int idx = str.find_first_not_of(whitespace);
+   if( idx != (int)string::npos )
        return str.substr(idx);
    
    return "";
@@ -90,8 +90,8 @@ string ltrim( const string &str, const string &whitespace)
 string rtrim( const string &str, const string &whitespace)
 {
 
-   unsigned int idx = str.find_last_not_of(whitespace);
-   if( idx != string::npos )
+   int idx = str.find_last_not_of(whitespace);
+   if( idx != (int)string::npos )
        return str.substr(0,idx+1);
 
    return str;
@@ -177,7 +177,7 @@ int setblocking(int socket)
 void correctReply(string &in)
 {
 	string tmp;
-	for(unsigned int i=0;i<in.length();i++)
+	for(int i=0;i < (int)in.length();i++)
 	{
 		if(in[i] != '\n')
 		{
@@ -229,6 +229,118 @@ int Bind(int &sock,string ip,int port)
 	}
 	return 1;
 }
+
+int Connect(int &sock,string host,int port,int sec,int &shouldquit,struct sockaddr_in &retadr)
+{
+	debugmsg("CONNECT","[Connect] start");
+	
+	struct sockaddr_in adr;
+	adr = GetIp(host,port);
+	if(!setnonblocking(sock))
+	{
+		debugmsg("CONNECT","[Connect] end(0-0)");
+		return 0;
+	}
+	int rc;
+	if((rc = connect(sock, (struct sockaddr *)&adr, sizeof(adr))) < 0)
+	{
+		if(errno != EINPROGRESS)
+		{
+			debugmsg("CONNECT","[Connect] end(0-1)");
+			return 0;
+		}
+	}
+	if (rc != 0) // ==0 -> connect completed immediately
+	{
+		fd_set writefds,readfds;
+		for(int i=0; i < sec * 20;i++)
+		{
+			FD_ZERO(&writefds);
+			FD_ZERO(&readfds);
+			FD_SET(sock, &writefds);
+			FD_SET(sock,&readfds);
+			
+			struct timeval tv;
+			tv.tv_sec = 0;
+			tv.tv_usec = 50000;
+			int res = select(sock+1, &readfds, &writefds, NULL, &tv);
+			if (res < 0)
+			{	
+				debugmsg("CONNECT","[Connect] end(0-2)");		
+				return 0;
+			}
+			else if(res == 0)
+			{			
+				if(shouldquit == 1) 
+				{
+					debugmsg("CONNECT","[Connect] end(0-3)");
+					return 0;
+				}
+			}
+			if(FD_ISSET(sock,&readfds) || FD_ISSET(sock,&writefds))
+			{
+				int err;
+				socklen_t errlen = sizeof(err);
+				if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&errlen) < 0)
+				{
+					debugmsg("CONNECT","[Connect] end(0-4)");
+					return 0;
+				}
+				if(err)
+				{
+					debugmsg("CONNECT","[Connect] end(0-5)",err);
+					return 0;
+				}
+				if(!SocketOption(sock,SO_KEEPALIVE))
+				{
+					debugmsg("CONNECT", "[Connect] client setsockopt error!",errno);
+					return 0;
+				}
+				if(!setblocking(sock))
+				{				
+					return 0;
+				}
+				retadr = adr;
+				//cout << "connect ip: " << inet_ntoa(adr.sin_addr) << "\n";
+				//cout << "connect port: " << adr.sin_port << "\n";
+				debugmsg("CONNECT","[Connect] end(1)");
+				return 1;
+			}
+		}
+	}
+	else
+	{
+		int err;
+		socklen_t errlen = sizeof(err);
+		if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&errlen) < 0)
+		{
+			debugmsg("CONNECT","[Connect] end(0-4)");
+			return 0;
+		}
+		if(err)
+		{
+			debugmsg("CONNECT","[Connect] end(0-5)");
+			return 0;
+		}
+		if(!SocketOption(sock,SO_KEEPALIVE))
+		{
+			debugmsg("CONNECT", "[Connect] client setsockopt error!",errno);
+			return 0;
+		}
+		if(!setblocking(sock))
+		{				
+			return 0;
+		}
+		retadr = adr;
+		//cout << "connect ip: " << inet_ntoa(adr.sin_addr) << "\n";
+		//cout << "connect port: " << adr.sin_port << "\n";
+		debugmsg("CONNECT","[Connect] end(1)");
+		return 1;
+	}
+	
+	return 0;
+}
+
 
 int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 {
@@ -300,6 +412,9 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 				{				
 					return 0;
 				}
+				
+				//cout << "connect ip: " << inet_ntoa(adr.sin_addr) << "\n";
+				//cout << "connect port: " << adr.sin_port << "\n";
 				debugmsg("CONNECT","[Connect] end(1)");
 				return 1;
 			}
@@ -328,12 +443,495 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 		{				
 			return 0;
 		}
+		
+		//cout << "connect ip: " << inet_ntoa(adr.sin_addr) << "\n";
+		//cout << "connect port: " << adr.sin_port << "\n";
 		debugmsg("CONNECT","[Connect] end(1)");
 		return 1;
 	}
 	
 	return 0;
 }
+
+
+int Connect5(int &sock,string host,int port, string socksip, int socksport, string socksuser, string sockspass, int sec,int &shouldquit)
+{
+	debugmsg("CONNECT5","[Connect] start");
+	fd_set writefds,readfds;
+	struct sockaddr_in adr;
+	adr = GetIp(socksip,socksport);
+	if(!setnonblocking(sock))
+	{
+		debugmsg("CONNECT5","[Connect] end(0-0)");
+		return 0;
+	}
+	int rc;
+	if((rc = connect(sock, (struct sockaddr *)&adr, sizeof(adr))) < 0)
+	{
+		if(errno != EINPROGRESS)
+		{
+			debugmsg("CONNECT5","[Connect] end(0-1)");
+			return 0;
+		}
+	}
+	if (rc != 0) // ==0 -> connect completed immediately
+	{
+		
+		for(int i=0; i < sec * 20;i++)
+		{
+			FD_ZERO(&writefds);
+			FD_ZERO(&readfds);
+			FD_SET(sock, &writefds);
+			FD_SET(sock,&readfds);
+			
+			struct timeval tv;
+			tv.tv_sec = 0;
+			tv.tv_usec = 50000;
+			int res = select(sock+1, &readfds, &writefds, NULL, &tv);
+			if (res < 0)
+			{	
+				debugmsg("CONNECT5","[Connect] end(0-2)");		
+				return 0;
+			}
+			else if(res == 0)
+			{			
+				if(shouldquit == 1) 
+				{
+					debugmsg("CONNECT5","[Connect] end(0-3)");
+					return 0;
+				}
+			}
+			if(FD_ISSET(sock,&readfds) || FD_ISSET(sock,&writefds))
+			{
+				int err;
+				socklen_t errlen = sizeof(err);
+				if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&errlen) < 0)
+				{
+					debugmsg("CONNECT5","[Connect] end(0-4)");
+					return 0;
+				}
+				if(err)
+				{
+					debugmsg("CONNECT5","[Connect] end(0-5)",err);
+					return 0;
+				}
+				if(!SocketOption(sock,SO_KEEPALIVE))
+				{
+					debugmsg("CONNECT5", "[Connect] client setsockopt error!",errno);
+					return 0;
+				}
+				if(!setblocking(sock))
+				{				
+					return 0;
+				}
+				// here socks5 connect starts
+				char *buffer;
+				buffer = new char[config.buffersize];
+				buffer[0] = 5;
+				buffer[1] = 1;
+				buffer[2] = 2;
+				
+				if(!DataWrite(sock,buffer,3,NULL))
+				{
+					debugmsg("-CONNECT5-","error writing to client");
+					delete [] buffer;
+					return 0;
+				}
+
+				for(int i=0; i < config.read_write_timeout * 2;i++)
+				{
+					FD_ZERO(&readfds);
+					FD_SET(sock,&readfds);
+					
+					struct timeval tv;
+					tv.tv_sec = 0;
+					tv.tv_usec = 500000;
+					
+					if (select(sock+1, &readfds, NULL, NULL, &tv) > 1)
+					{					
+						break;
+					}
+					
+				}
+				
+				if (FD_ISSET(sock, &readfds))
+				{
+					if(!DataRead(sock,buffer,rc,NULL,0,0))
+					{					
+						debugmsg("-CONNECT5-","data read failed");
+						Close(sock,"");
+						delete [] buffer;
+						return 0;
+					}
+					if(rc != 2)
+					{
+						debugmsg("-CONNECT5-","illegal response");
+						Close(sock,"");
+						delete [] buffer;
+						return 0;
+					}
+					if(buffer[0] != 5 || buffer[1] != 2)
+					{
+						debugmsg("-CONNECT5-","illegal response");
+						Close(sock,"");
+						delete [] buffer;
+						return 0;
+					}
+					if(socksuser.length() > 255 || sockspass.length() > 255)
+					{
+						debugmsg("-CONNECT5-","illegal user/pass length");
+						Close(sock,"");
+						delete [] buffer;
+						return 0;
+					}
+					buffer[0] = 1;
+					buffer[1] = socksuser.length();
+					for(int i=0;i < (int)socksuser.length();i++)
+					{
+						buffer[i+2] = socksuser[i];
+					}
+					buffer[socksuser.length() + 2] = sockspass.length();
+					for(int i=0;i < (int)sockspass.length();i++)
+					{
+						buffer[i+3+socksuser.length()] = sockspass[i];
+					}
+					if(!DataWrite(sock,buffer,3 + socksuser.length() + sockspass.length(),NULL))
+					{
+						debugmsg("-CONNECT5-","error writing to client");
+						Close(sock,"");
+						delete [] buffer;
+						return 0;
+					}
+					for(int i=0; i < config.read_write_timeout * 2;i++)
+					{
+						FD_ZERO(&readfds);
+						FD_SET(sock,&readfds);
+						
+						struct timeval tv;
+						tv.tv_sec = 0;
+						tv.tv_usec = 500000;
+						
+						if (select(sock+1, &readfds, NULL, NULL, &tv) > 1)
+						{					
+							break;
+						}
+						
+					}
+					if (FD_ISSET(sock, &readfds))
+					{
+						if(!DataRead(sock,buffer,rc,NULL,0,0))
+						{					
+							debugmsg("-CONNECT5-","data read failed");
+							Close(sock,"");
+							delete [] buffer;
+							return 0;
+						}
+						if(rc != 2)
+						{
+							debugmsg("-CONNECT5-","data read failed");
+							Close(sock,"");
+							delete [] buffer;
+							return 0;
+						}
+						if(buffer[0] != 1 || buffer[1] != 0)
+						{
+							debugmsg("-CONNECT5-","auth failed");
+							Close(sock,"");
+							delete [] buffer;
+							return 0;
+						}
+						// now send connect request
+						buffer[0] = 5;
+						buffer[1] = 1;
+						buffer[2] = 0;
+						buffer[3] = 1;
+
+						struct sockaddr_in newadr;
+						newadr = GetIp(host,port);
+
+						memcpy(buffer + 4, &newadr.sin_addr,4);
+						memcpy(buffer + 8, &newadr.sin_port,2);
+
+						if(!DataWrite(sock,buffer,10 + socksuser.length() + sockspass.length(),NULL))
+						{
+							debugmsg("-CONNECT5-","error writing to client");
+							Close(sock,"");
+							delete [] buffer;
+							return 0;
+						}
+
+						for(int i=0; i < config.read_write_timeout * 2;i++)
+						{
+							FD_ZERO(&readfds);
+							FD_SET(sock,&readfds);
+							
+							struct timeval tv;
+							tv.tv_sec = 0;
+							tv.tv_usec = 500000;
+							
+							if (select(sock+1, &readfds, NULL, NULL, &tv) > 1)
+							{					
+								break;
+							}
+							
+						}
+						if (FD_ISSET(sock, &readfds))
+						{
+							if(!DataRead(sock,buffer,rc,NULL,0,0))
+							{					
+								debugmsg("-CONNECT5-","data read failed");
+								Close(sock,"");
+								delete [] buffer;
+								return 0;
+							}
+							if(rc != 10)
+							{
+								debugmsg("-CONNECT5-","data read failed");
+								Close(sock,"");
+								delete [] buffer;
+								return 0;
+							}
+						}
+					}
+					else
+					{	
+						debugmsg("-CONNECT5-","data read failed");
+						Close(sock,"");
+						delete [] buffer;
+						return 0;				
+					}
+
+				}
+				else
+				{
+					debugmsg("-CONNECT5-","data read failed");
+					Close(sock,"");
+					delete [] buffer;
+					return 0;
+				}
+				// here socks5 connect ends
+				debugmsg("CONNECT5","[Connect] end(1)");
+				return 1;
+			}
+		}
+	}
+	else
+	{
+		int err;
+		socklen_t errlen = sizeof(err);
+		if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&errlen) < 0)
+		{
+			debugmsg("CONNECT5","[Connect] end(0-4)");
+			return 0;
+		}
+		if(err)
+		{
+			debugmsg("CONNECT5","[Connect] end(0-5)");
+			return 0;
+		}
+		if(!SocketOption(sock,SO_KEEPALIVE))
+		{
+			debugmsg("CONNECT5", "[Connect] client setsockopt error!",errno);
+			return 0;
+		}
+		if(!setblocking(sock))
+		{				
+			return 0;
+		}
+		// here socks5 connect starts
+		char *buffer;
+		buffer = new char[config.buffersize];
+		buffer[0] = 5;
+		buffer[1] = 1;
+		buffer[2] = 2;
+		
+		if(!DataWrite(sock,buffer,3,NULL))
+		{
+			debugmsg("-CONNECT5-","error writing to client");
+			delete [] buffer;
+			return 0;
+		}
+
+		for(int i=0; i < config.read_write_timeout * 2;i++)
+		{
+			FD_ZERO(&readfds);
+			FD_SET(sock,&readfds);
+			
+			struct timeval tv;
+			tv.tv_sec = 0;
+			tv.tv_usec = 500000;
+			
+			if (select(sock+1, &readfds, NULL, NULL, &tv) > 1)
+			{					
+				break;
+			}
+			
+		}
+		
+		if (FD_ISSET(sock, &readfds))
+		{
+			if(!DataRead(sock,buffer,rc,NULL,0,0))
+			{					
+				debugmsg("-CONNECT5-","data read failed");
+				Close(sock,"");
+				delete [] buffer;
+				return 0;
+			}
+			if(rc != 2)
+			{
+				debugmsg("-CONNECT5-","illegal response");
+				Close(sock,"");
+				delete [] buffer;
+				return 0;
+			}
+			if(buffer[0] != 5 || buffer[1] != 2)
+			{
+				debugmsg("-CONNECT5-","illegal response");
+				Close(sock,"");
+				delete [] buffer;
+				return 0;
+			}
+			if(socksuser.length() > 255 || sockspass.length() > 255)
+			{
+				debugmsg("-CONNECT5-","illegal user/pass length");
+				Close(sock,"");
+				delete [] buffer;
+				return 0;
+			}
+			buffer[0] = 1;
+			buffer[1] = socksuser.length();
+			for(int i=0;i < (int)socksuser.length();i++)
+			{
+				buffer[i+2] = socksuser[i];
+			}
+			buffer[socksuser.length() + 2] = sockspass.length();
+			for(int i=0;i < (int)sockspass.length();i++)
+			{
+				buffer[i+3+socksuser.length()] = sockspass[i];
+			}
+			if(!DataWrite(sock,buffer,3 + socksuser.length() + sockspass.length(),NULL))
+			{
+				debugmsg("-CONNECT5-","error writing to client");
+				Close(sock,"");
+				delete [] buffer;
+				return 0;
+			}
+			for(int i=0; i < config.read_write_timeout * 2;i++)
+			{
+				FD_ZERO(&readfds);
+				FD_SET(sock,&readfds);
+				
+				struct timeval tv;
+				tv.tv_sec = 0;
+				tv.tv_usec = 500000;
+				
+				if (select(sock+1, &readfds, NULL, NULL, &tv) > 1)
+				{					
+					break;
+				}
+				
+			}
+			if (FD_ISSET(sock, &readfds))
+			{
+				if(!DataRead(sock,buffer,rc,NULL,0,0))
+				{					
+					debugmsg("-CONNECT5-","data read failed");
+					Close(sock,"");
+					delete [] buffer;
+					return 0;
+				}
+				if(rc != 2)
+				{
+					debugmsg("-CONNECT5-","data read failed");
+					Close(sock,"");
+					delete [] buffer;
+					return 0;
+				}
+				if(buffer[0] != 1 || buffer[1] != 0)
+				{
+					debugmsg("-CONNECT5-","auth failed");
+					Close(sock,"");
+					delete [] buffer;
+					return 0;
+				}
+				// now send connect request
+				buffer[0] = 5;
+				buffer[1] = 1;
+				buffer[2] = 0;
+				buffer[3] = 1;
+
+				struct sockaddr_in newadr;
+				newadr = GetIp(host,port);
+
+				memcpy(buffer + 4, &newadr.sin_addr,4);
+				memcpy(buffer + 8, &newadr.sin_port,2);
+
+				if(!DataWrite(sock,buffer,10 + socksuser.length() + sockspass.length(),NULL))
+				{
+					debugmsg("-CONNECT5-","error writing to client");
+					Close(sock,"");
+					delete [] buffer;
+					return 0;
+				}
+
+				for(int i=0; i < config.read_write_timeout * 2;i++)
+				{
+					FD_ZERO(&readfds);
+					FD_SET(sock,&readfds);
+					
+					struct timeval tv;
+					tv.tv_sec = 0;
+					tv.tv_usec = 500000;
+					
+					if (select(sock+1, &readfds, NULL, NULL, &tv) > 1)
+					{					
+						break;
+					}
+					
+				}
+				if (FD_ISSET(sock, &readfds))
+				{
+					if(!DataRead(sock,buffer,rc,NULL,0,0))
+					{					
+						debugmsg("-CONNECT5-","data read failed");
+						Close(sock,"");
+						delete [] buffer;
+						return 0;
+					}
+					if(rc != 10)
+					{
+						debugmsg("-CONNECT5-","data read failed");
+						Close(sock,"");
+						delete [] buffer;
+						return 0;
+					}
+				}
+			}
+			else
+			{	
+				debugmsg("-CONNECT5-","data read failed");
+				Close(sock,"");
+				delete [] buffer;
+				return 0;				
+			}
+
+		}
+		else
+		{
+			debugmsg("-CONNECT5-","data read failed");
+			Close(sock,"");
+			delete [] buffer;
+			return 0;
+		}
+		// here socks5 connect ends
+		
+		debugmsg("CONNECT5","[Connect] end(1)");
+		return 1;
+	}
+	
+	return 0;
+}
+
 
 int Accept(int listensock,int &newsock,string &clientip,int &clientport,int sec,int &shouldquit)
 {
@@ -465,10 +1063,10 @@ int IsNumeric(char s)
 int FtpCode(string tmp,int &res)
 {
 	// check if it is last line
-	unsigned int pos1,pos2;
+	int pos1,pos2;
 	pos1 = tmp.rfind('\r',tmp.length());
 	
-	if (pos1 == string::npos)
+	if (pos1 == (int)string::npos)
 	{
 		// we never should get here
 		return 0;
@@ -477,7 +1075,7 @@ int FtpCode(string tmp,int &res)
 						
 	// check if message has only 1 line
 	pos2 = tmp.rfind('\r',pos1-1);
-	if (pos2 != string::npos)
+	if (pos2 != (int)string::npos)
 	{
 		//multiple lines
 		
@@ -519,10 +1117,10 @@ int FtpCode(string tmp,int &res)
 int IsEndline(string tmp)
 {
 	// check if it is last line
-	unsigned int pos1,pos2;
+	int pos1,pos2;
 	pos1 = tmp.rfind('\r',tmp.length());
 	
-	if (pos1 == string::npos)
+	if (pos1 == (int)string::npos)
 	{
 		// we never should get here
 		return 0;
@@ -531,7 +1129,7 @@ int IsEndline(string tmp)
 						
 	// check if message has only 1 line
 	pos2 = tmp.rfind('\r',pos1-1);
-	if (pos2 != string::npos)
+	if (pos2 != (int)string::npos)
 	{
 		//multiple lines
 		
@@ -563,19 +1161,23 @@ struct sockaddr_in GetIp(string ip,int port)
 {
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
-	
+	debugmsg("-GETIP-","try to get ip for: " + ip);
 	if(!inet_aton(ip.c_str(),&addr.sin_addr))
 	{
 		struct hostent *he;
 	
 		if((he = gethostbyname(ip.c_str())) == NULL)
 		{
+			debugmsg("-GETIP-","error resolving ip: " + ip);
 			//cout << "Error resolving ip\n";
 			inet_aton("0.0.0.0", &addr.sin_addr); 
 		}
 		else
 		{
 			addr.sin_addr = *(struct in_addr*)he->h_addr;
+			string tmp;
+			tmp = inet_ntoa(addr.sin_addr);
+			debugmsg("-GETIP-","resolved ip: " + tmp);
 		}
 	}
 	addr.sin_port = htons(port);
@@ -1024,29 +1626,29 @@ int ParsePortCommand(string portcmd,string &ip,int &port)
 {
 	debugmsg("-SYSTEM-","[ParsePortCommand] start");
 	
-	unsigned int startpos;
+	int startpos;
 		
 	startpos = portcmd.find(" ",0);
-	if (startpos == string::npos) { return 0; }
+	if (startpos == (int)string::npos) { return 0; }
 	portcmd = portcmd.substr(startpos+1,portcmd.length());
 	startpos = portcmd.find(",",0);
-	if (startpos == string::npos) { return 0; }
+	if (startpos == (int)string::npos) { return 0; }
 	portcmd.replace(startpos,1,".");
 	startpos = portcmd.find(",",0);
-	if (startpos == string::npos) { return 0; }
+	if (startpos == (int)string::npos) { return 0; }
 	portcmd.replace(startpos,1,".");
 	startpos = portcmd.find(",",0);
-	if (startpos == string::npos) { return 0; }
+	if (startpos == (int)string::npos) { return 0; }
 	portcmd.replace(startpos,1,".");
 	startpos = portcmd.find(",",0);
-	if (startpos == string::npos) { return 0; }
+	if (startpos == (int)string::npos) { return 0; }
 	ip = portcmd.substr(0,startpos);
 	
 		
 	string tmpport;
 	tmpport = portcmd.substr(startpos+1,portcmd.length());
 	startpos = tmpport.find(",",0);
-	if (startpos == string::npos) { return 0; }
+	if (startpos == (int)string::npos) { return 0; }
 	string p1,p2;
 	p1 = tmpport.substr(0,startpos);
 	p2 = tmpport.substr(startpos+1,tmpport.length()-1);
@@ -1063,10 +1665,10 @@ int ParsePsvCommand(string passivecmd,string &ip, int &port)
 
 	debugmsg("-SYSTEM-","[ParsePsvCommand] start");
 	debugmsg("-SYSTEM-","[ParsePsvCommand] " + passivecmd);
-	unsigned int startpos,endpos;
+	int startpos,endpos;
 	startpos = passivecmd.find("(",0);
 	endpos = passivecmd.find(")",0);
-	if (startpos == string::npos || endpos == string::npos)
+	if (startpos == (int)string::npos || endpos == (int)string::npos)
 	{		
 		return 0;
 	}
@@ -1077,29 +1679,29 @@ int ParsePsvCommand(string passivecmd,string &ip, int &port)
 	if (tmp == "") return 0;
 	
 	endpos = tmp.find(",",0);
-	if(endpos == string::npos) return 0;
+	if(endpos == (int)string::npos) return 0;
 	string ip1 = tmp.substr(0,endpos);
 	tmp = tmp.substr(endpos+1,tmp.length());
 
 	endpos = tmp.find(",",0);
-	if(endpos == string::npos) return 0;
+	if(endpos == (int)string::npos) return 0;
 	string ip2 = tmp.substr(0,endpos);
 	tmp = tmp.substr(endpos+1,tmp.length());
 
 	endpos = tmp.find(",",0);
-	if(endpos == string::npos) return 0;
+	if(endpos == (int)string::npos) return 0;
 	string ip3 = tmp.substr(0,endpos);
 	tmp = tmp.substr(endpos+1,tmp.length());
 
 	endpos = tmp.find(",",0);
-	if(endpos == string::npos) return 0;
+	if(endpos == (int)string::npos) return 0;
 	string ip4 = tmp.substr(0,endpos);
 	tmp = tmp.substr(endpos+1,tmp.length());
 
 	ip = ip1 + "." + ip2 + "." + ip3 + "." + ip4;
 
 	endpos = tmp.find(",",0);
-	if(endpos == string::npos) return 0;
+	if(endpos == (int)string::npos) return 0;
 	string port1 = tmp.substr(0,endpos);
 	if(port1 == "") return 0;
 	string port2 = tmp.substr(endpos+1,tmp.length());
@@ -1487,7 +2089,7 @@ int decrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
 	}
 
  	EVP_CIPHER_CTX_cleanup(&ctx);
- 	for (unsigned int i=0;i<key.length();i++) { key[i] = '0'; }
+ 	for (int i=0;i < (int)key.length();i++) { key[i] = '0'; }
         return 1;
 }
 
@@ -1509,7 +2111,7 @@ int encrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
 	}
 
  	EVP_CIPHER_CTX_cleanup(&ctx);
- 	for (unsigned int i=0;i<key.length();i++) { key[i] = '0'; }
+ 	for (int i=0;i < (int)key.length();i++) { key[i] = '0'; }
         return 1;
 }
 
@@ -1534,7 +2136,7 @@ int GetLine(int sock,SSL **ssl,string &reply)
 
 int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **ssl,SSL_CTX **sslctx,string &message)
 {
-	unsigned int pos;
+	int pos;
 	
 	int shouldquit = 0;
 	if (!Connect(sock,ip,port,5,shouldquit))
@@ -1568,7 +2170,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 		}
 		
 		pos = reply.find("AUTH TLS successful",0);
-		if(pos == string::npos)
+		if(pos == (int)string::npos)
 		{
 		    message = "AUTH TLS failed";	
 			return 0;
@@ -1600,14 +2202,14 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 	}
 	// standard gl message
 	pos = reply.find("331 Password required for",0);
-	if(pos == string::npos)
+	if(pos == (int)string::npos)
 	{
 		// standard anonymous ftp message
 		pos = reply.find("login ok",0);
-		if(pos == string::npos)
+		if(pos == (int)string::npos)
 		{
 			pos = reply.find("specify the password",0);
-			if(pos == string::npos)
+			if(pos == (int)string::npos)
 			{ 	
 				if(code != 331 && code != 230)
 				{
@@ -1640,14 +2242,14 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 		}
 		//standard gl message	
 		pos = reply.find("logged in.",0);
-		if(pos == string::npos)
+		if(pos == (int)string::npos)
 		{		
 			// standard anonymous ftp message
 			pos = reply.find("access granted",0);
-			if(pos == string::npos)
+			if(pos == (int)string::npos)
 			{
 				pos = reply.find("Login successful",0);
-				if(pos == string::npos)
+				if(pos == (int)string::npos)
 				{
 					if(code != 230)
 					{
@@ -1798,6 +2400,130 @@ string fingerprint(SSL *ssl)
 			return upper(res.str(),0);			
 		}
 	}
+}
+
+
+int Split(const string& input, const string& delimiter, vector<string>& results, bool includeEmpties)
+{
+    int iPos = 0;
+    int newPos = -1;
+    int delim_size = (int)delimiter.size();
+    int input_size = (int)input.size();
+
+    if(( input_size == 0 ) || ( delim_size == 0 ))
+    {
+        return 0;
+    }
+	
+    vector<int> positions;
+
+    newPos = input.find(delimiter, 0);
+
+    if( newPos < 0 )
+    { 
+		results.push_back(input);        
+    }
+
+    int numFound = 0;
+
+    while( newPos >= iPos )
+    {
+        numFound++;
+        positions.push_back(newPos);
+        iPos = newPos;
+        newPos = input.find (delimiter, iPos + delim_size);
+    }
+
+    if( numFound == 0 )
+    {
+        return 0;
+    }
+
+    for( int i = 0; i <= (int)positions.size(); ++i )
+    {
+        string s = "";
+        if( i == 0 ) 
+        { 
+            s = input.substr(i, positions[i]); 
+        }
+		else
+		{
+			int offset = positions[i-1] + delim_size;
+			if( offset < input_size )
+			{
+				if( i == (int)positions.size() )
+				{
+					s = input.substr(offset);
+				}
+				else if( i > 0 )
+				{
+					s = input.substr( positions[i-1] + delim_size, 
+						  positions[i] - positions[i-1] - delim_size );
+				}
+			}
+		}
+        if( includeEmpties || ( s.size() > 0 ) )
+        {
+            results.push_back(s);
+        }
+    }
+    return (int)results.size();
+}
+
+
+int MatchIp(const string& ip1, const string& ip2)
+{
+	// einfachster fall
+	if(ip1 == ip2) return 1;
+	vector<string> vip1;
+	vector<string> vip2;
+	if(Split(ip1,".",vip1,false) != 4) return 0; 
+	if(Split(ip2,".",vip2,false) != 4) return 0; 
+	// alle 4 blöcke vergleichen
+	for(int i=0; i < 4;i++)
+	{
+		string s1,s2;
+		s1 = vip1[i];
+		s2 = vip2[i];		
+		int pos = 0;
+		int lpos = 0;
+		int rpos = 0;
+		
+		// den längeren block raussuchen
+		int max_size = 0;
+		max_size = (int)s1.length();
+		if((int)s2.length() > max_size) max_size = (int)s2.length();
+	
+		while(pos < max_size)
+		{
+			// stimmen die längen der laufvariablen noch?
+			if(s1[lpos] == '*') break; // sonderfall *
+			if(lpos >= (int)s1.length()) return 0;
+			if(rpos >= (int)s2.length()) return 0;
+			
+			// bei ? kein vergleich - nur zähler erhöhen
+			if(s1[lpos] == '?')
+			{
+				pos++;
+				lpos++;
+				rpos++;
+			}
+			// alles nach * ist ok (192.168.1.1*1 usinnig)
+			else if(s1[lpos] == '*')
+			{
+				break;
+			}
+			// normalfall - beide stellen vergleichen
+			else
+			{
+				if(s1[lpos] != s2[rpos]) return 0;
+				lpos++;
+				rpos++;
+				pos++;
+			}
+		}
+	}
+	return 1;
 }
 
 #if defined(__linux__) && defined(__i386__)

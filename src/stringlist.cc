@@ -13,7 +13,7 @@ CStringlist::~CStringlist()
 
 int CStringlist::IsInList(string s)
 {
-	for (unsigned int i=0;i < List.size();i++)
+	for (int i=0;i < (int)List.size();i++)
 	{
 		if (List[i] == s)
 		{
@@ -59,11 +59,11 @@ void CStringlist::ParseString(string s,int mode)
 {
 	if (s == "") { return; }
 	s = s + ",";
-	unsigned int pos;
+	int pos;
 	do
 	{
 		pos = s.find(",",0);
-		if (pos != string::npos)
+		if (pos != (int)string::npos)
 		{
 			string tmp;
 			tmp = s.substr(0,pos);
@@ -78,16 +78,16 @@ void CStringlist::ParseString(string s,int mode)
 			s = s.substr(pos + 1, s.length() - pos - 1);
 		}
 	}
-	while (pos != string::npos);
+	while (pos != (int)string::npos);
 }
 
 string CStringlist::GetList(void)
 {
 	string tmp = "";
-	for (unsigned int i=0; i < List.size(); i++)
+	for (int i=0; i < (int)List.size(); i++)
 	{
 		tmp = tmp + List[i];
-		if ( i + 1 < List.size())
+		if ( i + 1 < (int)List.size())
 		{
 			tmp = tmp + ",";
 		}

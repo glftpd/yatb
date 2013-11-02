@@ -14,7 +14,7 @@ CFxpiplist::~CFxpiplist()
 int CFxpiplist::WriteList(string filename, string key)
 {
 	string daten;
-	for (unsigned int i=0;i < List.size();i++)
+	for (int i=0;i < (int)List.size();i++)
 	{
 		daten += List[i].ip + "," + List[i].comment + "," + List[i].user + "\r\n";
 	}
@@ -111,7 +111,7 @@ int CFxpiplist::IsInList(string s)
 	{
 		tmp = s;
 	}
-	for (unsigned int i=0;i < List.size();i++)
+	for (int i=0;i < (int)List.size();i++)
 	{
 		if (List[i].ip == tmp)
 		{
@@ -132,7 +132,7 @@ string CFxpiplist::GetComment(string s)
 	{
 		tmp = s;
 	}
-	for (unsigned int i=0;i < List.size();i++)
+	for (int i=0;i < int)List.size();i++)
 	{
 		if (List[i].ip == tmp)
 		{
@@ -147,9 +147,9 @@ void CFxpiplist::Remove(string s)
 	string tmp;
 	if(config.use_fxpiphash)
 	{	
-		unsigned int pos;
+		int pos;
 		pos = s.find(".",0);
-		if(pos == string::npos)
+		if(pos == (int)string::npos)
 		{
 			tmp = s;
 		}
@@ -181,8 +181,8 @@ int CFxpiplist::Insert(string s)
 	// format: ip,comment,user
 	string ip,comment,user;
 	if (s == "") { return 0; }	
-	unsigned int pos = s.find(",",0);
-	if (pos != string::npos)
+	int pos = s.find(",",0);
+	if (pos != (int)string::npos)
 	{
 		if(IsInList(s.substr(0,pos))) { return 2; }
 		if(config.use_fxpiphash)
@@ -195,7 +195,7 @@ int CFxpiplist::Insert(string s)
 		}
 		s = s.substr(pos + 1, s.length() - pos - 1);
 		pos = s.find(",",0);
-		if (pos != string::npos)
+		if (pos != (int)string::npos)
 		{
 			comment = s.substr(0,pos);
 			s = s.substr(pos + 1, s.length() - pos - 1);
@@ -225,13 +225,13 @@ void CFxpiplist::Insert_nokey(string s)
 	string ip,comment,user;
 	if (s == "") { return; }
 	if(IsInList(s)) { return; }
-	unsigned int pos = s.find(",",0);
-	if (pos != string::npos)
+	int pos = s.find(",",0);
+	if (pos != (int)string::npos)
 	{		
 		ip = s.substr(0,pos);		
 		s = s.substr(pos + 1, s.length() - pos - 1);
 		pos = s.find(",",0);
-		if (pos != string::npos)
+		if (pos != (int)string::npos)
 		{
 			comment = s.substr(0,pos);
 			s = s.substr(pos + 1, s.length() - pos - 1);
@@ -250,7 +250,7 @@ void CFxpiplist::Insert_nokey(string s)
 string CFxpiplist::GetList(void)
 {
 	string tmp = "200- FxpIp report start\r\n";
-	for (unsigned int i=0; i < List.size(); i++)
+	for (int i=0; i < (int)List.size(); i++)
 	{
 		tmp += "200- " + List[i].ip + " - " + List[i].comment + " - " + List[i].user + "\r\n";
 	}

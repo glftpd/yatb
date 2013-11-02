@@ -21,6 +21,8 @@ int setblocking(int);
 void correctReply(string &);
 
 int Connect(int &,string,int,int,int &);
+int Connect5(int &,string, int, string, int, string, string, int,int &);
+int Connect(int &,string,int,int,int &,struct sockaddr_in &);
 int Accept(int ,int &,string &,int &,int, int &);
 int Bind(int &,string,int);
 int SocketOption(int &,int);
@@ -60,6 +62,8 @@ int trafficcheck(void);
 string hash(string ,string );
 int filehash(string ,string ,string &);
 string fingerprint(SSL *);
+int Split(const string& , const string& , vector<string>& , bool );
+int MatchIp(const string& , const string& );
 
 #if defined(__linux__) && defined(__i386__)
 pid_t gettid(void);

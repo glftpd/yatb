@@ -130,23 +130,23 @@ CConfig::~CConfig()
 string CConfig::getkey(string name,string data)
 {
 	string value = "ERROR";
-	unsigned int start,end;
+	int start,end;
 	string tmp = data;
 	name = name + "=";
 	start = tmp.find(name,0);
-	if (start == string::npos)
+	if (start == (int)string::npos)
 	{
-		for (unsigned int i=0;i<data.length();i++) { data[i] = '0'; }
+		for (int i=0;i<(int)data.length();i++) { data[i] = '0'; }
 		return value;
 	}
 	end = tmp.find(";",start);
-	if (end == string::npos)
+	if (end == (int)string::npos)
 	{
-		for (unsigned int i=0;i<data.length();i++) { data[i] = '0'; }
+		for (int i=0;i<(int)data.length();i++) { data[i] = '0'; }
 		return value;
 	}
 	value = tmp.substr(start + name.length(),end-start-name.length());
-	for (unsigned int i=0;i<data.length();i++) { data[i] = '0'; }
+	for (int i=0;i<(int)data.length();i++) { data[i] = '0'; }
 	
 	return value;
 }
@@ -355,7 +355,7 @@ int CConfig::readconf(string filename,string key,int crypted)
 
 
 
-   		for(unsigned int i=0;i < daten.length();i++)
+   		for(int i=0;i < (int)daten.length();i++)
    		{
    			daten[i] = '0';
    		}

@@ -402,8 +402,8 @@ void CControlThread::mainloop(void)
 		debugmsg(username,"[controlthread] idndtcmd: " + idndtcmd);
 		// parse idnt command to get client ip
 		string tmp;
-		unsigned int pos;
-		if(pos == string::npos) return;
+		int pos;
+		if(pos == (int)string::npos) return;
 		idndtcmd = crcut(idndtcmd);
 		pos = idndtcmd.find(":",0);
 		tmp = idndtcmd.substr(pos + 1,idndtcmd.length() - pos - 1);
@@ -970,12 +970,12 @@ void CControlThread::mainloop(void)
 						gotfirstcmd++;
 
 					}
-					unsigned int pos,pos2;
+					int pos,pos2;
 					pos2 = s.find("!",0);
 					pos = s.find(" ",0);
-					if (pos2 != string::npos) { pos = pos2; }
+					if (pos2 != (int)string::npos) { pos = pos2; }
 					// return if empty user command is send
-					if (pos == string::npos) { return; }
+					if (pos == (int)string::npos) { return; }
 					username = s.substr(pos+1,s.length()-pos-3);
 
 				}
@@ -1451,9 +1451,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						adminlist.Insert(s);
@@ -1483,9 +1483,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						adminlist.Remove(s);
@@ -1540,9 +1540,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						entrylist.Insert(s);
@@ -1572,9 +1572,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						entrylist.Remove(s);
@@ -1629,9 +1629,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						fxpfromsitelist.Insert(s);
@@ -1662,9 +1662,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						fxpfromsitelist.Remove(s);
@@ -1716,9 +1716,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						fxptositelist.Insert(s);
@@ -1749,9 +1749,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						fxptositelist.Remove(s);
@@ -1803,9 +1803,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						sslexcludelist.Insert(s);
@@ -1836,9 +1836,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						sslexcludelist.Remove(s);
@@ -1887,9 +1887,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						int res = whitelist.Insert(s);
@@ -1938,9 +1938,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						whitelist.Remove(s);
@@ -1989,9 +1989,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						int res = fpwhitelist.Insert(s);
@@ -2040,9 +2040,9 @@ void CControlThread::mainloop(void)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
-					unsigned int pos;
+					int pos;
 					pos = s.find(" ",0);
-					if (pos != string::npos)
+					if (pos != (int)string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
 						fpwhitelist.Remove(s);
@@ -2165,7 +2165,7 @@ string CControlThread::CreatePsvCommand(int port)
 	}
 	
 	debugmsg("-SYSTEM-","[CreatePsvCommand] ip: " + tmpip);
-	unsigned int startpos;
+	int startpos;
 	startpos = tmpip.find(".",0);
 	tmpip.replace(startpos,1,",");
 	startpos = tmpip.find(".",0);

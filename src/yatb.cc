@@ -163,9 +163,9 @@ int main(int argc,char *argv[])
 	}
 	
 	yatbfilename = argv[0];
-	unsigned int pos;
+	int pos;
 	pos = yatbfilename.rfind("/",yatbfilename.length());
-	if(pos != string::npos)
+	if(pos != (int)string::npos)
 	{
 		yatbfilename = yatbfilename.substr(pos+1,yatbfilename.length() - pos-1);
 	}

@@ -25,11 +25,11 @@ int CFpWhitelist::CheckIp(string fp, string ip,string &msg)
 		tmp = ip;
 	}
 	// get fp entry
-	for(unsigned int i=0; i < List.size();i++)
+	for(int i=0; i < (int)List.size();i++)
 	{
 		if(List[i].fp == fp)
 		{
-			for(unsigned int k=0; k < List[i].iplist.size();k++)
+			for(int k=0; k < (int)List[i].iplist.size();k++)
 			{
 				if(List[i].iplist[k] == tmp)
 				{
@@ -49,12 +49,12 @@ int CFpWhitelist::CheckIp(string fp, string ip,string &msg)
 int CFpWhitelist::WriteList(string filename, string key)
 {
 	string daten;
-	for (unsigned int i=0;i < List.size();i++)
+	for (int i=0;i < (int)List.size();i++)
 	{
 		daten += List[i].fp + "," + List[i].comment + "," + List[i].user + ",";
-		for(unsigned int k=0; k < List[i].iplist.size();k++)
+		for(int k=0; k < (int)List[i].iplist.size();k++)
 		{
-			if(k == List[i].iplist.size() -1)
+			if(k == (int)List[i].iplist.size() -1)
 			{
 				daten += List[i].iplist[k];
 			}
@@ -151,7 +151,7 @@ int CFpWhitelist::IsInList(string s)
 {
 	string tmp;
 	tmp = s;
-	for (unsigned int i=0;i < List.size();i++)
+	for (int i=0;i < (int)List.size();i++)
 	{
 		if (List[i].fp == tmp)
 		{
@@ -167,7 +167,7 @@ string CFpWhitelist::GetComment(string s)
 	
 	tmp = s;
 	
-	for (unsigned int i=0;i < List.size();i++)
+	for (int i=0;i < (int)List.size();i++)
 	{
 		if (List[i].fp == tmp)
 		{
@@ -200,8 +200,8 @@ int CFpWhitelist::Insert(string s)
 	// format: fp,comment,user,ip1,ip2..
 	string fp,comment,user;
 	if (s == "") { return 0; }	
-	unsigned int pos = s.find(",",0);
-	if (pos != string::npos)
+	int pos = s.find(",",0);
+	if (pos != (int)string::npos)
 	{
 		if(IsInList(s.substr(0,pos))) { return 2; }
 		
@@ -209,12 +209,12 @@ int CFpWhitelist::Insert(string s)
 		
 		s = s.substr(pos + 1, s.length() - pos - 1);
 		pos = s.find(",",0);
-		if (pos != string::npos)
+		if (pos != (int)string::npos)
 		{
 			comment = s.substr(0,pos);			
 			s = s.substr(pos + 1, s.length() - pos - 1);
 			pos = s.find(",",0);
-			if(pos == string::npos)
+			if(pos == (int)string::npos)
 			{
 				user = s;
 			}
@@ -227,14 +227,14 @@ int CFpWhitelist::Insert(string s)
 			entry.comment = comment;
 			entry.user = user;
 			pos = s.find(",",0);
-			if (pos != string::npos)
+			if (pos != (int)string::npos)
 			{
 				s = s.substr(pos + 1, s.length() - pos - 1);				
 				// add ips if possible
 				if(s != "")
 				{
 					string tmp = "";
-					for(unsigned int i=0; i < s.length();i++)
+					for(int i=0; i < (int)s.length();i++)
 					{
 						if(s[i] != ',' && s[i] != '\r' && s[i] != '\n') tmp += s[i];
 						if(s[i] == ',')
@@ -268,7 +268,7 @@ string CFpWhitelist::GetList(void)
 {
 	stringstream ss;
 	ss << "200- FpWhitelist report start\r\n";
-	for (unsigned int i=0; i < List.size(); i++)
+	for (int i=0; i < (int)List.size(); i++)
 	{
 		ss << "200- " + List[i].fp + " - " + List[i].comment + " - " + List[i].user +
 			" #ips: " << List[i].iplist.size() << "\r\n";

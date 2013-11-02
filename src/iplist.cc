@@ -20,11 +20,11 @@ void CIplist::ParseString(string s,vector<string> &list)
 {
 	if (s == "") { return; }
 	s = s + ",";
-	unsigned int pos;
+	int pos;
 	do
 	{
 		pos = s.find(",",0);
-		if (pos != string::npos)
+		if (pos != (int)string::npos)
 		{
 			string tmp;
 			tmp = s.substr(0,pos);
@@ -34,7 +34,7 @@ void CIplist::ParseString(string s,vector<string> &list)
 			s = s.substr(pos + 1, s.length() - pos - 1);
 		}
 	}
-	while (pos != string::npos);
+	while (pos != (int)string::npos);
 }
 
 CIplist::CIplist()
@@ -68,7 +68,7 @@ int CIplist::readlist(string iplist,string portlist)
 	}
 	counter = 0;
 	debugmsg("IPLIST","adding ips to list");
-	for(unsigned int i=0; i < ip_list.size();i++)
+	for(int i=0; i < (int)ip_list.size();i++)
 	{
 		CIp ip;
 		ip.ip = ip_list[i];
