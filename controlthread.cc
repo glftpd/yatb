@@ -1298,18 +1298,22 @@ void CControlThread::mainloop(void)
 			}
 			else if (upper(s,5).find("PASV",0) != string::npos)
 			{
-				if(!control_write(site_sock,s,sitessl))
+				if (config.bounce_data_con)
 				{
-					
-					
+					deletedatathread();
+					gotpasvcmd = 1;
+				}
+				if(!control_write(site_sock,s,sitessl))
+				{					
 					return;
 				}
 				debugmsg(username,"[controlthread] pasv msg");
-				gotpasvcmd = 1;
+				
 				
 			}
 			else if (upper(s,5).find("PORT",0) != string::npos)
 			{
+				deletedatathread();
 				debugmsg(username,"[controlthread] port command");
 				gotportcmd = 1;
 				portcmd = s;
@@ -1539,6 +1543,7 @@ void CControlThread::mainloop(void)
 			{
 				if (config.bounce_data_con)
 				{
+					deletedatathread();
 					gotpasvcmd = 1;
 					sslprotp = 1;
 					cpsvcmd = 1;

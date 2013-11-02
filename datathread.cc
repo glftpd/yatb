@@ -397,7 +397,7 @@ void CDataThread::dataloop(void)
 		if (bind(datalisten_sock, (struct sockaddr *)&datalisten_addr, sizeof(struct sockaddr)) == -1)
 		{
 			debugmsg(username,"[datathread] Unable to bind to data port!",errno);
-			controlthread->control_write(controlthread->client_sock,"427 Could not bind to dataport\r\n",controlthread->clientssl);
+			controlthread->control_write(controlthread->client_sock,"427 Could not bind to dataport!\r\n",controlthread->clientssl);
 				
 			return;
 		}
@@ -437,7 +437,7 @@ void CDataThread::dataloop(void)
 	if(!Connect(datasite_sock,datasite_addr,config.connect_timeout,0))
 	{
 		debugmsg(username,"[datathread] could not connect site data port",errno);		
-		controlthread->control_write(controlthread->client_sock,"427 Connect Error/Timeout !\r\n",controlthread->clientssl);
+		//controlthread->control_write(controlthread->client_sock,"427 Connect Error/Timeout!\r\n",controlthread->clientssl);
 		return;
 	}
 	
@@ -454,7 +454,7 @@ void CDataThread::dataloop(void)
 				
 		if(!Accept(datalisten_sock,dataclient_sock,datalisten_addr,config.connect_timeout,0))
 		{
-			controlthread->control_write(controlthread->client_sock,"427 Accept Error/Timeout !\r\n",controlthread->clientssl);
+			//controlthread->control_write(controlthread->client_sock,"427 Accept Error/Timeout!\r\n",controlthread->clientssl);
 			debugmsg(username, "[datathread] accept error",errno);				
 			return;
 		}
@@ -577,7 +577,7 @@ void CDataThread::dataloop(void)
 		}
 		if(!Connect(dataclient_sock,active_addr,config.connect_timeout,0))
 		{
-			controlthread->control_write(controlthread->client_sock,"427 Connect Error/Timeout !\r\n",controlthread->clientssl);
+			//controlthread->control_write(controlthread->client_sock,"427 Connect Error/Timeout!\r\n",controlthread->clientssl);
 			debugmsg(username,"[datathread] fxp connect failed",errno);			
 			return;
 		}
