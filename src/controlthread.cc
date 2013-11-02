@@ -200,8 +200,8 @@ int CControlThread::tryrelink(int state)
 			return 0;
 		}
 	}
-
-    if(!Login(site_sock,config.relink_ip,config.relink_port,config.relink_user,config.relink_pass,config.ssl_relink,&sitessl,&sitesslctx))
+	string message;
+    if(!Login(site_sock,config.relink_ip,config.relink_port,config.relink_user,config.relink_pass,config.ssl_relink,&sitessl,&sitesslctx,message))
     {
         debugmsg(username, "[relink] could not connect to relinksite!",errno);
 		if(config.show_connect_failmsg) { Write(client_sock,"427 Login failed!\r\n",clientssl); }

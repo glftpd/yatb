@@ -11,71 +11,87 @@ all:
 	@echo "  - or 'make solaris' (solaris-debug,solaris-static,solaris-debug-static) to compile under solaris"
 	@echo "  - or 'make clean'"
 
-linux: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+linux: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -lcrypto -o bin/yatb; strip bin/yatb
-	g++ -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt -lssl -lcrypto; strip bin/blowcrypt
+	g++ src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt -lssl -lcrypto; strip bin/blowcrypt
+	g++ src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck -lssl -lcrypto; strip bin/bnccheck
 
-linux-debug: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+linux-debug: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -lcrypto -o bin/yatb-debug
-	g++ -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-debug -lssl -lcrypto
+	g++ src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt-debug -lssl -lcrypto
+	g++ src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck-debug -lssl -lcrypto
 
-linux-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+linux-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ -static src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -lcrypto -o bin/yatb-static; strip bin/yatb-static
-	g++ -static -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-static -lssl -lcrypto; strip bin/blowcrypt-static	
+	g++ -static src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt-static -lssl -lcrypto -lpthread; strip bin/blowcrypt-static
+	g++ -static src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck-static -lssl -lcrypto -lpthread; strip bin/bnccheck-static
 
-linux-debug-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+linux-debug-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ -static src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -lcrypto -o bin/yatb-static-debug
-	g++ -static -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-static-debug -lssl -lcrypto	
+	g++ -static src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt-static-debug -lssl -lcrypto -lpthread
+	g++ -static src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck-static-debug -lssl -lcrypto -lpthread
 
-bsd: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+bsd: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -pthread -lcrypto -o bin/yatb; strip bin/yatb
-	g++ -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt -lssl -lcrypto; strip bin/blowcrypt
-
-bsd-debug: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+	g++ src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt -lssl -lcrypto; strip bin/blowcrypt
+	g++ src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck -lssl -lcrypto; strip bin/bnccheck
+	
+bsd-debug: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -pthread -lcrypto -o bin/yatb-debug
-	g++ -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-debug -lssl -lcrypto
+	g++ src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt-debug -lssl -lcrypto
+	g++ src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck-debug -lssl -lcrypto
 
-bsd-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+bsd-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ -static src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -pthread -lcrypto -o bin/yatb-static; strip bin/yatb-static
-	g++ -static -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-static -lssl -lcrypto; strip bin/blowcrypt-static	
+	g++ -static src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt-static -lssl -lcrypto -pthread; strip bin/blowcrypt-static
+	g++ -static src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck-static -lssl -lcrypto -pthread; strip bin/bnccheck-static
 
-bsd-debug-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+bsd-debug-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ -static src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -pthread -lcrypto -o bin/yatb-static-debug
-	g++ -static -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-static-debug -lssl -lcrypto	
+	g++ -static src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt-static-debug -lssl -lcrypto -pthread
+	g++ -static src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck-static-debug -lssl -lcrypto -pthread
 
-cygwin: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+cygwin: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -lcrypto -o bin/yatb; strip bin/yatb.exe
-	g++ -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt -lssl -lcrypto; strip bin/blowcrypt.exe
+	g++ src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt -lssl -lcrypto; strip bin/blowcrypt.exe
+	g++ src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck -lssl -lcrypto; strip bin/bnccheck.exe
 
-cygwin-debug: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+cygwin-debug: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -lcrypto -o bin/yatb-debug
-	g++ -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-debug -lssl -lcrypto
+	g++ src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt-debug -lssl -lcrypto
+	g++ src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck-debug -lssl -lcrypto
 
-cygwin-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+cygwin-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ -static src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -lcrypto -o bin/yatb-static; strip bin/yatb-static.exe
-	g++ -static -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-static -lssl -lcrypto; strip bin/blowcrypt-static.exe	
+	g++ -static src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt-static -lssl -lcrypto -lpthread; strip bin/blowcrypt-static.exe
+	g++ -static src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck-static -lssl -lcrypto -lpthread; strip bin/bnccheck-static.exe
 
-cygwin-debug-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+cygwin-debug-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ -static src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -lcrypto -o bin/yatb-static-debug
-	g++ -static -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-static-debug -lssl -lcrypto	
+	g++ -static src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt-static-debug -lssl -lcrypto -lpthread
+	g++ -static src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck-static-debug -lssl -lcrypto -lpthread
 
-solaris: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+solaris: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -lcrypto -o bin/yatb; strip bin/yatb
-	g++ -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt -lssl -lcrypto; strip bin/blowcrypt
+	g++ src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt -lssl -lcrypto; strip bin/blowcrypt
+	g++ src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck -lssl -lcrypto; strip bin/bnccheck
 
-solaris-debug: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+solaris-debug: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -lcrypto -o bin/yatb-debug
-	g++ -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-debug -lssl -lcrypto
+	g++ src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt-debug -lssl -lcrypto
+	g++ src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck-debug -lssl -lcrypto
 
-solaris-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+solaris-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ -static src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -lcrypto -o bin/yatb-static; strip bin/yatb-static
-	g++ -static -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-static -lssl -lcrypto; strip bin/blowcrypt-static	
+	g++ -static src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt-static -lssl -lcrypto -lpthread; strip bin/blowcrypt-static
+	g++ -static src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck-static -lssl -lcrypto -lpthread; strip bin/bnccheck-static
 
-solaris-debug-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
+solaris-debug-static: src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o
 	g++ -static src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -lcrypto -o bin/yatb-static-debug
-	g++ -static -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-static-debug -lssl -lcrypto	
+	g++ -static src/blowcrypt.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/blowcrypt-static-debug -lssl -lcrypto -lpthread
+	g++ -static src/bnccheck.o src/config.o src/lock.o src/counter.o src/tools.o -o bin/bnccheck-static-debug -lssl -lcrypto -lpthread
 
        
 clean:
-	@(rm -f bin/yatb bin/blowcrypt bin/yatb-static bin/blowcrypt-static bin/yatb-debug bin/blowcrypt-debug bin/yatb-static-debug bin/blowcrypt-static-debug src/*.o)
+	@(rm -f bin/yatb bin/blowcrypt bin/yatb-static bin/blowcrypt-static bin/yatb-debug bin/blowcrypt-debug bin/yatb-static-debug bin/blowcrypt-static-debug bin/bnccheck bin/bnccheck-static bin/bnccheck-debug bin/bnccheck-static-debug bin/*.exe src/*.o)
 	@(echo "Clean succesful")

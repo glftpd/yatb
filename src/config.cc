@@ -8,7 +8,7 @@ CConfig::CConfig()
 	site_ip = "";
 	connect_ip = "";
 	site_port = "";
-	listen_interface = "";
+	listen_interface = "eth0";
 	listen_ip = "";
 	server_string  = "";
 	fake_serverstring = 0;
@@ -29,13 +29,13 @@ CConfig::CConfig()
 	port_range_start = 0;
 	port_range_end = 0;
 	use_port_range = 0;	
-	buffersize = 0;
+	buffersize = 4096;
 
 	pending = 0;
 	admin_list = "";
-	connect_timeout = 0;
-	ident_timeout = 0;
-	read_write_timeout = 0;
+	connect_timeout = 5;
+	ident_timeout = 5;
+	read_write_timeout = 5;
 
 	cert_path = "";
 	fxp_fromsite_list = "";
@@ -69,7 +69,7 @@ CConfig::CConfig()
 	forwarder_sport=0;
 	forwarder_dport=0;
 	forwarder_ip="";
-	retry_count = 0;
+	retry_count = 5;
 	no_idnt_cmd = 0;
 	ssl_ascii_cache = 0;
 	cmd_prefix = "";
@@ -111,64 +111,39 @@ string CConfig::getkey(string name,string data)
 
 int CConfig::readconf(string filename,string key)
 {
-	ifstream conffile(filename.c_str(), ios::binary | ios::in);
-	if (!conffile)
+	int s;
+	if (!filesize(filename,s))
 	{
 		cout << "Could not find config file!\n";
 		return 0;
 	}
 	else
-	{
-		
-		int start,end,outlen;
-		start = conffile.tellg();
-		conffile.seekg(0,ios::end);
-		end = conffile.tellg();
-		conffile.seekg(0,ios::beg);
+	{	
 		unsigned char *bufferin,*bufferout;
-		bufferin = new unsigned char [(end-start)  ];
-		bufferout = new unsigned char [(end-start) ];
-		memset(bufferin,0,end-start);
-		memset(bufferout,0,end-start );
-		conffile.read((char*)bufferin,end-start);
-		conffile.close();
-		unsigned char ivec[8];
-		memset(ivec,0, 8);
-		int ipos = 0;
-		outlen = end-start;
+		bufferin = new unsigned char [s];
+		bufferout = new unsigned char [s];
+		memset(bufferin,0,s);
+		memset(bufferout,0,s);
+		bufferin = readfile(filename,s);
+		
 		string daten;
 		
 		if (use_blowconf == 1)
 		{
-			
-			EVP_CIPHER_CTX ctx;
-			EVP_CIPHER_CTX_init(&ctx);
-	    EVP_CipherInit_ex(&ctx, EVP_bf_cfb(), NULL, NULL, NULL,ipos );
-	    EVP_CIPHER_CTX_set_key_length(&ctx, key.length());
-	    EVP_CipherInit_ex(&ctx, NULL, NULL,(unsigned char*)key.c_str(), ivec,ipos );
-	
-			if(!EVP_CipherUpdate(&ctx, bufferout, &outlen, bufferin, end-start))
-			{
-				memset(bufferin,0,end-start);
-				memset(bufferout,0,end-start );
-				delete [] bufferin;
-	 			delete [] bufferout;
-				return 0;
-			}
+			decrypt(key,bufferin,bufferout,s);
 			daten = ((const char*)bufferout);
-	    memset(bufferin,0,end-start);
-			memset(bufferout,0,end-start );
-	    delete [] bufferin;
+			memset(bufferin,0,s);
+			memset(bufferout,0,s);
+			delete [] bufferin;
 	 		delete [] bufferout;
-	 		
-	 		EVP_CIPHER_CTX_cleanup(&ctx);
+			
 		}
 		else
 		{			
 			daten = ((const char*)bufferin);
-	    memset(bufferin,0,end-start);
-			memset(bufferout,0,end-start );
-	    delete [] bufferin;
+	    	memset(bufferin,0,s);
+			memset(bufferout,0,s);
+	    	delete [] bufferin;
 	 		delete [] bufferout;
 		}    
 		

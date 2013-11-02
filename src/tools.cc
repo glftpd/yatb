@@ -713,7 +713,7 @@ int control_write(int sock,string s,SSL *sslcon)
 // read string
 int control_read(int sock,SSL *sslcon,string &str)
 {
-	
+	debugmsg("CONTROLREAD","start");
 	string tmp = "";
 	fd_set readfds;
 	struct timeval tv;
@@ -723,7 +723,8 @@ int control_read(int sock,SSL *sslcon,string &str)
 	int count = 0;
 	
 	while(1)
-	{		
+	{	
+		debugmsg("CONTROLREAD","loop start");	
 		for (int i=0;i<config.buffersize;i++) { buffer[i] = 0; }
 		tv.tv_sec = 0;
 		tv.tv_usec = 500000;
@@ -731,7 +732,7 @@ int control_read(int sock,SSL *sslcon,string &str)
 		FD_SET(sock,&readfds);
 		if (select(sock+1,&readfds,NULL,NULL,&tv) == -1)
 		{
-			
+			debugmsg("CONTROLREAD","select error");
 			str = tmp;
 			
 			stringstream ss;
@@ -803,7 +804,8 @@ int control_read(int sock,SSL *sslcon,string &str)
 				return 0;
 			}
 			else
-			{				
+			{	
+				debugmsg("LOGIN","else path");			
 				char *tmpstr;
 				tmpstr = new char[rc+1];
 				memcpy(tmpstr,buffer,rc);
@@ -826,6 +828,11 @@ int control_read(int sock,SSL *sslcon,string &str)
 					}
 				}
 			}
+		}
+		else
+		{
+			debugmsg("LOGIN","socket not ready");
+			return 0;
 		}
 	}
 }
@@ -1407,9 +1414,9 @@ int decrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
 
 	EVP_CIPHER_CTX ctx;
 	EVP_CIPHER_CTX_init(&ctx);
-        EVP_CipherInit_ex(&ctx, EVP_bf_cfb(), NULL, NULL, NULL,ipos );
-        EVP_CIPHER_CTX_set_key_length(&ctx, key.length());
-        EVP_CipherInit_ex(&ctx, NULL, NULL,(unsigned char*)key.c_str(), ivec,ipos );
+    EVP_CipherInit_ex(&ctx, EVP_bf_cfb(), NULL, NULL, NULL,ipos );
+    EVP_CIPHER_CTX_set_key_length(&ctx, key.length());
+    EVP_CipherInit_ex(&ctx, NULL, NULL,(unsigned char*)key.c_str(), ivec,ipos );
 
 	if(!EVP_CipherUpdate(&ctx, dataout, &outlen, datain, s))
 	{
@@ -1443,7 +1450,7 @@ int encrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
         return 1;
 }
 
-int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **ssl,SSL_CTX **sslctx)
+int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **ssl,SSL_CTX **sslctx,string &message)
 {
 	unsigned int pos;
 	
@@ -1451,42 +1458,51 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 	if (!Connect(sock,ip,port,5,shouldquit))
 	{		
 		debugmsg("LOGIN","can't connect");
+		message = "could not connect";
 		return 0;
 	}
+	debugmsg("LOGIN","connected");
 	string reply = "";
 	while(!IsEndline(reply))
 	{
 		string tmp;
+		
 		if(!control_read(sock,*ssl,tmp))
 		{
 		   debugmsg("LOGIN","read error");
+		   message = "read error";
 			return 0;
 		}
 		reply += tmp;
+				
 	}	
 	if(usessl)
 	{
 		if(!control_write(sock,"AUTH TLS\r\n",*ssl))
 		{
 		   debugmsg("LOGIN","write error");
+		   message = "write error";
 			return 0;
 		}
 		reply = "";
+		
 		while(!IsEndline(reply))
 		{
 			string tmp;
 			if(!control_read(sock,*ssl,tmp))
 			{
 				debugmsg("LOGIN","read error");
+				message = "read error";
 				return 0;
 			}
 			reply += tmp;
+			
 		}
 		
 		pos = reply.find("AUTH TLS successful",0);
 		if(pos == string::npos)
 		{
-		    	
+		    message = "AUTH TLS failed";	
 			return 0;
 		}	
 		if(!SslConnect(sock,ssl,sslctx))
@@ -1498,6 +1514,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 	if(!control_write(sock,"user " + user + "\r\n",*ssl))
 	{
 	   debugmsg("LOGIN","write error");
+	   message = "write error";
 		return 0;
 	}
 	reply = "";
@@ -1507,6 +1524,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 		if(!control_read(sock,*ssl,tmp))
 		{
 		   debugmsg("LOGIN","read error");
+		   message = "read error";
 			return 0;
 		}
 		reply += tmp;
@@ -1522,6 +1540,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 			pos = reply.find("specify the password",0);
 			if(pos == string::npos)
 			{ 	
+				message = "login failed";
 				return 0;      
 			}
 		}
@@ -1529,6 +1548,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 	if(!control_write(sock,"pass " + pass + "\r\n",*ssl))
 	{
 		debugmsg("LOGIN","write error");
+		message = "write error";
 		return 0;
 	}
 	reply = "";
@@ -1538,6 +1558,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 		if(!control_read(sock,*ssl,tmp))
 		{
 			debugmsg("LOGIN","read error");
+			message = "read error";
 			return 0;
 		}
 		reply += tmp;
@@ -1553,12 +1574,19 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 			pos = reply.find("Login successful",0);
 			if(pos == string::npos)
 			{
-				  	
+				message = "login failed";  	
 				return 0;
 			}
 		}
 	}
-   
+   if(usessl)
+   {
+   		message = "SSL login successfull";
+   }
+   else
+   {
+   		message = "Login successfull";
+   }
 	return 1;
 }
 

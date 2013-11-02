@@ -52,7 +52,7 @@ int writefile(string ,unsigned char *,int );
 int decrypt(string ,unsigned char *,unsigned char *,int );
 int encrypt(string ,unsigned char *,unsigned char *,int );
 
-int Login(int &,string ,int ,string ,string ,int ,SSL **,SSL_CTX **);
+int Login(int &,string ,int ,string ,string ,int ,SSL **,SSL_CTX **,string &);
 
 int trafficcheck(void);
 
