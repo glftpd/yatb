@@ -253,7 +253,7 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 	if (rc != 0) // ==0 -> connect completed immediately
 	{
 		fd_set writefds,readfds;
-		for(int i=0; i < sec * 2;i++)
+		for(int i=0; i < sec * 20;i++)
 		{
 			FD_ZERO(&writefds);
 			FD_ZERO(&readfds);
@@ -262,7 +262,7 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 			
 			struct timeval tv;
 			tv.tv_sec = 0;
-			tv.tv_usec = 500000;
+			tv.tv_usec = 50000;
 			int res = select(sock+1, &readfds, &writefds, NULL, &tv);
 			if (res < 0)
 			{	
@@ -347,13 +347,13 @@ int Accept(int listensock,int &newsock,string &clientip,int &clientport,int sec,
 		{
 			return 0;
 		}
-		for(int i=0; i < sec * 2;i++)
+		for(int i=0; i < sec * 20;i++)
 		{
 			FD_ZERO(&readfds);
 			FD_SET(listensock, &readfds);
 			struct timeval tv;
 			tv.tv_sec = 0;
-			tv.tv_usec = 500000;
+			tv.tv_usec = 50000;
 			int res;
 			
 			res =  select(listensock+1, &readfds, NULL, NULL, &tv);

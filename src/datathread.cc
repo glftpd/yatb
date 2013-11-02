@@ -187,8 +187,8 @@ void CDataThread::dataloop(void)
 	}
 	
 	debugmsg(username,"[datathread] try to connect to site");
-	int tmpshouldquit = getQuit();
-	if(!Connect(datasite_sock,passiveip,passiveport,config.connect_timeout,tmpshouldquit))
+	
+	if(!Connect(datasite_sock,passiveip,passiveport,config.connect_timeout,shouldquit))
 	{
 		
 		debugmsg(username, "[datathread] could not connect to site!",errno);
@@ -240,8 +240,8 @@ void CDataThread::dataloop(void)
 		{								
 			return;
 		}
-		tmpshouldquit = getQuit();
-		if(!Accept(datalisten_sock,dataclient_sock,clip,clport,config.connect_timeout,tmpshouldquit))
+		
+		if(!Accept(datalisten_sock,dataclient_sock,clip,clport,config.connect_timeout,shouldquit))
 		{
 			debugmsg(username,"Accept failed!");
 			
@@ -271,8 +271,8 @@ void CDataThread::dataloop(void)
 			}
 		}
 		debugmsg(username,"[datathread] active connect to: " + activeip);
-		tmpshouldquit = getQuit();
-		if(!Connect(dataclient_sock,activeip,activeport,config.connect_timeout,tmpshouldquit))
+		
+		if(!Connect(dataclient_sock,activeip,activeport,config.connect_timeout,shouldquit))
 		{			
 			debugmsg(username, "[datathread] could not connect to client!",errno);
 			return;
