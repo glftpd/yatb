@@ -11,6 +11,43 @@
 #include "tls.h"
 #include "forward.h"
 
+#ifndef SOLARIS
+#define SOLARIS (defined(sun) && (defined(__svr4__) || defined(__SVR4)))
+#endif
+
+
+#ifdef SOLARIS
+int
+daemon(int nochdir, int noclose)
+{
+        int fd;
+
+        switch (fork()) {
+        case -1:
+                return (-1);
+        case 0:
+                break;
+        default:
+                exit(0);
+        }
+
+        if (setsid() == -1)
+                return (-1);
+
+        if (!nochdir)
+                (void)chdir("/");
+
+        if (!noclose && (fd = open(PATH_DEVNULL, O_RDWR, 0)) != -1) {
+                (void)dup2(fd, STDIN_FILENO);
+                (void)dup2(fd, STDOUT_FILENO);
+                (void)dup2(fd, STDERR_FILENO);
+                if (fd > 2)
+                        (void)close (fd);
+        }
+        return (0);
+}
+#endif
+
 CConfig config;
 list<CControlThread*> conlist;
 CCounter totalcounter;

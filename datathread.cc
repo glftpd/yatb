@@ -284,10 +284,13 @@ void CDataThread::dataloop(void)
 	}
 	printsockopt(datasite_sock,"datasite_sock");
 	printsockopt(dataclient_sock,"dataclient_sock");
+	
+	debugmsg(username,"[datathread] wait for direction start");
 	while(!controlthread->DirectionSet())
 	{
 		if(shouldquit) return;
 	}
+	debugmsg(username,"[datathread] wait for direction end");
 	
 	debugmsg(username,"[datathread] direction: " + controlthread->direction);
 	

@@ -34,7 +34,7 @@
 using namespace std;
 
 #define version "Yet another traffic bouncer 1.1.5 (c) Hawk/PPX"
-#define builddate "18.04.2005"
+#define builddate "20.04.2005"
 
 #if defined(__GNUC__) && __GNUC__ < 3
 #define ios_base ios
@@ -42,6 +42,14 @@ using namespace std;
 
 #ifndef _REENTRANT
 #define _REENTRANT
+#endif
+
+#ifndef SIOCGIFADDR
+#include <sys/sockio.h>
+#endif
+
+#ifndef PATH_DEVNULL
+#define PATH_DEVNULL "/dev/null"
 #endif
 
 #endif

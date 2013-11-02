@@ -60,22 +60,21 @@ cygwin-debug-static: yatb.o forward.o counter.o controlthread.o datathread.o con
 	g++ -static -W -Wall -g blowcrypt.cc -o blowcrypt-static-debug -lssl -lcrypto	
 
 solaris: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -o yatb; strip yatb
+	g++ yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -lresolv -o yatb; strip yatb
 	g++ -W -Wall -g -I/usr/local/ssl/include blowcrypt.cc -o blowcrypt -lssl -lcrypto; strip blowcrypt
 
 solaris-debug: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -o yatb-debug
+	g++ yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -lresolv -o yatb-debug
 	g++ -W -Wall -g -I/usr/local/ssl/include blowcrypt.cc -o blowcrypt-debug -lssl -lcrypto
 
 solaris-static: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ -static yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -o yatb; strip yatb
-	g++ -static -W -Wall -g -I/usr/local/ssl/include blowcrypt.cc -o blowcrypt -lssl -lcrypto; strip blowcrypt
+	g++ -static yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -lresolv -o yatb-static; strip yatb-static
+	g++ -static -W -Wall -g -I/usr/local/ssl/include blowcrypt.cc -o blowcrypt-static -lssl -lcrypto; strip blowcrypt-static
 
 solaris-debug-static: yatb.o forward.o counter.o controlthread.o datathread.o config.o tls.o stringlist.o tools.o lock.o
-	g++ -static yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -o yatb
-	g++ -static -W -Wall -g -I/usr/local/ssl/include blowcrypt.cc -o blowcrypt -lssl -lcrypto
+	g++ -static yatb.o forward.o counter.o config.o controlthread.o datathread.o tls.o stringlist.o tools.o lock.o -lssl -lpthread -lcrypto -lnsl -lsocket -o yatb-static-debug
+	g++ -static -W -Wall -g -I/usr/local/ssl/include blowcrypt.cc -o blowcrypt-static-debug -lssl -lcrypto
 			
 clean:
 	@(rm -f yatb blowcrypt yatb-static blowcrypt-static yatb-debug blowcrypt-debug yatb-static-debug blowcrypt-static-debug *.o)
 	@(echo "Clean succesful")
-	

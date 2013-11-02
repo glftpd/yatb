@@ -356,7 +356,7 @@ void CControlThread::mainloop(void)
 	if (config.use_ident)
 	{	
 		debugmsg(username,"[controlthread] try to get ident reply");
-		if(Ident(clientip,clientport,config.listen_port,config.connect_ip,ident_user,config.ident_timeout))
+		if(Ident(clientip,clientport,config.listen_port,config.listen_ip,ident_user,config.ident_timeout))
 		{
 		}
 		else
