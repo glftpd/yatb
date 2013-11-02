@@ -364,17 +364,20 @@ void CControlThread::mainloop(void)
 	string ident_user = "*";
 	if (config.use_ident)
 	{	
-		debugmsg(username,"[controlthread] try to get ident reply");
-		if(Ident(clientip,clientport,config.listen_port,config.listen_ip,ident_user,config.ident_timeout))
+		if(!using_entry  || (using_entry && !entrylist.IsInList(clientip)))
 		{
-		}
-		else
-		{
-			string ident_user = "*";
-			if (config.enforce_ident)
+			debugmsg(username,"[controlthread] try to get ident reply");
+			if(Ident(clientip,clientport,config.listen_port,config.listen_ip,ident_user,config.ident_timeout))
 			{
-				return;
-			}			
+			}
+			else
+			{
+				string ident_user = "*";
+				if (config.enforce_ident)
+				{
+					return;
+				}			
+			}
 		}
 	}
 	debugmsg(username,"[controlthread] after ident");
@@ -411,6 +414,20 @@ void CControlThread::mainloop(void)
 	printsockopt(site_sock,"site_sock");
 	printsockopt(client_sock,"client_sock");
 	
+	if(!entrylist.IsInList(clientip) && config.allow_noentry_connect && !config.no_idnt_cmd)
+	{
+		debugmsg("-SYSTEM-","NO ENTRY CONNECT - send IDNT cmd");
+		stringstream idnt_cmd;
+		idnt_cmd << "IDNT " << ident_user << "@" << clientip << ":" << clientip << "\r\n";
+		
+		debugmsg("-SYSTEM-","IDNT cmd: " + idnt_cmd.str());
+		
+		if (!Write(site_sock,idnt_cmd.str(),sitessl))
+		{			
+			return;
+		}	
+	}
+	
 	if (!using_entry && !config.no_idnt_cmd)
 	{
 	
@@ -424,21 +441,8 @@ void CControlThread::mainloop(void)
 			return;
 		}	
 	
-	}
-	// connect is no entry and no entry conncts are allowed
-	else if(!entrylist.IsInList(clientip) && config.allow_noentry_connect)
-	{
-		stringstream idnt_cmd;
-		idnt_cmd << "IDNT " << ident_user << "@" << clientip << ":" << clientip << "\r\n";
-		
-		debugmsg("-SYSTEM-","IDNT cmd: " + idnt_cmd.str());
-		
-		if (!Write(site_sock,idnt_cmd.str(),sitessl))
-		{			
-			return;
-		}	
-	}
-	else if(!config.no_idnt_cmd)
+	}	
+	else if(!config.no_idnt_cmd && entrylist.IsInList(clientip))
 	{
 		//using entry? get IDNT cmd first
 		if(!Read(client_sock,clientssl,idndtcmd))

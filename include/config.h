@@ -129,7 +129,7 @@ class CConfig
 	// section [ADVANCED]
 	int add_to_passive_port;	
 	int port_range_start;
-	int port_range_end;
+	int port_range_end;	
 	int use_port_range;	
 	int buffersize;
 	int pending;	
@@ -143,6 +143,9 @@ class CConfig
     int disable_noop;	
 	int speed_write;
 	int allow_noentry_connect;
+	int active_bind_range_start;
+	int active_bind_range_end;
+	int use_active_bind;
 };
 
 extern CConfig config;

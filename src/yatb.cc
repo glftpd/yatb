@@ -49,7 +49,7 @@ daemon(int nochdir, int noclose)
 #endif
 
 CConfig config;
-CIplist iplist;
+CIplist iplist,listeniplist;
 list<CControlThread*> conlist;
 CCounter totalcounter,daycounter,weekcounter,monthcounter;
 int listen_sock;
@@ -264,6 +264,12 @@ int main(int argc,char *argv[])
 		debugmsg("-SYSTEM-","error in ip/port list");
 		return -1;
 	}
+
+	if(!listeniplist.readlist(config.listen_ip,"0"))
+	{
+		debugmsg("-SYSTEM-","error in listenip/port list");
+		return -1;
+	}
 	
 	if (!ssl_setup())
 	{
@@ -288,8 +294,7 @@ int main(int argc,char *argv[])
 	//when using entrys disable some options
 	if (config.entry_list != "")
 	{		
-		config.fake_serverstring = 0;
-		config.use_ident = 0;		
+		config.fake_serverstring = 0;			
 	}
 	
 	start_time = time(NULL);

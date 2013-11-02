@@ -8,6 +8,7 @@
 #include "whitelist.h"
 #include "fpwhitelist.h"
 
+
 // c wrapper for creating data connection thread
 void *makedatathread(void* pData)
 {
@@ -165,6 +166,16 @@ void CDataThread::dataloop(void)
 {
 	debugmsg(username,"[datathread] dataloop start");
 	
+	string bind_ip = "";
+	int dummy = 0;
+
+	// get first ip for binding
+	if(config.listen_ip != "")
+	{
+		list_lock.Lock();	
+		listeniplist.getip(bind_ip,dummy);
+		list_lock.UnLock();
+	}
 	
 	#if defined(__linux__) && defined(__i386__)
 	stringstream ss;
@@ -234,7 +245,7 @@ void CDataThread::dataloop(void)
 			debugmsg(username,"[datathread] passive connection - listen");
 			
 			
-			if (!Bind(datalisten_sock, config.listen_ip, newport))
+			if (!Bind(datalisten_sock, bind_ip, newport))
 			{
 				debugmsg(username,"Unable to bind to port!");
 				pasv_error = 1;
@@ -297,12 +308,28 @@ void CDataThread::dataloop(void)
 			return;
 		}
 		
+		// get ip for binding
+		if(config.listen_ip != "")
+		{
+			list_lock.Lock();	
+			listeniplist.getip(bind_ip,dummy);
+			list_lock.UnLock();
+		}
+
 		debugmsg(username,"[datathread] active connection");
+
+		int bind_port = 0;
+		if(config.use_active_bind)
+		{		
+			// pick a random port for active connection binding
+			bind_port = random_range(config.active_bind_range_start,config.active_bind_range_end);
+		}
+		// TODO: add retrys here
 		if (config.listen_ip != "")
 		{
 			debugmsg(username,"[datathread] try to set connect ip for client connect");
 			
-			if(!Bind(dataclient_sock,config.listen_ip,0))
+			if(!Bind(dataclient_sock,bind_ip,bind_port))
 			{
 				debugmsg(username,"[datathread] connect ip - could not bind",errno);
 				return;

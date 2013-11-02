@@ -3,6 +3,7 @@
 
 #include "global.h"
 #include "lock.h"
+#include "iplist.h"
 
 class CControlThread;
 
@@ -50,7 +51,7 @@ class CDataThread
 	CControlThread *controlthread;
 };
 
-
+extern CIplist listeniplist;
 
 
 #endif

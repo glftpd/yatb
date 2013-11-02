@@ -124,6 +124,9 @@ CConfig::CConfig()
     disable_noop = 0;
 	speed_write = 0;
 	allow_noentry_connect = 0;
+	active_bind_range_start = 0;
+	active_bind_range_end = 0;
+	use_active_bind = 0;
 }
 
 CConfig::~CConfig()
@@ -359,6 +362,9 @@ int CConfig::readconf(string filename,string key,int crypted)
 		getentry(disable_noop,"disable_noop",ok,daten);
 		getentry(speed_write,"speed_write",ok,daten);
 		getentry(allow_noentry_connect,"allow_noentry_connect",ok,daten);
+		getentry(active_bind_range_start,"active_bind_range_start",ok,daten);
+		getentry(active_bind_range_end,"active_bind_range_end",ok,daten);
+		getentry(use_active_bind,"use_active_bind",ok,daten);
 
    		for(int i=0;i < (int)daten.length();i++)
    		{

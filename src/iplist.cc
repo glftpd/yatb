@@ -53,13 +53,17 @@ int CIplist::readlist(string iplist,string portlist)
 	ip_list.clear();
 	port_list.clear();
 	ParseString(iplist,ip_list);
-	ParseString(portlist,port_list);
-	if(ip_list.size() != port_list.size())
+	if(portlist != "0")
 	{
-		lock.UnLock();
-		debugmsg("IPLIST","list size doesn't match");
-		 return 0;
+		ParseString(portlist,port_list);
+		if(ip_list.size() != port_list.size())
+		{
+			lock.UnLock();
+			debugmsg("IPLIST","list size doesn't match");
+			 return 0;
+		}
 	}
+	
 	if(ip_list.size() == 0)
 	{
 		lock.UnLock();
@@ -72,7 +76,15 @@ int CIplist::readlist(string iplist,string portlist)
 	{
 		CIp ip;
 		ip.ip = ip_list[i];
-		ip.port = atoi(port_list[i].c_str());
+		if(portlist != "0")
+		{
+			ip.port = atoi(port_list[i].c_str());
+		}
+		else
+		{
+			ip.port = 0;
+		}
+
 		List.push_back(ip);
 	}
 	lock.UnLock();
