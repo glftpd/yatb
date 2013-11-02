@@ -25,12 +25,37 @@ void CCounter::addrecvd(double d)
 	lock.UnLock();
 }
 
+void CCounter::reset(void)
+{
+	lock.Lock();
+	recvd = 0;
+	send = 0;
+	lock.UnLock();
+}
+
 double CCounter::getsend(void)
 {
-	return send;
+	double tmp;
+	lock.Lock();
+	tmp = send;
+	lock.UnLock();
+	return tmp;
 }
 
 double CCounter::getrecvd(void)
 {
-	return recvd;
+	double tmp;
+	lock.Lock();
+	tmp = recvd;
+	lock.UnLock();
+	return tmp;
+}
+
+double CCounter::gettotal(void)
+{
+	double tmp;
+	lock.Lock();
+	tmp = recvd + send;
+	lock.UnLock();
+	return tmp;
 }

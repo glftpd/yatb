@@ -470,6 +470,13 @@ when enabled auth tls is used for relinking
 
 --------------------------------------------------------
 
+- killcmd=kill;
+
+when executed cert,conf,yatb are killed and bnc stops
+make sure bnc has rights to overwrite/delete files!
+
+--------------------------------------------------------
+
 special bnc commands:
 ---------------------
 
@@ -497,6 +504,8 @@ this commands can be used if user is in admin list:
  'bnchelp' - show this help
 
  'reload' - reload config (for now only some values)
+
+ 'kill' - kill cert & conf and exit
 
 notes:
 ------

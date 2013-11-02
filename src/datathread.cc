@@ -543,6 +543,9 @@ int CDataThread::Read(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 	{
 		controlthread->localcounter.addrecvd(nrbytes);
 		totalcounter.addrecvd(nrbytes);
+		daycounter.addrecvd(nrbytes);
+		weekcounter.addrecvd(nrbytes);
+		monthcounter.addrecvd(nrbytes);
 	}
 	else if(sock == datasite_sock)
 	{
@@ -561,6 +564,9 @@ int CDataThread::Write(int sock,char *data,int nrbytes,SSL *ssl)
 	{
 		controlthread->localcounter.addsend(nrbytes);
 		totalcounter.addsend(nrbytes);
+		daycounter.addsend(nrbytes);
+		weekcounter.addsend(nrbytes);
+		monthcounter.addsend(nrbytes);
 	}
 	else if(sock == datasite_sock)
 	{

@@ -14,6 +14,11 @@ listen_interface=eth0;
 listen_ip=;
 traffic_bnc=1;
 
+[ Limit ]
+day_limit=0;
+week_limit=0;
+month_limit=0;
+
 [ SSL ]
 cert_path=dsa.pem;
 crypted_cert=0;
@@ -50,6 +55,7 @@ tositecmd=tosite;
 fromsitecmd=fromsite;
 sslexcludecmd=nossl;
 reloadcmd=reload;
+killcmd=kill;
 usecommands=1;
 
 [ Ftpd setup ]

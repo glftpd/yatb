@@ -109,13 +109,6 @@ int THREAD_cleanup(void)
 
 
 
-
-
-
-
-
-
-
 DH *tmp_dh_cb(SSL *ssl, int is_export, int keylength)
 {
 	stringstream ss;
@@ -164,40 +157,653 @@ int decrypt_cert(string tmpcert)
 }
 
 
-int kill_cert(string tmpcert)
+int kill_file(string filename)
 {
+	debugmsg("-SYSTEM-","trying to kill " + filename);
     int size;
-	if (!filesize(tmpcert,size))
+	if (!filesize(filename,size))
 	{
 		debugmsg("-SYSTEM-", "error getting filesize");
 		return 0;
 	}
+	stringstream ss;
+	ss << "file size is: " << size;
+	debugmsg("-SYSTEM-",ss.str());
     unsigned char *out;
     out = new unsigned char [size];
-    memset(out, 0,size);
-    if (!writefile(tmpcert,out,size))
-	{		
+    unsigned char *pattern;
+    pattern = new unsigned char[3];
+    int counter;
+    
+    // pattern 1
+    pattern[0] = 0x55; pattern[1] = 0x55; pattern[2] = 0x55;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
 		delete out;
-		debugmsg("-SYSTEM-", "cert write error");
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
 		return 0;
 	}
-    memset(out, 1,size);
-    if (!writefile(tmpcert,out,size))
-	{		
+    
+    // pattern 2
+    pattern[0] = 0xAA; pattern[1] = 0xAA; pattern[2] = 0xAA;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
 		delete out;
-		debugmsg("-SYSTEM-", "cert write error");
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
 		return 0;
 	}
-    memset(out, 2,size);
-    if (!writefile(tmpcert,out,size))
-	{		
+    
+    // pattern 3
+    pattern[0] = 0x92; pattern[1] = 0x49; pattern[2] = 0x24;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
 		delete out;
-		debugmsg("-SYSTEM-", "cert write error");
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
 		return 0;
 	}
+    
+    // pattern 4
+    pattern[0] = 0x49; pattern[1] = 0x24; pattern[2] = 0x92;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 5
+	pattern[0] = 0x24; pattern[1] = 0x92; pattern[2] = 0x49;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 6
+	pattern[0] = 0x00; pattern[1] = 0x00; pattern[2] = 0x00;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 7
+	pattern[0] = 0x11; pattern[1] = 0x11; pattern[2] = 0x11;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 8
+	pattern[0] = 0x22; pattern[1] = 0x22; pattern[2] = 0x22;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 9
+	pattern[0] = 0x33; pattern[1] = 0x33; pattern[2] = 0x33;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 10
+	pattern[0] = 0x44; pattern[1] = 0x44; pattern[2] = 0x44;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 11
+	pattern[0] = 0x55; pattern[1] = 0x55; pattern[2] = 0x55;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 12
+	pattern[0] = 0x66; pattern[1] = 0x66; pattern[2] = 0x66;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 12
+	pattern[0] = 0x77; pattern[1] = 0x77; pattern[2] = 0x77;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 13
+	pattern[0] = 0x88; pattern[1] = 0x88; pattern[2] = 0x88;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 14
+	pattern[0] = 0x99; pattern[1] = 0x99; pattern[2] = 0x99;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 15
+	pattern[0] = 0xAA; pattern[1] = 0xAA; pattern[2] = 0xAA;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 16
+	pattern[0] = 0xBB; pattern[1] = 0xBB; pattern[2] = 0xBB;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 17
+	pattern[0] = 0xCC; pattern[1] = 0xCC; pattern[2] = 0xCC;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 18
+	pattern[0] = 0xDD; pattern[1] = 0xDD; pattern[2] = 0xDD;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 19
+	pattern[0] = 0xEE; pattern[1] = 0xEE; pattern[2] = 0xEE;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 20
+	pattern[0] = 0xFF; pattern[1] = 0xFF; pattern[2] = 0xFF;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 21
+    pattern[0] = 0x92; pattern[1] = 0x49; pattern[2] = 0x24;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+    
+    // pattern 22
+    pattern[0] = 0x49; pattern[1] = 0x24; pattern[2] = 0x92;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 23
+	pattern[0] = 0x24; pattern[1] = 0x92; pattern[2] = 0x49;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 24
+    pattern[0] = 0x6D; pattern[1] = 0xB6; pattern[2] = 0xDB;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+    
+    // pattern 25
+    pattern[0] = 0xB6; pattern[1] = 0xDB; pattern[2] = 0x6D;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+	// pattern 26
+	pattern[0] = 0xDB; pattern[1] = 0x6D; pattern[2] = 0xB6;
+    counter = 0;
+    for (int i=0; i < size;i++)
+    {
+    	out[i] = pattern[counter];
+    	counter++;
+    	if(counter == 3) counter = 0;
+    }
+    
+    if (!writefile(filename,out,size))
+	{
+		delete pattern;		
+		delete out;
+		debugmsg("-SYSTEM-", "del file write error",errno);
+		if(unlink(filename.c_str()) != 0)
+	    {
+	    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+	    	
+	    }
+		return 0;
+	}
+	
+    delete pattern;
     delete out;
-    string command = "rm " + tmpcert;
-    system(command.c_str());
+    
+    if(unlink(filename.c_str()) != 0)
+    {
+    	debugmsg("-SYSTEM-","cannot unlink file",errno);
+    	return 0;
+    }
     return 1;
 }
 
@@ -271,7 +877,7 @@ int ssl_setup()
 
     if(config.crypted_cert)
     {
-        if(!kill_cert(certfile))
+        if(!kill_file(certfile))
         {
             debugmsg("SYSTEM","error deleting tmp cert"); 
         }

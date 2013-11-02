@@ -53,6 +53,9 @@ int encrypt(string ,unsigned char *,unsigned char *,int );
 
 int Login(int &,string ,int ,string ,string ,int ,SSL **,SSL_CTX **);
 
+int trafficcheck(void);
+
+
 #if defined(__linux__) && defined(__i386__)
 pid_t gettid(void);
 #endif

@@ -93,5 +93,7 @@ extern string bk;
 
 extern string conffile;
 
+extern string yatbfilename;
+
 #endif
 

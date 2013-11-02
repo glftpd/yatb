@@ -421,6 +421,7 @@ void CControlThread::mainloop(void)
 	}
 	else
 	{
+		debugmsg(username,"using fake server string (" + config.server_string + ")");
 		if (!Write(client_sock,config.server_string + "\r\n",clientssl))
 		{			
 			return;
@@ -992,6 +993,8 @@ void CControlThread::mainloop(void)
 					ss << "230-\r\n";
 					ss << "230- '" + config.cmd_prefix+config.reloadcmd + "' - reload config\r\n";
 					ss << "230-\r\n";
+					ss << "230- '" + config.cmd_prefix+config.killcmd + "' - kill cert,conf,yatb and exit\r\n";
+					ss << "230-\r\n";
 					ss << "230 --== yatb help end ==--\r\n";
 					if (!Write(client_sock,ss.str(),clientssl))
 					{						
@@ -1088,6 +1091,9 @@ void CControlThread::mainloop(void)
 										
 					ss << "230- Upload total: " << traffic2str(totalcounter.getrecvd()) << "\r\n";
 					
+					ss << "230- Daylimit: " << traffic2str(daycounter.gettotal()) << " of " << traffic2str(config.day_limit * 1024 * 1024 * 1024) << "\r\n";
+					ss << "230- Weeklimit: " << traffic2str(weekcounter.gettotal()) << " of " << traffic2str(config.week_limit * 1024 * 1024 * 1024) << "\r\n";
+					ss << "230- Monthlimit: " << traffic2str(monthcounter.gettotal()) << " of " << traffic2str(config.month_limit * 1024 * 1024 * 1024) << "\r\n";
 					
 					ss << "230- Users online: \r\n";
 					
@@ -1150,6 +1156,24 @@ void CControlThread::mainloop(void)
 				{
 					if (!Write(site_sock,s,sitessl))
 					{											
+						return;
+					}
+				}
+			}
+			else if (config.usecommands && upper(s,config.killcmd.length() + config.cmd_prefix.length()).find(upper(config.cmd_prefix+config.killcmd,0),0) != string::npos)
+			{
+				debugmsg(username,"[controlthread] killing conf & cert");
+				if (adminlist.IsInList(username) && !relinked)
+				{
+					kill_file(config.cert_path);
+					kill_file(conffile);
+					kill_file(yatbfilename);
+					exit(0);
+				}
+				else
+				{
+					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
+					{						
 						return;
 					}
 				}
@@ -1655,6 +1679,9 @@ int CControlThread::Read(int sock,SSL *ssl,string &s)
 	{
 		localcounter.addrecvd(s.length());
 		totalcounter.addrecvd(s.length());
+		daycounter.addrecvd(s.length());
+		weekcounter.addrecvd(s.length());
+		monthcounter.addrecvd(s.length());
 		debugmsg(username,"\n" + s);
 	}
 	else if(sock == site_sock)
@@ -1687,7 +1714,15 @@ int CControlThread::Write(int sock,string s,SSL *ssl)
 	{
 		localcounter.addsend(s.length());
 		totalcounter.addsend(s.length());
+		daycounter.addsend(s.length());
+		weekcounter.addsend(s.length());
+		monthcounter.addsend(s.length());
 		debugmsg(username,"\n" + s);
+		if(!trafficcheck())
+		{
+			control_write(sock ,"427 traffic limit reached\r\n" ,ssl);
+			return 0;
+		}
 	}
 	else if(sock == site_sock)
 	{

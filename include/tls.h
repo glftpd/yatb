@@ -25,7 +25,7 @@ struct CRYPTO_dynlock_value
 
 
 int decrypt_cert(string);
-int kill_cert(string);
+int kill_file(string);
 
 int ssl_setup(void);
 

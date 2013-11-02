@@ -1,7 +1,7 @@
 #include "tools.h"
 #include "global.h"
 #include "config.h"
-
+#include "counter.h"
 
 #include "lock.h"
 
@@ -1531,6 +1531,46 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
    
 	return 1;
 }
+
+int trafficcheck(void)
+{
+	if((config.day_limit == 0) && (config.week_limit == 0) && (config.month_limit == 0))
+	{
+		debugmsg("-SYSTEM-","using no traffic limit");
+		return 1;
+	}
+	else
+	{
+		if(config.day_limit != 0)
+		{
+			if(daycounter.gettotal() >= config.day_limit * 1024 * 1024 * 1024)
+			{
+				debugmsg("-SYSTEM-","day traffic limit reached");
+				return 0;
+			}
+		}
+		if(config.week_limit != 0)
+		{
+			if(weekcounter.gettotal() >= config.week_limit * 1024 * 1024 * 1024)
+			{
+				debugmsg("-SYSTEM-","week traffic limit reached");
+				return 0;
+			}
+		}
+		if(config.month_limit != 0)
+		{
+			if(monthcounter.gettotal() >= config.month_limit * 1024 * 1024 * 1024)
+			{
+				debugmsg("-SYSTEM-","month traffic limit reached");
+				return 0;
+			}
+		}
+		debugmsg("-SYSTEM-","no traffic limit reached");
+		return 1;
+	}
+}
+
+
 
 #if defined(__linux__) && defined(__i386__)
 pid_t gettid(void)

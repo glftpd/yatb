@@ -52,7 +52,7 @@ daemon(int nochdir, int noclose)
 
 CConfig config;
 list<CControlThread*> conlist;
-CCounter totalcounter;
+CCounter totalcounter,daycounter,weekcounter,monthcounter;
 int listen_sock;
 struct sockaddr_in listen_addr;
 long int nr_logins=0;
@@ -65,7 +65,8 @@ SSL_CTX *clientsslctx;
 CLock list_lock,config_lock,globals_lock,sock_lock;
 string bk = "";
 string cert_bk;
-string conffile;
+string conffile,yatbfilename;
+string lastday="",lastweek="",lastmonth="";
 
 void reload(int)
 {
@@ -84,6 +85,37 @@ void reload(int)
 	}
 }
 
+void *trafficthread(void *data)
+{
+	while(1)
+	{
+		debugmsg("-SYSTEM-","traffic thread start");
+		time_t t;
+		t = time(NULL);
+		string ti = asctime(localtime(&t));
+		debugmsg("-SYSTEM-",ti);
+		
+		string tmpday = ti.substr(0,3);
+		string tmpmonth = ti.substr(4,3);
+		if (lastday != tmpday)
+		{
+			debugmsg("-SYSTEM-","new day - reset limit");
+			lastday = tmpday;
+			daycounter.reset();
+		}
+		if(lastmonth != tmpmonth)
+		{
+			debugmsg("-SYSTEM-","new month - reset limit");
+			lastmonth = tmpmonth;
+			monthcounter.reset();
+		}
+		debugmsg("-SYSTEM-","traffic thread end");
+		sleep(60);
+		
+	}
+	return NULL;
+}
+
 pthread_attr_t threadattr;
 
 int main(int argc,char *argv[])
@@ -100,6 +132,14 @@ int main(int argc,char *argv[])
 		cout << "Usage:\n\t yatb configfile\n";
 		cout << "\t or yatb -u configfile for uncrypted conf file\n";
 		return -1;
+	}
+	
+	yatbfilename = argv[0];
+	unsigned int pos;
+	pos = yatbfilename.rfind("/",yatbfilename.length());
+	if(pos != string::npos)
+	{
+		yatbfilename = yatbfilename.substr(pos+1,yatbfilename.length() - pos-1);
 	}
 	
 	if (argc == 3)
@@ -326,7 +366,12 @@ int main(int argc,char *argv[])
 		return -1;
 	}
 	
-	
+	// start traff lmit control thread
+	pthread_t tid;
+	if(pthread_create(&tid,&threadattr,trafficthread,NULL) != 0)
+	{
+		debugmsg("-SYSTEM-","could not create traffic control thread");
+	}
 	
 	while(1)
 	{				
@@ -337,7 +382,9 @@ int main(int argc,char *argv[])
 		
 		if (Accept(listen_sock,tmp_sock,clientip,clientport,0,shouldquit))
 		{
-			printsockopt(listen_sock,"listen_sock");
+			if(trafficcheck())
+			{
+				printsockopt(listen_sock,"listen_sock");
 				debugmsg("-SYSTEM-","[main] list create start");
 				// create a new connection and put it into the list
 				list_lock.Lock();
@@ -358,6 +405,11 @@ int main(int argc,char *argv[])
 				
 				
 				debugmsg("-SYSTEM-","[main] list create end");
+			}
+			else
+			{
+				Close(tmp_sock,"tmp_sock");
+			}
 			
 		}
 		

@@ -14,9 +14,11 @@ class CCounter
 	
 	void addsend(double);
 	void addrecvd(double);
+	void reset(void);
 	
 	double getsend(void);
 	double getrecvd(void);
+	double gettotal(void);
 	
 	private:
 	
@@ -26,6 +28,6 @@ class CCounter
 	
 };
 
-extern CCounter totalcounter;
+extern CCounter totalcounter,daycounter,weekcounter,monthcounter;
 
 #endif

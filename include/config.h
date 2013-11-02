@@ -82,6 +82,7 @@ class CConfig
 	string site_closed;
 	string site_full;
 	string reloadcmd;
+	string killcmd;
 	int usecommands;
 	int show_connect_failmsg;
 	string pidfile;
@@ -97,6 +98,9 @@ class CConfig
 	string cmd_prefix;
 	int crypted_cert;
     int ssl_relink;
+    double day_limit;
+    double week_limit;
+    double month_limit;
 };
 
 extern CConfig config;

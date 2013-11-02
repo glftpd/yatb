@@ -73,6 +73,10 @@ CConfig::CConfig()
 	ssl_ascii_cache = 0;
 	cmd_prefix = "";
     ssl_relink = 0;
+    killcmd = "";
+    day_limit = 0;
+    week_limit = 0;
+    month_limit = 0;
 }
 
 CConfig::~CConfig()
@@ -707,7 +711,7 @@ int CConfig::readconf(string filename,string key)
    		return 0;
    	}
  		
- 		if ((val=getkey("tositecmd",daten)) != "ERROR")
+ 	if ((val=getkey("tositecmd",daten)) != "ERROR")
    	{
    		tositecmd = val;
    	}
@@ -717,8 +721,19 @@ int CConfig::readconf(string filename,string key)
    		
    		return 0;
    	}
+   	
+   	if ((val=getkey("killcmd",daten)) != "ERROR")
+   	{
+   		killcmd = val;
+   	}
+   	else
+   	{
+   		cout << "killcmd missing\n";
+   		
+   		return 0;
+   	}
  		
- 		if ((val=getkey("fromsitecmd",daten)) != "ERROR")
+ 	if ((val=getkey("fromsitecmd",daten)) != "ERROR")
    	{
    		fromsitecmd = val;
    	}
@@ -945,6 +960,39 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "ssl_relink missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	if ((val=getkey("day_limit",daten)) != "ERROR")
+   	{
+   		day_limit = atof(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "day_limit missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	if ((val=getkey("week_limit",daten)) != "ERROR")
+   	{
+   		week_limit = atof(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "week_limit missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	if ((val=getkey("month_limit",daten)) != "ERROR")
+   	{
+   		month_limit = atof(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "month_limit missing\n";
    		
    		return 0;
    	}
