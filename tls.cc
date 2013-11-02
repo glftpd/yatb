@@ -142,12 +142,16 @@ int ssl_setup()
 	SSL_load_error_strings();
 	SSL_library_init();
 	OpenSSL_add_all_algorithms();
-	if (RAND_status()) { debugmsg("SYSTEM","RAND_status ok"); }
+	if (RAND_status()) { debugmsg("-SYSTEM-","RAND_status ok"); }
 	else { cout << "RAND_status not ok\n"; return 0; }
 	clientsslctx = 	SSL_CTX_new(SSLv23_server_method());
 	if (clientsslctx == NULL)
 	{
-		cout << "error creating ctx\n";
+		debugmsg("-SYSTEM-", "error creating ctx");
+		if(config.syslog)
+		{
+			syslog(LOG_ERR, "error creating ctx");
+		}
 		return 0;
 	}
 
@@ -158,18 +162,30 @@ int ssl_setup()
 
 	if (SSL_CTX_use_certificate_file(clientsslctx,config.cert_path.c_str(),SSL_FILETYPE_PEM) <= 0)
 	{
-		cout << "error loading cert file!\n";
+		if(config.syslog)
+		{
+			syslog(LOG_ERR, "error loading cert file!");
+		}
+		debugmsg("-SYSTEM-", "error loading cert file!");
 		return 0;
 	}
 	if (SSL_CTX_use_PrivateKey_file(clientsslctx, config.cert_path.c_str(), SSL_FILETYPE_PEM) <=0 )
 	{
-		cout << "error loading private key!\n";
+		if(config.syslog)
+		{
+			syslog(LOG_ERR, "error loading private key!");
+		}
+		debugmsg("-SYSTEM-", "error loading private key!");
 		return 0;
 	}
 
 	if ( !SSL_CTX_check_private_key(clientsslctx))
 	{
-		cout << "key invalid\n";
+		if(config.syslog)
+		{
+			syslog(LOG_ERR, "key invalid");
+		}
+		debugmsg("-SYSTEM-", "key invalid");
 		return 0;
 	}
 	

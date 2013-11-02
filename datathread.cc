@@ -18,17 +18,18 @@ void *makedatathread(void* pData)
 	return NULL;
 }
 
-CDataThread::CDataThread(int cpsv, int tt, int pp, int rl, int ussl, int actvcon, string usrname, struct sockaddr_in caddr,  CControlThread *ct)
+CDataThread::CDataThread(int cpsv, int tt, int pp, int rl, int ussl, int actvcon, string usrname, string cip, string pip, string aip,int pport, int aport, int nport, CControlThread *ct,string pcmd)
 {
 	debugmsg(username,"[datathread] constructor start");
 	username = usrname;
 	usingssl = ussl;
 	activecon = actvcon;
-
-	activeport = -1;
-	passiveport = -1;
-	siteport = -1;
-	activeip = "";
+	passiveip = pip;
+	activeport = aport;
+	passiveport = pport;
+	newport = nport;
+	activeip = aip;
+	clientip = cip;
 	relinked = rl;
 	transfertype = tt;
 	sslprotp = pp;
@@ -37,312 +38,215 @@ CDataThread::CDataThread(int cpsv, int tt, int pp, int rl, int ussl, int actvcon
 	dataclient_sock = -1;
 	shouldquit = 0;
 	cpsvcmd = cpsv;
-	client_addr = caddr;
-	//using ip from idnt cmd when running with entrys
-	if(ct->using_entry)
-	{
-		client_addr.sin_addr.s_addr = inet_addr(ct->client_ip.c_str());
-	}
+	passivecmd = pcmd;
+	clientssl = NULL;
+	sitessl = NULL;
+	sitesslctx = NULL;
+	
 	buffer = new char[config.buffersize];
+	
 	controlthread = ct;
-	globals_lock.Lock();
-	nr_threads++;
-	globals_lock.UnLock();
 	debugmsg(username,"[datathread] constructor end");
 }
 
 CDataThread::~CDataThread()
 {
 	debugmsg(username,"[datathread] destructor start");
-				
+	closeconnection();			
 	debugmsg(username,"[datathread] delete buffer");
 	delete [] buffer;
-	globals_lock.Lock();
-	nr_threads--;
-	globals_lock.UnLock();
+	
 	debugmsg(username,"[datathread] destructor end");
 }
 
 void CDataThread::closeconnection(void)
-{
-	
-	if (datasite_sock > 0) 
+{	
+	if (usingssl)
 	{
+		
+		if (sitessl != NULL) 
+		{
+			debugmsg(username,"[datathread] close site ssl"); 
+			SSL_shutdown(sitessl);
+						
+		}
+		
+		if (clientssl != NULL) 
+		{
+			debugmsg(username,"[datathread] close client ssl"); 
+			SSL_shutdown(clientssl); 	
+		
+		}
+	}
+	
 		debugmsg(username,"[datathread] close site sock"); 
 		close(datasite_sock); 
-		datasite_sock = -1;
-	}
 	
-	if (dataclient_sock > 0) 
-	{
 		debugmsg(username,"[datathread] close client sock"); 
 		close(dataclient_sock); 
-		dataclient_sock = -1;
-	}
 	
-	if (datalisten_sock > 0) 
-	{ 
 		debugmsg(username,"[datathread] close listen sock");		
-		close(datalisten_sock); 
-		datalisten_sock = -1;
-	}
-	
-
-	
-}
-
-void CDataThread::getactive_data(string portcmd)
-{
-	debugmsg(username,"[getactive_data] start");
-	debugmsg(username,"[getactive_data] " + portcmd);
-	unsigned int startpos;
+		close(datalisten_sock); 	
 		
-	startpos = portcmd.find(" ",0);
-	if (startpos == string::npos) { return; }
-	portcmd = portcmd.substr(startpos+1,portcmd.length());
-	startpos = portcmd.find(",",0);
-	if (startpos == string::npos) { return; }
-	portcmd.replace(startpos,1,".");
-	startpos = portcmd.find(",",0);
-	if (startpos == string::npos) { return; }
-	portcmd.replace(startpos,1,".");
-	startpos = portcmd.find(",",0);
-	if (startpos == string::npos) { return; }
-	portcmd.replace(startpos,1,".");
-	startpos = portcmd.find(",",0);
-	if (startpos == string::npos) { return; }
-	activeip = portcmd.substr(0,startpos);
-	debugmsg(username,"[getactive_data] " + activeip);
-	string tmpport;
-	tmpport = portcmd.substr(startpos+1,portcmd.length());
-	startpos = tmpport.find(",",0);
-	if (startpos == string::npos) { return; }
-	string p1,p2;
-	p1 = tmpport.substr(0,startpos);
-	p2 = tmpport.substr(startpos+1,tmpport.length()-1);
-	activeport = 256 * atoi(p1.c_str()) + atoi(p2.c_str());
-	stringstream ss;
-	ss << activeport;
-	debugmsg(username,"[getactive_data] " + ss.str());
-	debugmsg(username,"[getactive_data] end");
-}
-
-
-string CDataThread::getpassive_data(string passivecmd)
-{
-	// add some more checks here??
-	debugmsg(username,"[getpassive_data] start");
-	debugmsg(username,"[getpassive_data] " + passivecmd);
-	unsigned int startpos,endpos;
-	startpos = passivecmd.find("(",0);
-	endpos = passivecmd.find(")",0);
-	if (startpos == string::npos || endpos == string::npos)
-	{
-		debugmsg(username,"[getpassive_data] parse error");
-		return "";
-	}
-	
-	// split passive mode string
-	string tmp = passivecmd.substr(1+startpos,endpos-startpos-1);
-
-	endpos = tmp.find(",",0);
-	string ip1 = tmp.substr(0,endpos);
-	tmp = tmp.substr(endpos+1,tmp.length());
-
-	endpos = tmp.find(",",0);
-	string ip2 = tmp.substr(0,endpos);
-	tmp = tmp.substr(endpos+1,tmp.length());
-
-	endpos = tmp.find(",",0);
-	string ip3 = tmp.substr(0,endpos);
-	tmp = tmp.substr(endpos+1,tmp.length());
-
-	endpos = tmp.find(",",0);
-	string ip4 = tmp.substr(0,endpos);
-	tmp = tmp.substr(endpos+1,tmp.length());
-
-	endpos = tmp.find(",",0);
-	string port1 = tmp.substr(0,endpos);
-
-	string port2 = tmp.substr(endpos+1,tmp.length());
-
-	siteport = (atoi(port1.c_str()) * 256 + atoi(port2.c_str()));
-	passiveport = siteport + config.add_to_passive_port;
-
-	string newpassivecmd = "227 Entering Passive Mode (";
-	
-	if (config.use_port_range && relinked)
-	{
-		passiveport = random_range(config.port_range_start,config.port_range_end);
-	}
-	string tmpip;
-	if (config.listen_ip != "") 
-	{ 
-		tmpip = config.listen_ip; 
-	}
-	else
-	{
-		debugmsg(username,"[getpassive_data] try to get current ip start");
-		struct ifreq ifa;
-		struct sockaddr_in *i;
-		memset(&ifa,0,sizeof( struct ifreq ) );
-		strcpy(ifa.ifr_name,config.listen_interface.c_str());
+		if (usingssl)
+	{			
 		
-		int rc = ioctl(listen_sock, SIOCGIFADDR, &ifa);
+		if (sitessl != NULL) 
+		{ 
+			debugmsg(username, "[datathread] free site ssl");
+			SSL_free(sitessl); 
+			sitessl = NULL; 
+		}
 		
-		if(rc != -1)
-		{
-			i = (struct sockaddr_in*)&ifa.ifr_addr;
-			tmpip = inet_ntoa(i->sin_addr);
+		if (clientssl != NULL) 
+		{ 
+			debugmsg(username, "[datathread] free client ssl");
+			SSL_free(clientssl); 
+			clientssl = NULL; 
 		}
-		else
-		{
-			tmpip = "0.0.0.0";
-			debugmsg(username,"[getpassive_data] ioctl error",errno);
+		
+		if (sitesslctx != NULL) 
+		{ 
+			debugmsg(username, "[datathread] free sitesslctx");
+			SSL_CTX_free(sitesslctx); 
+			sitesslctx = NULL; 
 		}
-		debugmsg(username,"[getpassive_data] try to get current ip end");
+		
+		debugmsg(username, "[datathread] free ssl error queue");
+		ERR_remove_state(0);
 	}
 	
-	debugmsg(username,"[getpassive_data] ip: " + tmpip);
-	startpos = tmpip.find(".",0);
-	tmpip.replace(startpos,1,",");
-	startpos = tmpip.find(".",0);
-	tmpip.replace(startpos,1,",");
-	startpos = tmpip.find(".",0);
-	tmpip.replace(startpos,1,",");
-
-
-	newpassivecmd += tmpip + ",";
-	stringstream ss;
-	ss << (int)(passiveport / 256) << "," << (passiveport % 256) << ")\r\n";
-
-	newpassivecmd += ss.str();
-	
-	debugmsg(username,"[getpassive_data] passive cmd: " + newpassivecmd);
-	
-	debugmsg(username,"[getpassive_data] end");
-	return newpassivecmd;
 }
 
 
-int CDataThread::data_write(int sock,char *data,int nrbytes)
-{
-	
-	int total = 0;
-	int bytesleft = nrbytes;
-	int rc,len;
-	len = nrbytes;
-	fd_set writefds;
-	FD_ZERO(&writefds);
-	FD_SET(sock,&writefds);
-	struct timeval tv;
-	while(total < nrbytes)
-	{
-		tv.tv_sec = config.read_write_timeout;
-		tv.tv_usec = 0;
-		if (select(sock+1, NULL, &writefds, NULL, NULL) < 1)
-		{
-			debugmsg(username,"[data_write] select error!",errno);
-			return 0;
-		}
-		if (FD_ISSET(sock, &writefds))
-		{			
-			rc = send(sock,data+total,bytesleft,0);
-		}
-		else
-		{
-			debugmsg(username,"[data_write] error!",errno);
-			return 0;
-		}
-		if (rc <= 0) 
-		{
-			if (rc == 0)
-			{
-				debugmsg(username,"[data_write] connection closed",errno);
-			}
-			debugmsg(username,"[data_write] error!");  
-			return 0; 
-		}
-		total += rc;
-		bytesleft -= rc;
-	}
-	return 1;	
-	
-}
 
-int CDataThread::data_read(int sock ,char *buffer,int &nrbytes)
-{
-	
-		if ((transfertype == 1) && config.ssl_ascii_cache  && usingssl && !relinked)
-		{			
-			int sslasciiread = 0;
-      int rc = 1;
-      while (rc > 0 && (sslasciiread < config.buffersize))
-      {  
-      	debugmsg(username,"[data_read] ssl_ascii_cache mode");    	
-      	fd_set readfds;
-      	FD_ZERO(&readfds);
-				FD_SET(sock,&readfds);
-				struct timeval tv;
-				tv.tv_sec = 0;
-				tv.tv_usec = 5;
-				if (select(sock+1, &readfds, NULL, NULL, &tv) < 1)
-				{
-					break;
-				}
-				if (FD_ISSET(sock, &readfds))
-				{
-      		rc = recv(sock,buffer + sslasciiread,config.buffersize - sslasciiread,0);
-      	}
-      	else
-      	{
-      		break;
-      	}
-      	
-      	if (rc > 0) 
-        { 
-           sslasciiread += rc; 
-                
-        }
-        else
-        {
-        	break;
-        }
-			}
-			
-      if (sslasciiread > 0) { nrbytes = sslasciiread; return 1; }
-      else if (sslasciiread == 0) { nrbytes=0; return 0; }
-      
-      
-		}
-		else
-		{
-			
-    	int rc = recv(sock,buffer,config.buffersize,0);
-    				
-			if (rc > 0) { nrbytes = rc; return 1; }
-			else 
-			{
-				if (rc == 0)
-				{
-					debugmsg(username,"[data_read] connection closed",errno);
-				}
-				debugmsg(username,"[data_read] error!"); 
-				nrbytes=0; 
-				return 0; 
-			}
-			
-		}
 
-	
-	
-	return 0;
-}
+
+
+
 
 void CDataThread::dataloop(void)
 {
 	debugmsg(username,"[datathread] dataloop start");
-
+	
+	// try to connect to site
+	if ((datasite_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
+	{
+		debugmsg(username, "[datathread] unable to create site sock!",errno);		
+		
+		return;
+	}
+	
+	if (config.connect_ip != "")
+	{
+		debugmsg(username,"[datathread] try to set connect ip for site connect");
+		
+		if(!Bind(datasite_sock,config.connect_ip,0))
+		{
+			debugmsg(username,"[datathread] connect ip - could not bind",errno);
+			return;
+		}
+	}
+	
+	debugmsg(username,"[datathread] try to connect to site");
+	if(!Connect(datasite_sock,passiveip,passiveport,config.connect_timeout,shouldquit))
+	{
+		
+		debugmsg(username, "[datathread] could not connect to site!",errno);
+		return;
+	}
+	
+	
+	
+	if ((dataclient_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
+	{
+		debugmsg(username, "[datathread] unable to create client sock!",errno);		
+		
+		return;
+	}
+	
+	debugmsg(username,"[datathread] passive connection - listen");
+	// passive connection - try to listen
+	if(!activecon)
+	{
+		if ((datalisten_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
+		{
+			debugmsg(username, "[datathread] unable to create listen sock!",errno);		
+			
+			return;
+		}
+		if(!SocketOption(datalisten_sock,SO_REUSEADDR))
+		{
+			debugmsg(username,"setsockopt error!");
+			return;
+		}
+		if (!Bind(datalisten_sock, config.listen_ip, newport))
+		{
+			debugmsg(username,"Unable to bind to port!");
+			
+			return ;
+		}
+		if (listen(datalisten_sock, config.pending) == -1)
+		{
+			debugmsg(username,"Unable to listen!");
+			
+			return ;
+		}
+		string clip;
+		int clport;
+		if (!control_write(controlthread->client_sock,passivecmd,controlthread->clientssl))
+		{								
+			return;
+		}
+		if(!Accept(datalisten_sock,dataclient_sock,clip,clport,config.connect_timeout,shouldquit))
+		{
+			debugmsg(username,"Accept failed!");
+			
+			return ;
+		}
+	}
+	// active connection - try to connect
+	else
+	{
+		debugmsg(username,"[datathread] active connection");
+		if (config.listen_ip != "")
+		{
+			debugmsg(username,"[datathread] try to set connect ip for client connect");
+			
+			if(!Bind(dataclient_sock,config.listen_ip,0))
+			{
+				debugmsg(username,"[datathread] connect ip - could not bind",errno);
+				return;
+			}
+		}
+		if(!Connect(dataclient_sock,activeip,activeport,config.connect_timeout,shouldquit))
+		{
+			
+			debugmsg(username, "[datathread] could not connect to client!",errno);
+			return;
+		}
+	}
+	
+	// ssl stuff
+	if(!config.ssl_forward && usingssl)
+	{
+		if(!SslConnect(datasite_sock,&sitessl,&sitesslctx))
+		{
+			debugmsg(username, "[datathread] ssl connect failed",errno);
+			return;
+		}
+	}
+	
+	if((usingssl && relinked) || (!config.ssl_forward && usingssl))
+	{
+		if(!SslAccept(dataclient_sock,&clientssl,&clientsslctx))
+		{
+			debugmsg(username, "[datathread] ssl accept failed",errno);
+			return;
+		}
+	}
+	
+/*
 	stringstream ss;
 	ss << "active port: " << activeport << " passiveport: " << passiveport;
 	debugmsg(username,"[datathread] " + ss.str());
@@ -427,10 +331,11 @@ void CDataThread::dataloop(void)
 	debugmsg(username,"[datathread] try to connect to site");
 	if (config.connect_ip != "")
 	{
-		struct sockaddr_in connect_addr;
-		connect_addr = GetIp(config.connect_ip,0);
-		
-		bind(datasite_sock,(struct sockaddr *)&connect_addr, sizeof(struct sockaddr));
+		if(!Bind(datasite_sock,config.connect_ip,0))
+		{
+			debugmsg(username,"[datathread] unable to bind");
+			return;
+		}		
 	}
 	setnonblocking(datasite_sock);
 	
@@ -584,24 +489,21 @@ void CDataThread::dataloop(void)
 		}
 	
 	}
-
+*/
 	
 	fd_set data_readfds;
 	
-	setblocking(datasite_sock);
-	setblocking(dataclient_sock);
+	
 	
 	debugmsg(username,"[datathread] entering dataloop");
-	while (1)
+	while (!shouldquit)
 	{
 
 		FD_ZERO(&data_readfds);
 		FD_SET(dataclient_sock,&data_readfds);
 		FD_SET(datasite_sock,&data_readfds);
 
-
 		int tmpsock;
-
 
 		if (datasite_sock > dataclient_sock)
 		{
@@ -626,19 +528,20 @@ void CDataThread::dataloop(void)
 			memset(buffer,'\0',1);
 	
 				int rc;
-				if(!data_read(datasite_sock,buffer,rc))
+				if(!DataRead(datasite_sock,buffer,rc,sitessl))
 				{
 					debugmsg(username,"[datathread] read from site failed");
 					break;
 				}
 
-				if(!data_write(dataclient_sock,buffer,rc))
+				if(!DataWrite(dataclient_sock,buffer,rc,clientssl))
 				{
 					debugmsg(username,"[datathread] send to client failed");
 					break;
 				}
 				else
 				{
+				
 					controlthread->localcounter.addsend(rc);
 					totalcounter.addsend(rc);
 					
@@ -652,19 +555,20 @@ void CDataThread::dataloop(void)
 			memset(buffer,'\0',1);
 
 				int rc;
-				if(!data_read(dataclient_sock,buffer,rc))
+				if(!DataRead(dataclient_sock,buffer,rc,clientssl))
 				{
 					debugmsg(username,"[datathread] read from client failed");
 					break;
 				}
 				else
 				{
+					
 					controlthread->localcounter.addrecvd(rc);
 					totalcounter.addrecvd(rc);
 					
 				}
 
-				if(!data_write(datasite_sock,buffer,rc))
+				if(!DataWrite(datasite_sock,buffer,rc,sitessl))
 				{
 					debugmsg(username,"[datathread] send to site failed");
 					break;

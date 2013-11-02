@@ -30,7 +30,7 @@ class CConfig
 	
 	int fake_server_string;
 	int trytorelink;
-	int bounce_data_con;
+	int traffic_bnc;
 	
 	int use_ident;
 	int enforce_ident;
@@ -66,8 +66,8 @@ class CConfig
 	int uid;
 	string debug_logfile;
 	int log_to_screen;
-	int thread_limit;
-	int ssl_ascii_cache;
+
+	int ssl_forward;
 	int use_ssl_exclude;
 	string sslexclude_list;
 

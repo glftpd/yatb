@@ -13,7 +13,7 @@ CConfig::CConfig()
 	server_string  = "";
 	fake_server_string = 0;
 	trytorelink = 0;
-	bounce_data_con = 0;	
+	traffic_bnc = 0;	
 	use_ident = 0;
 	enforce_ident = 0;
 	enforce_tls = 0;
@@ -45,8 +45,8 @@ CConfig::CConfig()
 	uid = 0;
 	debug_logfile = "";
 	log_to_screen = 0;
-	thread_limit = 0;
-	ssl_ascii_cache = 0;
+	ssl_forward = 0;
+
 	use_ssl_exclude = 0;
 	sslexclude_list = "";
 
@@ -313,13 +313,13 @@ int CConfig::readconf(string filename,string key)
    		return 0;
    	}
 
- 		if ((val=getkey("bounce_data_con",daten)) != "ERROR")
+ 		if ((val=getkey("traffic_bnc",daten)) != "ERROR")
     {
-   		bounce_data_con = atoi(val.c_str());
+   		traffic_bnc = atoi(val.c_str());
    	}
    	else
    	{
-   		cout << "bounce_data_con missing\n";
+   		cout << "traffic_bnc missing\n";
    		
    		return 0;
    	}
@@ -636,28 +636,7 @@ int CConfig::readconf(string filename,string key)
    		
    		return 0;
    	}
-		
-		if ((val=getkey("thread_limit",daten)) != "ERROR")
-   	{
-   		thread_limit = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "thread_limit missing\n";
-   		
-   		return 0;
-   	}
- 		
- 		if ((val=getkey("ssl_ascii_cache",daten)) != "ERROR")
-   	{
-   		ssl_ascii_cache = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "ssl_ascii_cache missing\n";
-   		
-   		return 0;
-   	}
+		 		 		
    	
    	if ((val=getkey("use_ssl_exclude",daten)) != "ERROR")
    	{
@@ -832,6 +811,17 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "syslog missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	if ((val=getkey("ssl_forward",daten)) != "ERROR")
+   	{
+   		ssl_forward = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "ssl_forward missing\n";
    		
    		return 0;
    	}

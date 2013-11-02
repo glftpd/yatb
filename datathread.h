@@ -10,13 +10,12 @@ class CDataThread
 {
 	public:
 	
-	CDataThread(int, int, int, int, int, int, string, struct sockaddr_in,CControlThread *);
+	CDataThread(int, int, int, int, int, int, string, string, string, string, int, int, int,CControlThread *,string);
 	~CDataThread();
 	
 	pthread_t tid; // thread id
 	
-	void getactive_data(string);
-	string getpassive_data(string);
+	
 	
 	void closeconnection();
 	
@@ -29,14 +28,14 @@ class CDataThread
 	void dataloop(void);
 	
 	
-	int data_write(int,char*,int);
-	int data_read(int,char *,int &);
+	SSL *sitessl,*clientssl;
+	SSL_CTX *sitesslctx;
 	
 	int datalisten_sock,datasite_sock,dataclient_sock;
 
-	struct sockaddr_in client_addr;
-	string activeip,username;
-	int activeport,passiveport,siteport;
+	
+	string activeip,username,clientip,passiveip,passivecmd;
+	int activeport,passiveport,newport;
 	int transfertype,sslprotp,cpsvcmd;
 	int relinked, usingssl, activecon;
 	char *buffer;

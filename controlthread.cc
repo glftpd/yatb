@@ -23,11 +23,11 @@ void *makethread(void* pData)
 
 
 // constructor
-CControlThread::CControlThread(int fd,struct sockaddr_in addr)
+CControlThread::CControlThread(int fd,string cip,int cport)
 {
 	debugmsg("-SYSTEM-","[konstruktor] start");
 	client_sock = fd;
-	client_addr = addr;
+	
 	site_sock = -1;
 	sitessl = NULL;
 	clientssl = NULL;
@@ -59,11 +59,10 @@ CControlThread::CControlThread(int fd,struct sockaddr_in addr)
 	{
 		using_entry = 1;
 	}
-	globals_lock.Lock();
-	nr_threads++;
-	globals_lock.UnLock();
+	
 	debugmsg("-SYSTEM-","[konstruktor] end");
-	client_ip = "";
+	clientip = cip;
+	clientport = cport;
 }
 
 // destructor
@@ -99,17 +98,15 @@ CControlThread::~CControlThread()
 		}
 	}
 	
-	if (client_sock > 0) 
-	{ 
+	
 		debugmsg(username, "[controlthread] close client sock");
 		close(client_sock); 
-	}
 	
-	if (site_sock > 0) 
-	{ 
+	
+	
 		debugmsg(username, "[controlthread] close site sock");
 		close(site_sock); 
-	}
+	
 	
 	if (usingssl)
 	{			
@@ -138,9 +135,7 @@ CControlThread::~CControlThread()
 		debugmsg(username, "[controlthread] free ssl error queue");
 		ERR_remove_state(0);
 	}
-	globals_lock.Lock();
-	nr_threads--;
-	globals_lock.UnLock();	
+	
 	
 	debugmsg(username,"[controlthread] destructor end");
 
@@ -155,8 +150,7 @@ void CControlThread::deletedatathread(void)
 		datathread->shouldquit = 1;
 		
 		debugmsg(username,"[deletedatathread] join datathread");
-		//datathread->closeconnection();
-		
+				
 		if(pthread_join(datathread->tid,NULL) != 0)
 		{
 			debugmsg(username,"[deletedatathread] error joining thread",errno);
@@ -167,206 +161,6 @@ void CControlThread::deletedatathread(void)
 	}	
 }
 
-// send string
-int CControlThread::control_write(int sock,string s,SSL *sslcon)
-{	
-	debugmsg(username,"[control_write] start");
-	writelock.Lock();
-	stringstream ss;
-	ss << s.length();
-	debugmsg(username,"[control_write] size: " + ss.str());
-	if (sock == site_sock) { debugmsg(username, "[control_write] to site:\n" + s); }
-	if (sock == client_sock) { debugmsg(username, "[control_write] to client:\n" + s); }
-	fd_set writefds;
-	struct timeval tv;
-
-	int maxsize = config.buffersize; // max size in bytes of packet
-	int total = 0;
-	int bytesleft = s.length();
-	int blocksize;
-	if (bytesleft > maxsize)
-	{
-		blocksize = maxsize;
-	}
-	else
-	{
-		blocksize = bytesleft;
-	}
-	int n,len;
-	len = s.length();
-	while(total < len)
-	{
-		tv.tv_sec = config.read_write_timeout;
-		tv.tv_usec = 0;
-		FD_ZERO(&writefds);
-		FD_SET(sock,&writefds);
-		if (select(sock+1,NULL,&writefds,NULL,&tv) == -1)
-		{
-			debugmsg(username, "[control_write] select error!",errno);
-			writelock.UnLock();
-			return 0;
-		}
-		if (FD_ISSET(sock,&writefds))
-		{
-			if (!sslcon)
-			{
-				n = send(sock,s.c_str()+total,blocksize,0);
-			}
-			else
-			{
-				n = SSL_write(sslcon, s.c_str()+total, blocksize);
-			}
-		}
-		if (n < 0)
-		{
-			if (sslcon != NULL)
-			{
-				int err = SSL_get_error(sslcon,n);
-				
-				if (err == SSL_ERROR_WANT_READ) { continue; }
-				if (err == SSL_ERROR_WANT_WRITE) { continue; }
-				if (err == SSL_ERROR_WANT_X509_LOOKUP) { continue; }				
-				
-			}
-			stringstream ss;
-			ss << "n: " << n << " bytesleft: " << bytesleft;
-			debugmsg(username,"[control_write] error: " + ss.str());
-			break;
-		}
-		total += n;
-		bytesleft -= n;
-		if (bytesleft > maxsize)
-		{
-			blocksize = maxsize;
-		}
-		else
-		{
-			blocksize = bytesleft;
-		}
-	}
-	if (sock == client_sock) 
-	{		
-		localcounter.addsend(total);
-		totalcounter.addsend(total);
-				
-	}
-
-	if (bytesleft == 0)
-	{
-		debugmsg(username,"[control_write] end");
-		writelock.UnLock();
-		return 1;
-	}
-	else
-	{
-		debugmsg(username,"[control_write] send error");
-		writelock.UnLock();
-		return 0;
-	}
-}
-
-// read string
-int CControlThread::control_read(int sock,SSL *sslcon,string &str)
-{
-	debugmsg(username,"[control_read] start");
-	string tmp = "";
-	fd_set readfds;
-	struct timeval tv;
-	int rc;
-	char *buffer;
-	buffer = new char[config.buffersize];
-	
-	while(1)
-	{		
-		for (int i=0;i<config.buffersize;i++) { buffer[i] = 0; }
-		tv.tv_sec = 0;
-		tv.tv_usec = 500;
-		FD_ZERO(&readfds);
-		FD_SET(sock,&readfds);
-		if (select(sock+1,&readfds,NULL,NULL,&tv) == -1)
-		{
-			debugmsg(username, "[control_read] nothing more to read",errno);
-			str = tmp;
-			if (sock == client_sock) 
-			{
-				localcounter.addrecvd(str.length());
-				totalcounter.addrecvd(str.length());
-				
-			}
-			stringstream ss;
-			ss << str.length();
-			debugmsg(username,"[control_read] size: " + ss.str());
-			debugmsg(username,"[control_read] end");
-			delete [] buffer;
-			return 1;
-		}
-		if (FD_ISSET(sock,&readfds))
-		{
-			if (sslcon == NULL)
-			{
-				rc = recv(sock,buffer,config.buffersize,0);
-			}
-			else
-			{
-				rc = SSL_read(sslcon,buffer,config.buffersize);
-			}
-			if (rc == 0)
-			{
-				if (sock == client_sock)
-				{
-					debugmsg(username, "[control_read] client closed connection!",errno);
-				}
-				if (sock == site_sock)
-				{
-					debugmsg(username, "[control_read] site closed connection!",errno);
-				}
-				debugmsg(username,"[control_read] end");
-				delete [] buffer;
-				return 0;
-			}
-			else if (rc < 0)
-			{
-				if (sslcon != NULL)
-				{
-					int err = SSL_get_error(sslcon,rc);
-					
-					if (err == SSL_ERROR_WANT_READ) { continue; }
-					if (err == SSL_ERROR_WANT_WRITE) { continue; }
-					if (err == SSL_ERROR_WANT_X509_LOOKUP) { continue; }					
-					
-				}
-				debugmsg(username, "[control_read] read error!");
-				debugmsg(username,"[control_read] end");
-				delete [] buffer;
-				return 0;
-			}
-			else
-			{				
-				char *tmpstr;
-				tmpstr = new char[rc+1];
-				memcpy(tmpstr,buffer,rc);
-				tmpstr[rc] = '\0';
-				
-				tmp += tmpstr;
-				
-				delete [] tmpstr;
-				if (rc < config.buffersize)
-				{
-					// reached end of line?
-					if (tmp[tmp.length() - 1] == '\n')
-					{		
-						// fix missing \r's
-						correctReply(tmp);		
-						str = tmp;		
-						delete [] buffer;
-						return 1;		
-													
-					}
-				}
-			}
-		}
-	}
-}
 
 
 
@@ -384,25 +178,18 @@ int CControlThread::tryrelink(int state)
 		debugmsg(username, "[relink] could not create socket",errno);
 		return 0;
 	}
-	
-	setnonblocking(site_sock);
-	
-	site_addr = GetIp(config.relink_ip,config.relink_port);
-	
+		
 	
 	if (config.listen_ip != "")
 	{
-		struct sockaddr_in connect_addr;
-		connect_addr = GetIp(config.listen_ip,0);
-		
-		if(bind(site_sock,(struct sockaddr *)&connect_addr, sizeof(struct sockaddr)) != 0)
+		if(!Bind(site_sock,config.relink_ip,0))
 		{
 			debugmsg(username,"[controlthread] connect ip - could not bind",errno);
 			return 0;
 		}
 	}
 	
-	if(!Connect(site_sock,site_addr,config.connect_timeout,shouldquit))
+	if(!Connect(site_sock,config.relink_ip,config.relink_port,config.connect_timeout,shouldquit))
 	{
 		debugmsg(username, "[relink] could not connect to relinksite!",errno);
 		if(config.showconnectfailmsg) { control_write(client_sock,"427 Login failed!\r\n",clientssl); }
@@ -488,73 +275,17 @@ int CControlThread::trytls(void)
 {
 	debugmsg(username,"[trytls] trying tls connection");
 		
-	setblocking(client_sock);
-	setblocking(site_sock);
-
-	sitesslctx = SSL_CTX_new(TLSv1_client_method());
-	SSL_CTX_set_options(sitesslctx,SSL_OP_ALL);
-	SSL_CTX_set_mode(sitesslctx,SSL_MODE_AUTO_RETRY);
-	SSL_CTX_set_session_cache_mode(sitesslctx,SSL_SESS_CACHE_OFF);
-	if (sitesslctx == NULL)
+	if(!SslConnect(site_sock,&sitessl,&sitesslctx))
 	{
-		debugmsg(username, "[trytls] sitesslctx failed!");
-		return 0;
-	}
-
-
-	sitessl = SSL_new(sitesslctx);
-	if (sitessl == NULL)
-	{
-		debugmsg(username, "[trytls] site ssl failed!");
-		return 0;
-	}
-	SSL_set_fd(sitessl,site_sock);
-	debugmsg(username,"[trytls] try to connect to site..");
-	if (SSL_connect(sitessl))
-	{
-		SSL_get_cipher_bits(sitessl,&sitesslbits);
-
-		// get reply
-
-	}
-	else
-	{
-		debugmsg(username, "[trytls] TLS Connection failed!");
-		return 0;
-	}
-
-
-
-
-	clientssl = SSL_new(clientsslctx);
-	if (clientssl == NULL)
-	{
-		debugmsg(username, "[trytls] clientssl failed!");
-		return 0;
-	}
-
-	if (!SSL_set_fd(clientssl,client_sock))
-	{
-		debugmsg(username,"[trytls] " +  (string)ERR_error_string(ERR_get_error(), NULL));
+		debugmsg(username,"[trytls] ssl connect failed");
 		return 0;
 	}
 	
-	
-	
-	debugmsg(username,"[trytls] try ssl accept");
-	int err;
-	
-	if( (err = SSL_accept(clientssl)) <= 0)
+	if(!SslAccept(client_sock,&clientssl,&clientsslctx))
 	{
-		debugmsg(username, "[trytls] accept failed!");
-		debugmsg(username,"[trytls] " +  (string)ERR_error_string(ERR_get_error(), NULL));
-		
+		debugmsg(username,"[trytls] ssl accept failed");
 		return 0;
-	}
-	
-	
-	setnonblocking(site_sock);
-	setnonblocking(client_sock);
+	}	
 	
 	debugmsg(username, "[trytls] end trytls");
 	usingssl = 1;
@@ -573,146 +304,33 @@ void CControlThread::mainloop(void)
 		debugmsg(username,"[controlthread] using entry_list");
 		debugmsg(username,"[controlthread] entry_list: " + entrylist.GetList());
 		// only allow connects from entry bnc
-		string cip = inet_ntoa(client_addr.sin_addr);
-		if(!entrylist.IsInList(cip))
+		
+		if(!entrylist.IsInList(clientip))
 		{
-			debugmsg(username,"[controlthread] connect ip: " + cip);
+			debugmsg(username,"[controlthread] connect ip: " + clientip);
 			debugmsg(username,"[controlthread] connect ip not in entry_list");
 			return;
 		}
 	}
 		
 	connect_time = time(NULL);
-
-	
-	string ident_reply;
-	string ident_user;
-	ident_reply = "ERROR";
-	ident_user = "*";
-	username = "-BEFORE-IDENT-";
-	// try to get ident reply
+	debugmsg(username,"[controlthread] try to get ident reply");
+	string ident_user = "*";
 	if (config.use_ident)
-	{
-		debugmsg(username,"[controlthread] try ident");
-		int ident_sock;
-		ident_sock = socket(AF_INET,SOCK_STREAM,0);
-		if (ident_sock != -1)
+	{		
+		if(Ident(clientip,clientport,config.listen_port,config.connect_ip,ident_user,config.ident_timeout))
 		{
-
-			struct sockaddr_in ident_addr;
-						
-			ident_addr.sin_family = AF_INET;
-			ident_addr.sin_port = htons(113);
-			ident_addr.sin_addr.s_addr = client_addr.sin_addr.s_addr;
-			memset(&(ident_addr.sin_zero), '\0', 8);
-			
-			setnonblocking(ident_sock);
-			
-			if (config.listen_ip != "")
-			{
-				debugmsg(username,"[controlthread] try to set connect ip for ident");
-				struct sockaddr_in connect_addr;				
-				connect_addr = GetIp(config.listen_ip,0);
-								
-				if(bind(ident_sock,(struct sockaddr *)&connect_addr, sizeof(struct sockaddr)) != 0)
-				{
-					debugmsg(username,"[controlthread] ident connect ip - could not bind",errno);
-					return;
-				}
-			}
-			
-			if (Connect(ident_sock,ident_addr,config.ident_timeout,shouldquit) )
-			{				
-				debugmsg(username,"[controlthread] try to read ident reply");
-				FD_ZERO(&readfds);
-				FD_SET(ident_sock, &readfds);
-				stringstream ss;
-				ss << ntohs(client_addr.sin_port) << " , " << config.listen_port << "\r\n";
-				if (!control_write(ident_sock,ss.str(),NULL))
-				{
-					if(config.enforce_ident)
-					{
-						
-						
-						return;
-					}
-				}
-				struct timeval tv;
-				tv.tv_sec = config.ident_timeout;
-				tv.tv_usec = 0;
-				
-				if (select(ident_sock+1, &readfds, NULL, NULL, &tv) <= 0)
-				{
-					debugmsg(username, "[controlthread] ident select error!",errno);
-
-				}
-				else
-				{
-					if (FD_ISSET(ident_sock, &readfds))
-					{
-
-						if(!control_read(ident_sock,NULL,ident_reply))
-						{
-							if(config.enforce_ident)
-							{					
-								
-								return;
-							}
-						}
-						debugmsg(username,"[controlthread] ident: " + ident_reply);
-					}
-					
-				}
-				close(ident_sock);
-			}
-			else
-			{
-				debugmsg(username,"[controlthread] could not connect to ident port");
-				if (config.enforce_ident)
-				{
-					
-					
-					return;
-				}
-			}
 		}
 		else
 		{
-			debugmsg(username,"[controlthread] unable to create ident sock!");
 			if (config.enforce_ident)
 			{
-				
-				
 				return;
-			}
+			}			
 		}
 	}
-
-	//parse ident reply
-	if (config.use_ident)
-	{
-		if (upper(ident_reply,ident_reply.length()).find("ERROR",0) == string::npos)
-		{
-			// no error - get username
-			string idnt;
-			idnt=ident_reply.substr(ident_reply.rfind(":",ident_reply.length())+1);
-			idnt=idnt.substr(0,idnt.find("\r"));
-			ident_user = trim(idnt);
-			if (ident_user[ident_user.length() - 1] == '\n') { ident_user = ident_user.substr(0,ident_user.length() - 1); }
-		}
-		else
-		{
-			ident_user = "*";
-			if (config.enforce_ident)
-			{				
-				return;
-			}
-			
-		}
-	}
-
+	debugmsg(username,"[controlthread] after ident");
 	username = "-AFTER-IDENT-";
-
 	
 	if ((site_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
 	{
@@ -720,100 +338,87 @@ void CControlThread::mainloop(void)
 		
 		return;
 	}
-
-	// try to connect to site
-	site_addr = GetIp(config.site_ip,config.site_port);
 	
 	if (config.connect_ip != "")
 	{
 		debugmsg(username,"[controlthread] try to set connect ip for site connect");
-		struct sockaddr_in connect_addr;
-		connect_addr = GetIp(config.connect_ip,0);
 		
-		
-		if(bind(site_sock,(struct sockaddr *)&connect_addr, sizeof(struct sockaddr)) != 0)
+		if(!Bind(site_sock,config.connect_ip,0))
 		{
 			debugmsg(username,"[controlthread] connect ip - could not bind",errno);
 			return;
 		}
-	}
-	
-	setnonblocking(site_sock);
-	setnonblocking(client_sock);
-	
+	}		
 	
 	debugmsg(username,"[controlthread] try to connect to site");
-	
-	
-	
-	if(!Connect(site_sock,site_addr,config.connect_timeout,shouldquit))
+			
+	if(!Connect(site_sock,config.site_ip,config.site_port,config.connect_timeout,shouldquit))
 	{
 		if(config.showconnectfailmsg) { control_write(client_sock,config.connectfailmsg + "\r\n",clientssl); }
 		debugmsg(username, "[controlthread] could not connect to site!",errno);
 		return;
 	}
 	
-
-	if (config.fake_server_string)
+	if (!using_entry)
 	{
-		if (!control_write(client_sock,config.server_string + "\r\n",clientssl))
-		{
-			
-			return;
-		}
-	}
 	
-	//set client/site sock to keepalive
-	int yes = 1;
-	
-	if (setsockopt(client_sock,SOL_SOCKET,SO_KEEPALIVE,&yes,sizeof(int)) == -1)
-	{
-		debugmsg(username, "[controlthread] client setsockopt error!",errno);
-
-	}	
-	
-	if (setsockopt(site_sock,SOL_SOCKET,SO_KEEPALIVE,&yes,sizeof(int)) == -1)
-	{
-		debugmsg(username, "[controlthread] site setsockopt error!",errno);
-
-	}
-	
-	stringstream idnt_cmd;
-	idnt_cmd << "IDNT " << ident_user << "@" << inet_ntoa(client_addr.sin_addr) << ":" << inet_ntoa(client_addr.sin_addr) << "\r\n";
-	debugmsg("-SYSTEM-","IDNT cmd: " + idnt_cmd.str());
-	if (config.use_ident)
-	{
+		stringstream idnt_cmd;
+		idnt_cmd << "IDNT " << ident_user << "@" << clientip << ":" << clientip << "\r\n";
+		
+		debugmsg("-SYSTEM-","IDNT cmd: " + idnt_cmd.str());
+		
 		if (!control_write(site_sock,idnt_cmd.str(),sitessl))
 		{			
-			
+			return;
+		}	
+	
+	}
+	else
+	{
+		//using entry? get IDNT cmd first
+		if(!control_read(client_sock,clientssl,idndtcmd))
+		{			
+			return;
+		}
+		if (!control_write(site_sock,idndtcmd,sitessl))
+		{			
+			return;
+		}	
+		debugmsg(username,"[controlthread] idndtcmd: " + idndtcmd);
+		// parse idnt command to get client ip
+		string tmp;
+		unsigned int pos;
+		if(pos == string::npos) return;
+		idndtcmd = crcut(idndtcmd);
+		pos = idndtcmd.find(":",0);
+		tmp = idndtcmd.substr(pos + 1,idndtcmd.length() - pos - 1);
+		debugmsg(username,"[controlthread] client ip: " + tmp);
+		clientip = tmp;
+	}
+	
+	debugmsg(username,"[controlthread] try to get welcome msg");
+	string serverwelcomemsg;
+	if(!control_read(site_sock,sitessl,serverwelcomemsg))
+	{			
+		return;
+	}
+		
+	
+	if (!config.fake_server_string )
+	{
+		if (!control_write(client_sock,serverwelcomemsg,clientssl))
+		{			
 			return;
 		}
 	}
-	if(!using_entry)
+	else
 	{
-		debugmsg(username,"[controlthread] try to get welcome msg");
-		string serverwelcomemsg,tmp;
-		do
-		{
-			if(!control_read(site_sock,sitessl,tmp))
-			{		
-				
-				return;
-			}	
-			serverwelcomemsg += tmp;
-		}
-		while (!IsEndline(tmp));
-		
-		if (!config.fake_server_string )
-		{
-			if (!control_write(client_sock,serverwelcomemsg,clientssl))
-			{
-				
-				
-				return;
-			}
+		if (!control_write(client_sock,config.server_string + "\r\n",clientssl))
+		{			
+			return;
 		}
 	}
+	
 
 	username = "-BEFORE-MAINLOOP-";
 
@@ -849,7 +454,7 @@ void CControlThread::mainloop(void)
 			string s;
 			if(!control_read(site_sock,sitessl,s))
 			{		
-				
+				debugmsg(username,"[controlthread] read from site failed!");
 				return;
 			}
 
@@ -1059,33 +664,41 @@ void CControlThread::mainloop(void)
 
 					}
 				}
-				else if (gotpasvcmd && config.bounce_data_con && !gotportcmd)
+				else if (gotpasvcmd && config.traffic_bnc && !gotportcmd)
 				{			
 					
 					debugmsg(username,"[controlthread] create datathread");
 					deletedatathread();
-					
-					if (config.thread_limit == 0 || nr_threads < config.thread_limit)
+					string passiveip;
+					int passiveport,newpassiveport;
+					if(ParsePsvCommand(s,passiveip,passiveport))
 					{
-						datathread = new CDataThread(cpsvcmd, transfertype, sslprotp, relinked, usingssl, activecon, username, client_addr,  this);
-						debugmsg(username,"[controlthread] call datathread getactive_data");
-						string pcmd = datathread->getpassive_data(s);
-						if (!control_write(client_sock,pcmd,clientssl))
-						{							
-							return;
+						if(relinked && config.use_port_range)
+						{
+							newpassiveport = random_range(config.port_range_start,config.port_range_end);
 						}
+						else
+						{
+							newpassiveport = passiveport + config.add_to_passive_port;
+						}
+						string passivecmd = CreatePsvCommand(newpassiveport);
+						datathread = new CDataThread(cpsvcmd, transfertype, sslprotp, relinked, usingssl, activecon, username, clientip, passiveip,   "", passiveport, 0, newpassiveport, this,passivecmd);
 						if(pthread_create(&datathread->tid,NULL,makedatathread,datathread) != 0)
 						{
 							debugmsg(username,"[controlthread] error creating thread!",errno);
 							delete datathread; 
 							datathread = NULL; 
 						}
-						debugmsg(username,"[controlthread] datathread created");
+												
 					}
 					else
 					{
-						debugmsg(username,"[controlthrad] maximum # of threads reached");
+						debugmsg(username,"[controlthread] ParsePsvCommand failed!");
 					}
+					
+					
+					debugmsg(username,"[controlthread] datathread created");
+				
 					debugmsg(username,"[controlthread] reset datathread vars");
 					gotpasvcmd = 0;
 					gotportcmd = 0;
@@ -1093,36 +706,46 @@ void CControlThread::mainloop(void)
 					cpsvcmd = 0;
 	
 				}
-				else if (gotportcmd && config.bounce_data_con)
+				else if (gotportcmd && config.traffic_bnc)
 				{
 					activecon = 1;
 					debugmsg(username,"[controlthread] create datathread");
 					deletedatathread();	
-					
-					if (config.thread_limit == 0 || nr_threads < config.thread_limit)
+					string activeip,passiveip;
+					int activeport,passiveport;
+					if(ParsePortCommand(portcmd,activeip,activeport))
 					{
-						datathread = new CDataThread(cpsvcmd, transfertype, sslprotp, relinked, usingssl, activecon, username, client_addr,  this);
-						debugmsg(username,"[controlthread] call datathread getactive_data");
-						datathread->getactive_data(portcmd);
-						debugmsg(username,"[controlthread] call datathread getpassive_data");
-						string pcmd = datathread->getpassive_data(s);
-						if (!control_write(client_sock,"200 PORT command successful.\r\n",clientssl))
-						{		
-							
-							return;
-						}
-						if(pthread_create(&datathread->tid,NULL,makedatathread,datathread) != 0)
+						if(ParsePsvCommand(s,passiveip,passiveport))
 						{
-							debugmsg(username,"[controlthread] error creating thread!",errno);
-							delete datathread; 
-							datathread = NULL; 
+							datathread = new CDataThread(cpsvcmd, transfertype, sslprotp, relinked, usingssl, activecon, username, clientip, passiveip,  activeip, passiveport, activeport, 0, this,"");
+							if(pthread_create(&datathread->tid,NULL,makedatathread,datathread) != 0)
+							{
+								debugmsg(username,"[controlthread] error creating thread!",errno);
+								delete datathread; 
+								datathread = NULL; 
+							}
+							if (!control_write(client_sock,"200 PORT command successful.\r\n",clientssl))
+							{								
+								return;
+							}
 						}
-						debugmsg(username,"[controlthread] datathread created");
+						else
+						{
+							debugmsg(username,"[controlthread] ParsePsvCommand failed!");
+						}
 					}
 					else
 					{
-						debugmsg(username,"[controlthrad] maximum # of threads reached");
+						if(!control_write(client_sock,"500 '" + crcut(portcmd) + "': Command not understood.\r\n",clientssl))
+						{
+							return;
+						}
+						debugmsg(username,"[controlthread] ParsePortCommand failed!");
 					}
+					
+		
+					debugmsg(username,"[controlthread] datathread created");
+					
 					debugmsg(username,"[controlthread] reset datathread vars");
 					gotpasvcmd = 0;
 					gotportcmd = 0;
@@ -1150,68 +773,39 @@ void CControlThread::mainloop(void)
 			debugmsg(username,"[controlthread] read from client");
 			string s;
 			if(!control_read(client_sock,clientssl,s))
-			{				
+			{
+				debugmsg(username,"[controlthread] read from client failed!");	
 				return;
 			}
 
 			if (upper(s,5).find("IDNT",0) != string::npos)
 			{
 				debugmsg(username,"[controlthread] idnt command");
-				if (config.entry_list != "")
-				{
-					if(!control_write(site_sock,s,sitessl))
-					{					
-						
-						return;
-					}
-					unsigned int pos1,pos2;
-					pos1 = s.find("@",0);
-					if (pos1 != string::npos)
-					{
-						s = s.substr(pos1+1,s.length()-pos1-3);
-						pos2 = s.find(":",0);
-						if (pos2 != string::npos)
-						{
-							client_ip = s.substr(0,pos2);
-							debugmsg(username,"[controlthread] client ip: " + client_ip);
-						}
-						else
-						{
-							debugmsg(username,"[controlthread] strange IDNT cmd");
-							return;
-						}
-					}
-					else
-					{
-						debugmsg(username,"[controlthread] strange IDNT cmd");
-						return;
-					}
+				
+				
+				if (!control_write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
+				{					
+					
+					return;
 				}
-				else
-				{
-					if (!control_write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-					{
-						
-						
-						return;
-					}
-					}
+				
 				
 			}
 			else if (upper(s,6).find("ABOR",0) != string::npos)
 			{
 
 				s = "ABOR\r\n";
+				if(config.traffic_bnc)
+				{
+					deletedatathread();	
+				}
 				if(!control_write(site_sock,s,sitessl))
 				{					
 					
 					return;
 				}
 				debugmsg(username,"[controlthread] abort command");
-				if(config.bounce_data_con)
-				{
-					deletedatathread();	
-				}
+				
 			}
 
 
@@ -1336,7 +930,7 @@ void CControlThread::mainloop(void)
 			}
 			else if (upper(s,5).find("PASV",0) != string::npos)
 			{
-				if (config.bounce_data_con)
+				if (config.traffic_bnc)
 				{
 					deletedatathread();
 					gotpasvcmd = 1;
@@ -1351,11 +945,11 @@ void CControlThread::mainloop(void)
 			}
 			else if (upper(s,5).find("PORT",0) != string::npos)
 			{
-				deletedatathread();
+				
 				debugmsg(username,"[controlthread] port command");
 				gotportcmd = 1;
 				portcmd = s;
-				if (!config.bounce_data_con)
+				if (!config.traffic_bnc)
 				{
 					if(!control_write(site_sock,s,sitessl))
 					{
@@ -1366,7 +960,8 @@ void CControlThread::mainloop(void)
 					
 				}
 				else
-				{				
+				{
+					deletedatathread();				
 					if (!control_write(site_sock,"PASV\r\n",sitessl))
 					{
 						
@@ -1378,6 +973,10 @@ void CControlThread::mainloop(void)
 			
 			else if(upper(s,5).find("QUIT",0) != string::npos)
 			{
+				if(config.traffic_bnc)
+				{
+					deletedatathread();
+				}
 				if (config.send_traffic_info)
 				{
 					stringstream ss;
@@ -1540,11 +1139,11 @@ void CControlThread::mainloop(void)
 							<< "] DL  -  [" << traffic2str((*it)->localcounter.getrecvd());
 							if (using_entry)
 							{
-								ss << "] UL  -  [" << (*it)->client_ip << "]  -  ";
+								ss << "] UL  -  [" << (*it)->clientip << "]  -  ";
 							}
 							else
 							{
-								ss << "] UL  -  [" << inet_ntoa((*it)->client_addr.sin_addr) << "]  -  ";
+								ss << "] UL  -  [" << (*it)->clientip << "]  -  ";
 							}
 							ss << (now - (*it)->connect_time) / 60 << " min online \r\n";
 						
@@ -1555,7 +1154,7 @@ void CControlThread::mainloop(void)
 					hoursup = ((now - start_time) - daysup * 24 * 60 * 60) / (60 * 60);
 					minup = ((now - start_time) - daysup * 24 * 60 * 60 - hoursup * 60 * 60) / 60;
 					ss << "230- Bnc uptime: " << daysup << " day(s), " << hoursup << " hour(s), " << minup << " minute(s)\r\n";
-					ss << "230- # of current threads: " << nr_threads << "\r\n";
+			
 					ss << "230 --== stats ==--\r\n";
 					globals_lock.UnLock();
 					if (!control_write(client_sock,ss.str(),clientssl))
@@ -1579,7 +1178,7 @@ void CControlThread::mainloop(void)
 			
 			else if (upper(s,5).find("CPSV",0) != string::npos)
 			{
-				if (config.bounce_data_con)
+				if (config.traffic_bnc)
 				{
 					deletedatathread();
 					gotpasvcmd = 1;
@@ -2069,5 +1668,59 @@ void CControlThread::mainloop(void)
 
 	}
 	
+}
+
+string CControlThread::CreatePsvCommand(int port)
+{
+	debugmsg("-SYSTEM-","[CreatePsvCommand] start");
+	string newpassivecmd = "227 Entering Passive Mode (";
+		
+	string tmpip;
+	if (config.listen_ip != "") 
+	{ 
+		tmpip = config.listen_ip; 
+	}
+	else
+	{
+		
+		struct ifreq ifa;
+		struct sockaddr_in *i;
+		memset(&ifa,0,sizeof( struct ifreq ) );
+		strcpy(ifa.ifr_name,config.listen_interface.c_str());
+		
+		int rc = ioctl(listen_sock, SIOCGIFADDR, &ifa);
+		
+		if(rc != -1)
+		{
+			i = (struct sockaddr_in*)&ifa.ifr_addr;
+			tmpip = inet_ntoa(i->sin_addr);
+		}
+		else
+		{
+			tmpip = "0.0.0.0";
+			debugmsg("-SYSTEM-","[CreatePsvCommand] ioctl error",errno);
+		}
+		debugmsg("-SYSTEM-","[CreatePsvCommand] try to get current ip end");
+	}
+	
+	debugmsg("-SYSTEM-","[CreatePsvCommand] ip: " + tmpip);
+	unsigned int startpos;
+	startpos = tmpip.find(".",0);
+	tmpip.replace(startpos,1,",");
+	startpos = tmpip.find(".",0);
+	tmpip.replace(startpos,1,",");
+	startpos = tmpip.find(".",0);
+	tmpip.replace(startpos,1,",");
+	
+	newpassivecmd += tmpip + ",";
+	stringstream ss;
+	ss << (int)(port / 256) << "," << (port % 256) << ")\r\n";
+
+	newpassivecmd += ss.str();
+	
+	debugmsg("-SYSTEM-","[CreatePsvCommand] passive cmd: " + newpassivecmd);
+	
+	debugmsg("-SYSTEM-","[CreatePsvCommand] end");
+	return newpassivecmd;
 }
 

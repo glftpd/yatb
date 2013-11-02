@@ -1,9 +1,10 @@
+#include "tools.h"
 #include "global.h"
 #include "config.h"
 #include "lock.h"
 
 // print debug msg
-void debugmsg(string un,string s,int err=0)
+void debugmsg(string un,string s,int err)
 {
 	
 	if (config.debug)
@@ -69,6 +70,22 @@ string trim( const string &str, const string &whitespace)
     return rtrim(ltrim(str,whitespace),whitespace);
 }
 
+// cut off \r\n from string
+string crcut(string s)
+{
+	string tmp;
+	tmp = s;
+	if(tmp[tmp.length()-1] == '\n')
+	{
+		tmp = tmp.substr(0,tmp.length() - 1);
+	}
+	if(tmp[tmp.length()-1] == '\r')
+	{
+		tmp = tmp.substr(0,tmp.length() - 1);
+	}
+	return tmp;
+}
+
 // return input string in upcase
 string upper(string str,int length)
 {
@@ -94,12 +111,12 @@ int random_range(int lowest_number, int highest_number)
 int setnonblocking(int socket)
 {
 	int flags;
-	if((flags = fcntl(socket, F_GETFL, 0)) < 0)
+	if((flags = fcntl(socket, F_GETFL, 0)) == -1)
 	{ 
 		return 0;
 	}
 	flags |= O_NONBLOCK;
-	if (fcntl(socket, F_SETFL, flags) < 0)
+	if (fcntl(socket, F_SETFL, flags) == -1)
 	{
 		return 0;
 	}
@@ -109,12 +126,12 @@ int setnonblocking(int socket)
 int setblocking(int socket)
 {
 	int flags;
-	if((flags = fcntl(socket, F_GETFL, 0)) < 0)
+	if((flags = fcntl(socket, F_GETFL, 0)) == -1)
 	{ 
 		return 0;
 	}
 	flags &= ~O_NONBLOCK;
-	if (fcntl(socket, F_SETFL, flags) < 0)
+	if (fcntl(socket, F_SETFL, flags) == -1)
 	{
 		return 0;
 	}
@@ -154,10 +171,41 @@ void correctReply(string &in)
 	in = tmp;
 }
 
-int Connect(int &sock,struct sockaddr_in &adr,int sec,int &shouldquit)
+int Bind(int &sock,string ip,int port)
+{
+	struct sockaddr_in adr;
+	if (ip != "")
+	{
+		adr = GetIp(ip,port);
+	}
+	else
+	{
+		debugmsg("-SYSTEM-","[Bind] bind to any adr");
+		adr.sin_addr.s_addr = INADDR_ANY;
+		adr.sin_port = htons(port);
+		adr.sin_family = AF_INET;
+		memset(&(adr.sin_zero), '\0', 8);
+	}
+	if(bind(sock,(struct sockaddr *)&adr, sizeof(struct sockaddr)) != 0)
+	{
+		debugmsg("-SYSTEM-","[Bind] could not bind",errno);
+		return 0;
+	}
+	return 1;
+}
+
+int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 {
 	debugmsg("-SYSTEM-","[Connect] start");
-	if(connect(sock, (struct sockaddr *)&adr, sizeof(adr)) == -1)
+	struct sockaddr_in adr;
+	adr = GetIp(host,port);
+	if(!setnonblocking(sock))
+	{
+		debugmsg("-SYSTEM-","[Connect] end(0-0)");
+		return 0;
+	}
+	
+	if(connect(sock, (struct sockaddr *)&adr, sizeof(adr)) != 0)
 	{
 		if(errno != EINPROGRESS)
 		{
@@ -195,7 +243,7 @@ int Connect(int &sock,struct sockaddr_in &adr,int sec,int &shouldquit)
 	}
 	int err;
 	socklen_t errlen = sizeof(err);
-	if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&errlen) == -1)
+	if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&errlen) != 0)
 	{
 		debugmsg("-SYSTEM-","[Connect] end(0-4)");
 		return 0;
@@ -205,41 +253,62 @@ int Connect(int &sock,struct sockaddr_in &adr,int sec,int &shouldquit)
 		debugmsg("-SYSTEM-","[Connect] end(0-5)");
 		return 0;
 	}
+	if(!SocketOption(sock,SO_KEEPALIVE))
+	{
+		debugmsg("-SYSTEM-", "[Connect] client setsockopt error!",errno);
+		return 0;
+	}
 	debugmsg("-SYSTEM-","[Connect] end(1)");
 	return 1;
 }
 
-int Accept(int &listensock,int &newsock,struct sockaddr_in &adr,int sec,int &shouldquit)
+int Accept(int &listensock,int &newsock,string &clientip,int &clientport,int sec,int &shouldquit)
 {
 	debugmsg("-SYSTEM-","[Accept] start");
 	fd_set readfds;
+	struct sockaddr_in adr;
 	
-	
-	for(int i=0; i < sec * 2;i++)
+	if(sec > 0)
 	{
-		FD_ZERO(&readfds);
-		FD_SET(listensock, &readfds);
-		struct timeval tv;
-		tv.tv_sec = 0;
-		tv.tv_usec = 500000;
-		
-		int res =  select(listensock+1, &readfds, NULL, NULL, &tv);
-		if (res < 0)
+		if(!setnonblocking(listensock))
 		{
-			debugmsg("-SYSTEM-","[Accept] end(0-1)");		
 			return 0;
 		}
-		else if(res == 0)
+		for(int i=0; i < sec * 2;i++)
 		{
-			if (shouldquit == 1) 
+			FD_ZERO(&readfds);
+			FD_SET(listensock, &readfds);
+			struct timeval tv;
+			tv.tv_sec = 0;
+			tv.tv_usec = 500000;
+			int res;
+			
+			res =  select(listensock+1, &readfds, NULL, NULL, &tv);
+			
+			if (res < 0)
 			{
-				debugmsg("-SYSTEM-","[Accept] end(0-2)");		
+				debugmsg("-SYSTEM-","[Accept] end(0-1)");		
 				return 0;
 			}
+			else if(res == 0)
+			{
+				if (shouldquit == 1) 
+				{
+					debugmsg("-SYSTEM-","[Accept] end(0-2)");		
+					return 0;
+				}
+			}
+			else
+			{
+				break;
+			}
 		}
-		else
+	}
+	else
+	{
+		if(!setblocking(listensock))
 		{
-			break;
+			return 0;
 		}
 	}
 	socklen_t size = sizeof(adr);
@@ -248,13 +317,26 @@ int Accept(int &listensock,int &newsock,struct sockaddr_in &adr,int sec,int &sho
 		debugmsg("-SYSTEM-","[Accept] end(0-3)");		
 		return 0;
 	}
+	clientip = inet_ntoa(adr.sin_addr);
+	clientport = ntohs(adr.sin_port);
 	debugmsg("-SYSTEM-","[Accept] end(1)");		
 	return 1;
 }
 
-#if defined(__GNUC__) && __GNUC__ < 3
-#define ios_base ios
-#endif
+int SocketOption(int &sock,int option)
+{
+	int yes = 1;
+	if (setsockopt(sock,SOL_SOCKET,option,&yes,sizeof(int)) != 0)
+	{
+		debugmsg("-SYSTEM-","setsockopt error!");
+		
+		return 0;
+	}
+	return 1;
+}
+
+
+
 
 string traffic2str(double in)
 {
@@ -348,3 +430,564 @@ struct sockaddr_in GetIp(string ip,int port)
 	memset(&(addr.sin_zero), '\0', 8);
 	return addr;
 }
+
+int Ident(string ip, int clientport, int listenport, string connectip, string &reply,int timeout)
+{
+	int ident_sock;
+	int shouldquit = 0;
+	fd_set readfds;
+	string ident_reply;
+	
+	if((ident_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
+	{
+		return 0;
+	}
+	
+	if (connectip != "")
+	{
+		if(!Bind(ident_sock,connectip,0))
+		{				
+			debugmsg("-SYSTEM-","[Ident] could not bind",errno);
+			return 0;
+		}
+	}
+	
+	if (Connect(ident_sock,ip,113,timeout,shouldquit) )
+	{				
+		debugmsg("-SYSTEM-","[Ident] try to read ident reply");
+		FD_ZERO(&readfds);
+		FD_SET(ident_sock, &readfds);
+		stringstream ss;
+		ss << clientport << " , " << listenport << "\r\n";
+		if (!control_write(ident_sock,ss.str(),NULL))
+		{	
+			close(ident_sock);				
+			return 0;		
+		}
+		struct timeval tv;
+		tv.tv_sec = timeout;
+		tv.tv_usec = 0;
+		
+		if (select(ident_sock+1, &readfds, NULL, NULL, &tv) <= 0)
+		{
+			debugmsg("-SYSTEM-", "[Ident] ident select error!",errno);
+		}
+		else
+		{
+			if (FD_ISSET(ident_sock, &readfds))
+			{	
+				if(!control_read(ident_sock,NULL,ident_reply))
+				{	
+					close(ident_sock);								
+					return 0;					
+				}
+				debugmsg("-SYSTEM-","[Ident] ident: " + ident_reply);
+			}
+			
+		}
+		close(ident_sock);
+	}
+	else
+	{
+		debugmsg("-SYSTEM-","[Ident] could not connect to ident port @"+ip);
+		close(ident_sock);		
+		return 0;		
+	}
+	string idnt,ident_user;
+	idnt=ident_reply.substr(ident_reply.rfind(":",ident_reply.length())+1);
+	idnt=idnt.substr(0,idnt.find("\r"));
+	ident_user = trim(idnt);
+	if (ident_user[ident_user.length() - 1] == '\n') { ident_user = ident_user.substr(0,ident_user.length() - 1); }
+	close(ident_sock);		
+	reply = ident_user;
+	return 1;
+}
+
+// send string
+int control_write(int sock,string s,SSL *sslcon)
+{	
+		
+	stringstream ss;
+	ss << s.length();
+		
+	fd_set writefds;
+	struct timeval tv;
+
+	int maxsize = config.buffersize; // max size in bytes of packet
+	int total = 0;
+	int bytesleft = s.length();
+	int blocksize;
+	if (bytesleft > maxsize)
+	{
+		blocksize = maxsize;
+	}
+	else
+	{
+		blocksize = bytesleft;
+	}
+	int n,len;
+	len = s.length();
+	while(total < len)
+	{
+		tv.tv_sec = config.read_write_timeout;
+		tv.tv_usec = 0;
+		FD_ZERO(&writefds);
+		FD_SET(sock,&writefds);
+		if (select(sock+1,NULL,&writefds,NULL,&tv) == -1)
+		{	
+			
+			return 0;
+		}
+		if (FD_ISSET(sock,&writefds))
+		{
+			if (!sslcon)
+			{
+				n = send(sock,s.c_str()+total,blocksize,0);
+			}
+			else
+			{
+				n = SSL_write(sslcon, s.c_str()+total, blocksize);
+			}
+		}
+		if (n < 0)
+		{
+			if (sslcon != NULL)
+			{
+				int err = SSL_get_error(sslcon,n);
+				
+				if (err == SSL_ERROR_WANT_READ) { continue; }
+				if (err == SSL_ERROR_WANT_WRITE) { continue; }
+				if (err == SSL_ERROR_WANT_X509_LOOKUP) { continue; }				
+				
+			}
+			
+			break;
+		}
+		total += n;
+		bytesleft -= n;
+		if (bytesleft > maxsize)
+		{
+			blocksize = maxsize;
+		}
+		else
+		{
+			blocksize = bytesleft;
+		}
+	}
+	
+	if (bytesleft == 0)
+	{		
+		
+		return 1;
+	}
+	else
+	{		
+		
+		return 0;
+	}
+}
+
+// read string
+int control_read(int sock,SSL *sslcon,string &str)
+{
+	
+	string tmp = "";
+	fd_set readfds;
+	struct timeval tv;
+	int rc;
+	char *buffer;
+	buffer = new char[config.buffersize];
+	
+	while(1)
+	{		
+		for (int i=0;i<config.buffersize;i++) { buffer[i] = 0; }
+		tv.tv_sec = 0;
+		tv.tv_usec = 500000;
+		FD_ZERO(&readfds);
+		FD_SET(sock,&readfds);
+		if (select(sock+1,&readfds,NULL,NULL,&tv) == -1)
+		{
+			
+			str = tmp;
+			
+			stringstream ss;
+			ss << str.length();
+			
+			delete [] buffer;
+			return 1;
+		}
+		if (FD_ISSET(sock,&readfds))
+		{
+			if (sslcon == NULL)
+			{
+				rc = recv(sock,buffer,config.buffersize,0);
+			}
+			else
+			{
+				rc = SSL_read(sslcon,buffer,config.buffersize);
+			}
+			if (rc == 0)
+			{				
+				delete [] buffer;
+				return 0;
+			}
+			else if (rc < 0)
+			{
+				if (sslcon != NULL)
+				{
+					int err = SSL_get_error(sslcon,rc);
+					
+					if (err == SSL_ERROR_WANT_READ) { continue; }
+					if (err == SSL_ERROR_WANT_WRITE) { continue; }
+					if (err == SSL_ERROR_WANT_X509_LOOKUP) { continue; }					
+					
+				}
+				
+				delete [] buffer;
+				return 0;
+			}
+			else
+			{				
+				char *tmpstr;
+				tmpstr = new char[rc+1];
+				memcpy(tmpstr,buffer,rc);
+				tmpstr[rc] = '\0';
+				
+				tmp += tmpstr;
+				
+				delete [] tmpstr;
+				if (rc < config.buffersize)
+				{
+					// reached end of line?
+					if (tmp[tmp.length() - 1] == '\n')
+					{		
+						// fix missing \r's
+						correctReply(tmp);		
+						str = tmp;		
+						delete [] buffer;
+						return 1;		
+													
+					}
+				}
+			}
+		}
+	}
+}
+
+int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
+{
+	
+	if(!setblocking(sock))
+	{ 
+		debugmsg("-SYSTEM-", "[SslConnect] set blocking failed!");
+		return 0;
+	}
+	
+	*sslctx = SSL_CTX_new(TLSv1_client_method());
+	SSL_CTX_set_options(*sslctx,SSL_OP_ALL);
+	SSL_CTX_set_mode(*sslctx,SSL_MODE_AUTO_RETRY);
+	SSL_CTX_set_session_cache_mode(*sslctx,SSL_SESS_CACHE_OFF);
+	if (*sslctx == NULL)
+	{
+		debugmsg("-SYSTEM-", "[SslConnect] sitesslctx failed!");
+		return 0;
+	}
+	
+	*ssl = SSL_new(*sslctx);
+	if (*ssl == NULL)
+	{
+		debugmsg("-SYSTEM-", "[SslConnect] site ssl failed!");
+		return 0;
+	}
+	if(SSL_set_fd(*ssl,sock) == 0)
+	{
+		debugmsg("-SYSTEM-", "[SslConnect] ssl set fd failed!");
+		return 0;
+	}
+	debugmsg("-SYSTEM-","[SslConnect] try to connect...");
+	if (SSL_connect(*ssl) == 1)
+	{
+		//SSL_get_cipher_bits(sitessl,&sitesslbits);
+
+		// get reply
+
+	}
+	else
+	{
+		debugmsg("-SYSTEM-", "[SslConnect] TLS Connection failed!");
+		return 0;
+	}
+	if(!setnonblocking(sock))
+	{
+		debugmsg("-SYSTEM-", "[SslConnect] set non blocking failed!");
+		return 0;
+	}
+	debugmsg("-SYSTEM-", "[SslConnect] end");
+	return 1;
+}
+
+int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx)
+{
+	if(!setblocking(sock))
+	{ 
+		debugmsg("-SYSTEM-", "[SslAccept] set blocking failed!");
+		return 0;
+	}
+	
+	*ssl = SSL_new(*sslctx);
+	if (*ssl == NULL)
+	{
+		debugmsg("-SYSTEM-", "[SslAccept] clientssl failed!");
+		return 0;
+	}
+
+	if (SSL_set_fd(*ssl,sock) == 0)
+	{
+		debugmsg("-SYSTEM-","[SslAccept] " +  (string)ERR_error_string(ERR_get_error(), NULL));
+		return 0;
+	}
+	
+	
+	
+	debugmsg("-SYSTEM-","[SslAccept] try ssl accept");
+	int err;
+	
+	if( (err = SSL_accept(*ssl)) != 1)
+	{
+		debugmsg("-SYSTEM-", "[SslAccept] accept failed!");
+		debugmsg("-SYSTEM-","[SslAccept] " +  (string)ERR_error_string(ERR_get_error(), NULL));
+		
+		return 0;
+	}
+	
+	if(!setnonblocking(sock))
+	{
+		debugmsg("-SYSTEM-", "[SslAccept] set non blocking failed!");
+		return 0;
+	}
+	debugmsg("-SYSTEM-", "[SslAccept] end");
+	return 1;
+	
+}
+
+int ParsePortCommand(string portcmd,string &ip,int &port)
+{
+	debugmsg("-SYSTEM-","[ParsePortCommand] start");
+	
+	unsigned int startpos;
+		
+	startpos = portcmd.find(" ",0);
+	if (startpos == string::npos) { return 0; }
+	portcmd = portcmd.substr(startpos+1,portcmd.length());
+	startpos = portcmd.find(",",0);
+	if (startpos == string::npos) { return 0; }
+	portcmd.replace(startpos,1,".");
+	startpos = portcmd.find(",",0);
+	if (startpos == string::npos) { return 0; }
+	portcmd.replace(startpos,1,".");
+	startpos = portcmd.find(",",0);
+	if (startpos == string::npos) { return 0; }
+	portcmd.replace(startpos,1,".");
+	startpos = portcmd.find(",",0);
+	if (startpos == string::npos) { return 0; }
+	ip = portcmd.substr(0,startpos);
+	
+		
+	string tmpport;
+	tmpport = portcmd.substr(startpos+1,portcmd.length());
+	startpos = tmpport.find(",",0);
+	if (startpos == string::npos) { return 0; }
+	string p1,p2;
+	p1 = tmpport.substr(0,startpos);
+	p2 = tmpport.substr(startpos+1,tmpport.length()-1);
+	if(p1 == "") return 0;
+	if(p2 == "") return 0;
+	port = 256 * atoi(p1.c_str()) + atoi(p2.c_str());
+	debugmsg("-SYSTEM-","[ParsePortCommand] end");
+	return 1;
+	
+}
+
+int ParsePsvCommand(string passivecmd,string &ip, int &port)
+{
+
+	debugmsg("-SYSTEM-","[ParsePsvCommand] start");
+	debugmsg("-SYSTEM-","[ParsePsvCommand] " + passivecmd);
+	unsigned int startpos,endpos;
+	startpos = passivecmd.find("(",0);
+	endpos = passivecmd.find(")",0);
+	if (startpos == string::npos || endpos == string::npos)
+	{		
+		return 0;
+	}
+	
+	// split passive mode string
+	string tmp = passivecmd.substr(1+startpos,endpos-startpos-1);
+
+	if (tmp == "") return 0;
+	
+	endpos = tmp.find(",",0);
+	if(endpos == string::npos) return 0;
+	string ip1 = tmp.substr(0,endpos);
+	tmp = tmp.substr(endpos+1,tmp.length());
+
+	endpos = tmp.find(",",0);
+	if(endpos == string::npos) return 0;
+	string ip2 = tmp.substr(0,endpos);
+	tmp = tmp.substr(endpos+1,tmp.length());
+
+	endpos = tmp.find(",",0);
+	if(endpos == string::npos) return 0;
+	string ip3 = tmp.substr(0,endpos);
+	tmp = tmp.substr(endpos+1,tmp.length());
+
+	endpos = tmp.find(",",0);
+	if(endpos == string::npos) return 0;
+	string ip4 = tmp.substr(0,endpos);
+	tmp = tmp.substr(endpos+1,tmp.length());
+
+	ip = ip1 + "." + ip2 + "." + ip3 + "." + ip4;
+
+	endpos = tmp.find(",",0);
+	if(endpos == string::npos) return 0;
+	string port1 = tmp.substr(0,endpos);
+	if(port1 == "") return 0;
+	string port2 = tmp.substr(endpos+1,tmp.length());
+	if(port2 == "") return 0;
+	port = (atoi(port1.c_str()) * 256 + atoi(port2.c_str()));
+	
+	debugmsg("-SYSTEM-","[ParsePsvCommand] end");
+	return 1;
+}
+
+int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
+{
+	
+	int total = 0;
+	int bytesleft = nrbytes;
+	int rc,len;
+	len = nrbytes;
+	fd_set writefds;
+	FD_ZERO(&writefds);
+	FD_SET(sock,&writefds);
+	struct timeval tv;
+	while(total < nrbytes)
+	{
+		tv.tv_sec = config.read_write_timeout;
+		tv.tv_usec = 0;
+		if (select(sock+1, NULL, &writefds, NULL, &tv) < 1)
+		{
+			debugmsg("-SYSTEM-","[data_write] select error!",errno);
+			return 0;
+		}
+		if (FD_ISSET(sock, &writefds))
+		{	
+			if(ssl == NULL)
+			{		
+				rc = send(sock,data+total,bytesleft,0);
+			}
+			else
+			{
+				rc = SSL_write(ssl,data+total,bytesleft);
+			}
+			if(rc > 0)
+			{
+				total += rc;
+				bytesleft -= rc;
+			}
+			else if (rc == 0)
+			{
+				debugmsg("-SYSTEM-","[data_write] connection closed",errno);
+			}
+			else
+			{
+				if (ssl != NULL)
+				{
+					int err = SSL_get_error(ssl,rc);
+					
+					if (err == SSL_ERROR_WANT_READ) { continue; }
+					if (err == SSL_ERROR_WANT_WRITE) { continue; }
+					if (err == SSL_ERROR_WANT_X509_LOOKUP) { continue; }					
+					
+				}
+				debugmsg("-SYSTEM-","[data_write] error!");  
+				return 0; 
+			}
+		}
+		else
+		{
+			debugmsg("-SYSTEM-","[data_write] error!",errno);
+			return 0;
+		}
+		
+		
+	}
+	return 1;	
+	
+}
+
+int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
+{
+	while(1)
+	{
+		fd_set readfds;
+		FD_ZERO(&readfds);
+		FD_SET(sock,&readfds);
+		struct timeval tv;
+		tv.tv_sec = config.read_write_timeout;
+		tv.tv_usec = 0;
+		if (select(sock+1, &readfds, NULL, NULL, &tv) < 1)
+		{
+			debugmsg("-SYSTEM-","[data_read] select error!",errno);
+			return 0;
+		}
+		if (FD_ISSET(sock, &readfds))
+		{	
+			int rc;		
+			if (ssl == NULL)
+			{
+				rc = recv(sock,buffer,config.buffersize,0);
+			}
+			else
+			{
+				rc = SSL_read(ssl,buffer,config.buffersize);
+			}
+	  				
+			if (rc > 0) 
+			{ 
+				nrbytes = rc; 
+				return 1; 
+			}
+			else  if(rc == 0)
+			{			
+				debugmsg("-SYSTEM-","[data_read] connection closed",errno);
+				nrbytes=0; 
+				return 0; 
+			}
+			else
+			{	
+				if (ssl != NULL)
+				{
+					int err = SSL_get_error(ssl,rc);
+					
+					if (err == SSL_ERROR_WANT_READ) { continue; }
+					if (err == SSL_ERROR_WANT_WRITE) { continue; }
+					if (err == SSL_ERROR_WANT_X509_LOOKUP) { continue; }					
+					
+				}
+				debugmsg("-SYSTEM-","[data_read] error!"); 
+				nrbytes=0; 
+				return 0; 
+			}
+		}
+		else
+		{
+			debugmsg("-SYSTEM-","[data_read] error!",errno);
+			return 0;
+		}
+	}	
+  	
+		
+	return 0;
+}
+

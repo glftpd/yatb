@@ -157,7 +157,7 @@ relink pass
 
 --------------------------------------------------------
 
-- bounce_data_con=1;
+- traffic_bnc=1;
 
 if enabled control and data connections are bounced
 else bnc is running in entry mode
@@ -298,19 +298,6 @@ if enabled debug messages are printed to console and not to logfile
 
 --------------------------------------------------------
 
-- thread_limit=0;
-
-maximum number of running threads (0 for unlimited)
-
---------------------------------------------------------
-
-- ssl_ascii_cache=0;
-
-if enabled ascii transfers are speed up when using gl 1.3x (not sure if this works)
-you should use gl 2.x..
-
---------------------------------------------------------
-
 - use_ssl_exclude=0;
 
 if enabled users in sslexclude_list are not forced to use
@@ -405,6 +392,13 @@ if connection to site failes this message is send
 
 if enabled start errors and logins/logouts and failed logins are
 logged to daemon.log (normally in /var/log/)
+
+--------------------------------------------------------
+
+- ssl_forward=0;
+
+if enabled encrypted packets are passed to client
+else they are decrypted and encrypted again
 
 --------------------------------------------------------
 special bnc commands:

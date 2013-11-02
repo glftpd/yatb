@@ -16,7 +16,7 @@ class CControlThread
 	pthread_t tid; // thread id
 
 
-	CControlThread(int,struct sockaddr_in);
+	CControlThread(int,string,int);
 	~CControlThread();
 	
 	
@@ -29,17 +29,15 @@ class CControlThread
 	CDataThread *datathread;
 
 	void deletedatathread(void);
-	struct sockaddr_in client_addr,site_addr;
-	void mainloop(void);
-
 	
-	int control_read(int,SSL*,string&);
-	int control_write(int,string,SSL*);
+	void mainloop(void);
+		
 	
 	int trytls(void);
 
 	int tryrelink(int);
 
+	string CreatePsvCommand(int);
 	
 	CCounter localcounter;
 	
@@ -66,22 +64,23 @@ class CControlThread
 	
 	int clientsslbits,sitesslbits;
 	
-	string passivecmd,portcmd;
+	string passivecmd,portcmd,idndtcmd;
 	
 	string username;
 
 	int shouldquit;
-
+	
 	int using_entry;
 	CLock writelock;
-	string client_ip;
+	string clientip;
+	int clientport;
 };
 
 extern list<CControlThread*> conlist;
 
 extern int listen_sock;
 
-extern int nr_logins,nr_threads;
+extern long int nr_logins;
 
 extern time_t start_time;
 

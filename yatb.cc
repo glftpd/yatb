@@ -15,10 +15,10 @@ list<CControlThread*> conlist;
 CCounter totalcounter;
 int listen_sock;
 struct sockaddr_in listen_addr;
-int nr_logins=0;
+long int nr_logins=0;
 CStringlist adminlist,fxpfromsitelist,fxptositelist,sslexcludelist,entrylist;
 time_t start_time;
-int nr_threads = 0;
+
 int use_blowconf = 1;
 long *lock_count;
 SSL_CTX *clientsslctx;
@@ -32,7 +32,7 @@ pthread_attr_t threadattr;
 
 int main(int argc,char *argv[])
 {		
-	
+		
 	pthread_attr_init(&threadattr);
   pthread_attr_setdetachstate(&threadattr,PTHREAD_CREATE_DETACHED);
 	
@@ -122,18 +122,6 @@ int main(int argc,char *argv[])
 	}
 	
 	start_time = time(NULL);
-	
-	listen_addr.sin_family = AF_INET;
-	listen_addr.sin_port = htons(config.listen_port);
-	if (config.listen_ip != "")
-	{
-		listen_addr.sin_addr.s_addr = inet_addr(config.listen_ip.c_str());
-	}
-	else
-	{
-		listen_addr.sin_addr.s_addr = INADDR_ANY;
-	}
-	memset(&(listen_addr.sin_zero), '\0', 8);
 
 	srand(12);
 
@@ -151,9 +139,8 @@ int main(int argc,char *argv[])
 		}
 		return -1;
 	}
-	
-	int yes = 1;
-	if (setsockopt(listen_sock,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) == -1)
+		
+	if(!SocketOption(listen_sock,SO_REUSEADDR))
 	{
 		debugmsg("-SYSTEM-","setsockopt error!");
 		if (config.syslog)
@@ -163,7 +150,7 @@ int main(int argc,char *argv[])
 		return -1;
 	}
 	
-	if (bind(listen_sock, (struct sockaddr *)&listen_addr, sizeof(struct sockaddr)) == -1)
+	if (!Bind(listen_sock, config.listen_ip, config.listen_port))
 	{
 		debugmsg("-SYSTEM-","Unable to bind to port!");
 		if (config.syslog) 
@@ -256,24 +243,21 @@ int main(int argc,char *argv[])
 	}
 	
 	while(1)
-	{
-		
-		debugmsg("-SYSTEM-","[main] accept start");
-		struct sockaddr_in tmp_addr;
-		socklen_t size = sizeof(tmp_addr);
+	{				
 		int tmp_sock;
+		string clientip;
+		int clientport;
+		int shouldquit = 0;
 		
-		tmp_sock = accept(listen_sock,(struct sockaddr *)&tmp_addr,&size);
-		if (tmp_sock > 0)
+		if (Accept(listen_sock,tmp_sock,clientip,clientport,0,shouldquit))
 		{
-			if (config.thread_limit == 0 || nr_threads < config.thread_limit)
-			{
+			
 				debugmsg("-SYSTEM-","[main] list create start");
 				// create a new connection and put it into the list
 				list_lock.Lock();
 			
 				CControlThread *tmp;
-				tmp = new CControlThread(tmp_sock,tmp_addr);
+				tmp = new CControlThread(tmp_sock,clientip,clientport);
 				conlist.push_back(tmp);
 			
 				list_lock.UnLock();
@@ -288,17 +272,9 @@ int main(int argc,char *argv[])
 				
 				
 				debugmsg("-SYSTEM-","[main] list create end");
-			}
-			else
-			{
-				debugmsg("-SYSTEM-","[main] maximum # of threads reached");
-				close(tmp_sock);
-			}
-		}
-		debugmsg("-SYSTEM-","[main] accept end");
 			
+		}
 		
-
 	}
 	THREAD_cleanup();
 	if (clientsslctx != NULL) { SSL_CTX_free(clientsslctx); }
