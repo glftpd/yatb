@@ -108,8 +108,6 @@ void CDataThread::closeconnection(void)
 		}
 	}
 		
-		
-		
 		Close(datalisten_sock,"datalisten_sock");
 		
 		Close(dataclient_sock,"dataclient_sock");
@@ -215,37 +213,66 @@ void CDataThread::dataloop(void)
 	// passive connection - try to listen
 	if(!activecon)
 	{
-		debugmsg(username,"[datathread] passive connection - listen");
+		int trie = 1;
+		int pasv_error = 0;
 		if (!GetSock(datalisten_sock))
 		{
-			debugmsg(username, "[datathread] unable to create listen sock!",errno);		
-			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
+			debugmsg(username, "[datathread] unable to create listen sock!",errno);
 			return;
-		}
-		
-		
-		if (!Bind(datalisten_sock, config.listen_ip, newport))
-		{
-			debugmsg(username,"Unable to bind to port!");
-			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
-			return ;
-		}
+		}		
 		
 		if(!SocketOption(datalisten_sock,SO_REUSEADDR))
 		{
-			debugmsg(username,"setsockopt error!");
-			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
+			debugmsg(username,"[datathread] setsockopt error!");			
 			return;
 		}
-		
-		
-		if (listen(datalisten_sock, config.pending) == -1)
+		while(trie < 4)
 		{
-			debugmsg(username,"Unable to listen!");
-			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
-			return ;
+			// pick random port here if bind fails?
+
+			debugmsg(username,"[datathread] passive connection - listen");
+			
+			
+			if (!Bind(datalisten_sock, config.listen_ip, newport))
+			{
+				debugmsg(username,"Unable to bind to port!");
+				pasv_error = 1;
+			}
+			else
+			{
+				if(!SocketOption(datalisten_sock,SO_REUSEADDR))
+				{
+					debugmsg(username,"setsockopt error!");
+					pasv_error = 1;
+				}
+				else
+				{
+					if (listen(datalisten_sock, config.pending) == -1)
+					{
+						debugmsg(username,"Unable to listen!");
+						pasv_error = 1;
+					}
+				}
+			}
+			
+			trie++;
+			if(pasv_error == 1 && trie < 4)
+			{
+				pasv_error = 0;
+				usleep(90000);
+			}
+			else
+			{
+				break;
+			}
 		}
-		
+				
+		if(pasv_error)
+		{
+			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection!\r\n",controlthread->clientssl);
+			return;
+		}
+
 		if (!controlthread->Write(controlthread->client_sock,passivecmd,controlthread->clientssl))
 		{								
 			return;
@@ -300,32 +327,30 @@ void CDataThread::dataloop(void)
 	// ssl stuff
 	if((!config.ssl_forward && usingssl && sslprotp && !relinked) || (relinked && config.ssl_relink))
 	{
-		if(!SslConnect(datasite_sock,&sitessl,&sitesslctx))
+		if(!SslConnect(datasite_sock,&sitessl,&sitesslctx,shouldquit))
 		{
 			debugmsg(username, "[datathread] ssl connect failed",errno);
 			return;
 		}
+		debugmsg(username,"[datathread] site fingerprint: " + fingerprint(sitessl) + "\r\n");
 		// show fingerprint of site
 		//controlthread->Write(controlthread->client_sock,"220 Site (SSL connect) datachannel fingerprint: " + fingerprint(sitessl) + "\r\n",controlthread->clientssl);
 		
 	}
 	
-	if(cpsvcmd || sscncmd)
+	if((cpsvcmd || sscncmd) && !controlthread->dirlisting)
 	{
 		debugmsg(username,"[datathread] ssl client method");
 		if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink))
 		{
 			debugmsg(username,"[datathread] client ssl connect");
-			if(!SslConnect(dataclient_sock,&clientssl,&tmpctx))
+			if(!SslConnect(dataclient_sock,&clientssl,&tmpctx,shouldquit))
 			{
 				debugmsg(username, "[datathread] ssl connect failed",errno);
 				return;
 			}
 			fp = fingerprint(clientssl);
-			if(config.show_fp_on_control)
-			{
-				controlthread->Write(controlthread->client_sock,"220 Client (SSL connect) datachannel fingerprint: " + fp + "\r\n",controlthread->clientssl);
-			}
+			debugmsg(username,"[datathread] client fingerprint: " + fingerprint(clientssl) + "\r\n");
 		}
 	}
 	else 
@@ -334,16 +359,13 @@ void CDataThread::dataloop(void)
 		if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink))
 		{
 			debugmsg(username,"[datathread] client ssl accept");
-			if(!SslAccept(dataclient_sock,&clientssl,&clientsslctx))
+			if(!SslAccept(dataclient_sock,&clientssl,&clientsslctx,shouldquit))
 			{
 				debugmsg(username, "[datathread] ssl accept failed",errno);
 				return;
 			}
 			fp = fingerprint(clientssl);
-			if(config.show_fp_on_control)
-			{
-				controlthread->Write(controlthread->client_sock,"220 Client (SSL accept) datachannel fingerprint: " + fp + "\r\n",controlthread->clientssl);
-			}
+			debugmsg(username,"[datathread] client fingerprint: " + fingerprint(clientssl) + "\r\n");
 		}
 	}
 	
@@ -409,6 +431,18 @@ void CDataThread::dataloop(void)
 			debugmsg(username, "[datathread] passive - fxp");
 			if(config.use_fxpiplist)
 			{
+				// check for ip in fp list
+				if(config.fp_new_ip_msg)
+				{
+					string msg;
+					if(fpwhitelist.CheckIp(fp,clip,msg) == 1)
+					{
+						// fp added, ip not added -> send msg
+						controlthread->admin_msg = "site msg " + config.fp_msg_nick + msg + "\r\n";
+						debugmsg(username,"[datathread] ADMIN MSG: site msg " + config.fp_msg_nick + msg + "\r\n");
+					}
+				}
+
 				// first check fingerprint
 				if(!fpwhitelist.IsInList(fp) && !adminlist.IsInList(username))
 				{
@@ -480,9 +514,23 @@ void CDataThread::dataloop(void)
 			debugmsg(username, "[datathread] active - fxp");
 			if(config.use_fxpiplist)
 			{
+				// check for ip in fp list
+				if(config.fp_new_ip_msg)
+				{
+					string msg;
+					if(fpwhitelist.CheckIp(fp,activeip,msg) == 1)
+					{
+						// fp added, ip not added -> send msg
+						controlthread->admin_msg = "site msg " + config.fp_msg_nick + msg + "\r\n";
+						debugmsg(username,"[datathread] ADMIN MSG: site msg " + config.fp_msg_nick + msg + "\r\n");
+					}
+				}
+
 				// first check fingerprint
 				if(!fpwhitelist.IsInList(fp) && !adminlist.IsInList(username))
 				{
+					
+
 					// check ip ip is allowed or user is admin
 					if(!whitelist.IsInList(activeip) && !adminlist.IsInList(username))
 					{

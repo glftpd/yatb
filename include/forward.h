@@ -3,6 +3,8 @@
 
 #include "global.h"
 
+void *makeforwardthread(void* pData);
+
 class CForward
 {
 	public:

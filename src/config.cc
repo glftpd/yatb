@@ -64,9 +64,10 @@ CConfig::CConfig()
 	hash_algo = "sha256";
 	iplist_file = "";
 	crypted_iplist=0;
-	show_fp_on_control=0;
 	fpwhitelist_file = "";
 	crypted_fpwhitelist = 0;
+	fp_new_ip_msg = 0;
+	fp_msg_nick = "";
 
 	// section [ADMIN]
 	usecommands = 0;
@@ -296,11 +297,12 @@ int CConfig::readconf(string filename,string key,int crypted)
 		getentry(use_fxpiphash,"use_fxpiphash",ok,daten);
 		getentry(hash_algo,"hash_algo",ok,daten);
 		getentry(iplist_file,"iplist_file",ok,daten);
-		getentry(crypted_iplist,"crypted_iplist",ok,daten);
-		getentry(show_fp_on_control,"show_fp_on_control",ok,daten);
+		getentry(crypted_iplist,"crypted_iplist",ok,daten);		
 		getentry(fpwhitelist_file,"fpwhitelist_file",ok,daten);
 		getentry(crypted_fpwhitelist,"crypted_fpwhitelist",ok,daten);
-		
+		getentry(fp_new_ip_msg,"fp_new_ip_msg",ok,daten);
+		getentry(fp_msg_nick,"fp_msg_nick",ok,daten);
+
 		// section [ADMIN]
 		getentry(usecommands,"usecommands",ok,daten);
 		getentry(admin_list,"admin_list",ok,daten);

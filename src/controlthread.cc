@@ -76,6 +76,7 @@ CControlThread::CControlThread(int fd,string cip,int cport,string sip,int sport)
 	direction = "";
 	dirlist_ip = "";
 	dirlisting = 0;
+	admin_msg = "";
 }
 
 // destructor
@@ -272,14 +273,14 @@ int CControlThread::trytls(void)
 {
 	debugmsg(username,"[trytls] trying tls connection");
 	username = "-TRYTLS-";
-	
-	if(!SslConnect(site_sock,&sitessl,&sitesslctx))
+	int shouldquit = 0;
+	if(!SslConnect(site_sock,&sitessl,&sitesslctx,shouldquit))
 	{
 		debugmsg(username,"[trytls] ssl connect failed");
 		return 0;
 	}
 	
-	if(!SslAccept(client_sock,&clientssl,&clientsslctx))
+	if(!SslAccept(client_sock,&clientssl,&clientsslctx,shouldquit))
 	{
 		debugmsg(username,"[trytls] ssl accept failed");
 		return 0;
@@ -743,6 +744,8 @@ void CControlThread::mainloop(void)
 					gotportcmd = 0;
 					activecon = 0;
 					cpsvcmd = 0;
+					dirlisting = 0;
+					//sscn = 0;
 	
 				}
 				else if ((gotportcmd && config.traffic_bnc) || (relinked && config.traffic_bnc_relink && gotportcmd))
@@ -797,7 +800,8 @@ void CControlThread::mainloop(void)
 					gotportcmd = 0;
 					activecon = 0;
 					cpsvcmd = 0;
-				
+					dirlisting = 0;
+					//sscn = 0;
 
 				}
 				
@@ -807,7 +811,23 @@ void CControlThread::mainloop(void)
 					{						
 						return;
 					}
-					
+
+					if(IsEndline(s))
+					{
+						int code;
+						FtpCode(s,code);
+						if(code == 226)
+						{
+							if(admin_msg != "")
+							{
+								if(!Write(site_sock,admin_msg,sitessl))
+								{					
+									return;
+								}
+								admin_msg = "";
+							}
+						}
+					}
 				}
 
 		}

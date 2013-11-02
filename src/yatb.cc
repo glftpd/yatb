@@ -101,17 +101,23 @@ void reload(int)
 
 void *trafficthread(void *)
 {
+	time_t t;
+	string ti;
+	string tmpday;
+	string tmpmonth;
+	int tmpweek;
+
 	while(1)
 	{
-		debugmsg("-SYSTEM-","traffic thread start");
-		time_t t;
+		//debugmsg("-SYSTEM-","traffic thread start");
+		
 		t = time(NULL);
-		string ti = asctime(localtime(&t));
+		ti = asctime(localtime(&t));
 		//debugmsg("-SYSTEM-",ti);
 		
-		string tmpday = ti.substr(0,3);
-		string tmpmonth = ti.substr(4,3);
-		int tmpweek = atoi(ti.substr(7,3).c_str());
+		tmpday = ti.substr(0,3);
+		tmpmonth = ti.substr(4,3);
+		tmpweek = atoi(ti.substr(7,3).c_str());
 		
 		if (lastday != tmpday)
 		{
@@ -131,7 +137,7 @@ void *trafficthread(void *)
 			lastmonth = tmpmonth;
 			monthcounter.reset();
 		}
-		debugmsg("-SYSTEM-","traffic thread end");
+		//debugmsg("-SYSTEM-","traffic thread end");
 		sleep(60);
 		
 	}

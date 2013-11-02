@@ -9,6 +9,7 @@
 
 class CDataThread;
 
+void *makethread(void* pData);
 
 class CControlThread
 {
@@ -84,6 +85,7 @@ class CControlThread
 	string dirlist_ip; // ip used for (first) dirlisting
 	int site_port;
 	int dirlisting; // transfer is a dirlisting
+	string admin_msg; // msg for admin from datathread (fpwl)
 };
 
 extern list<CControlThread*> conlist;

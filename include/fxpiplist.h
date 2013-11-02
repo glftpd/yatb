@@ -1,26 +1,25 @@
-#ifndef __FPWHITELIST_H
-#define __FPWHITELIST_H
+#ifndef __FXPIPLIST_H
+#define __FXPIPLIST_H
 
 #include "global.h"
 #include "config.h"
 #include "tools.h"
 
-class FpEntry
+class FxpEntry
 {
 	public:
-	string fp;
+	string ip;
 	string comment;
 	string user;
-	vector<string> iplist; // store ip(s) of site
 };
 
-class CFpWhitelist
+class CFxpiplist
 {
 	public:
 	
-	CFpWhitelist();
+	CFxpiplist();
 	
-	~CFpWhitelist();
+	~CFxpiplist();
 	
 	void Remove(string);
 	
@@ -32,21 +31,20 @@ class CFpWhitelist
 	
 	int WriteList(string,string);
 	
-	int CheckIp(string,string,string &);
-
 	string GetComment(string);
 
 	string GetList(void);
 	
 	private:
-		
-	vector<FpEntry> List;	
+	
+	void Insert_nokey(string);
+
+	vector<FxpEntry> List;
 	
 			
 };
 
-extern CFpWhitelist fpwhitelist;
-extern string fpwl_bk,bk;
-
+extern CFxpiplist fxpiplist;
+extern string bk; // blowkey for hashing
 #endif
 

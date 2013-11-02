@@ -11,12 +11,59 @@ CFpWhitelist::~CFpWhitelist()
 	
 }
 
+// return 1 for new ip - 0 for already added ip
+int CFpWhitelist::CheckIp(string fp, string ip,string &msg)
+{
+	string tmp = "";
+	if(config.use_fxpiphash)
+	{
+		// use hash of ip?
+		tmp = hash(bk+ip,config.hash_algo);
+	}
+	else
+	{
+		tmp = ip;
+	}
+	// get fp entry
+	for(unsigned int i=0; i < List.size();i++)
+	{
+		if(List[i].fp == fp)
+		{
+			for(unsigned int k=0; k < List[i].iplist.size();k++)
+			{
+				if(List[i].iplist[k] == tmp)
+				{
+					// already added - do nothing
+					return 0;
+				}		
+			}
+			List[i].iplist.push_back(tmp);
+			msg = " new ip: " + List[i].comment + " [" + fp + "] - " + ip;
+			WriteList(config.fpwhitelist_file,fpwl_bk);
+			return 1;
+		}
+	}	
+	return -1; // fp not found
+}
+
 int CFpWhitelist::WriteList(string filename, string key)
 {
 	string daten;
 	for (unsigned int i=0;i < List.size();i++)
 	{
-		daten += List[i].fp + "," + List[i].comment + "," + List[i].user + "\r\n";
+		daten += List[i].fp + "," + List[i].comment + "," + List[i].user + ",";
+		for(unsigned int k=0; k < List[i].iplist.size();k++)
+		{
+			if(k == List[i].iplist.size() -1)
+			{
+				daten += List[i].iplist[k];
+			}
+			else
+			{
+				daten += List[i].iplist[k] + ",";
+			}
+		}
+		daten += "\r\n";
 	}
 	unsigned char *bufferin,*bufferout;
 	int s = daten.length();
@@ -150,7 +197,7 @@ void CFpWhitelist::Remove(string s)
 
 int CFpWhitelist::Insert(string s)
 {
-	// format: fp,comment,user
+	// format: fp,comment,user,ip1,ip2..
 	string fp,comment,user;
 	if (s == "") { return 0; }	
 	unsigned int pos = s.find(",",0);
@@ -164,13 +211,43 @@ int CFpWhitelist::Insert(string s)
 		pos = s.find(",",0);
 		if (pos != string::npos)
 		{
-			comment = s.substr(0,pos);
+			comment = s.substr(0,pos);			
 			s = s.substr(pos + 1, s.length() - pos - 1);
-			user = s;
+			pos = s.find(",",0);
+			if(pos == string::npos)
+			{
+				user = s;
+			}
+			else
+			{
+				user = s.substr(0,pos);
+			}
 			FpEntry entry;
 			entry.fp = upper(fp,0);
 			entry.comment = comment;
 			entry.user = user;
+			pos = s.find(",",0);
+			if (pos != string::npos)
+			{
+				s = s.substr(pos + 1, s.length() - pos - 1);				
+				// add ips if possible
+				if(s != "")
+				{
+					string tmp = "";
+					for(unsigned int i=0; i < s.length();i++)
+					{
+						if(s[i] != ',' && s[i] != '\r' && s[i] != '\n') tmp += s[i];
+						if(s[i] == ',')
+						{
+							if(tmp != "")
+							{								
+								entry.iplist.push_back(tmp);
+								tmp = "";
+							}
+						}
+					}
+				}
+			}
 			List.push_back(entry);
 			return 1;
 		}
@@ -189,11 +266,13 @@ int CFpWhitelist::Insert(string s)
 
 string CFpWhitelist::GetList(void)
 {
-	string tmp = "200- FpWhitelist report start\r\n";
+	stringstream ss;
+	ss << "200- FpWhitelist report start\r\n";
 	for (unsigned int i=0; i < List.size(); i++)
 	{
-		tmp += "200- " + List[i].fp + " - " + List[i].comment + " - " + List[i].user + "\r\n";
+		ss << "200- " + List[i].fp + " - " + List[i].comment + " - " + List[i].user +
+			" #ips: " << List[i].iplist.size() << "\r\n";
 	}
-	tmp += "200 FpWhitelist report end\r\n";
-	return tmp;
+	ss << "200 FpWhitelist report end\r\n";
+	return ss.str();
 }

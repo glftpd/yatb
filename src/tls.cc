@@ -810,7 +810,15 @@ int kill_file(string filename)
 }
 
 static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
-{	
+{
+	if(preverify_ok == 2)
+	{
+		// do nothing
+	}
+	if(ctx == NULL)
+	{
+		// do nothing
+	}
 	return 1;
 }
 

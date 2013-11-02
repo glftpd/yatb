@@ -57,9 +57,10 @@ use_fxpiphash=0;
 hash_algo=sha256;
 iplist_file=;
 crypted_iplist=0;
-show_fp_on_control=1;
 fpwhitelist_file=;
 crypted_fpwhitelist=0;
+fp_new_ip_msg=0;
+fp_msg_nick=;
 
 [ Admin ]
 usecommands=0;

@@ -6,6 +6,7 @@
 
 class CControlThread;
 
+void *makedatathread(void* pData);
 
 class CDataThread
 {

@@ -889,7 +889,7 @@ int control_read(int sock,SSL *sslcon,string &str)
 }
 
 
-int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
+int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit)
 {
 	if(!setnonblocking(sock))
 	{				
@@ -911,7 +911,7 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 	*ssl = SSL_new(*sslctx);
 	if (*ssl == NULL)
 	{
-		debugmsg("SSLCONNECT", "[SslConnect] site ssl failed!");
+		debugmsg("SSLCONNECT", "[SslConnect] sslnew failed!");
 		return 0;
 	}
 	if(SSL_set_fd(*ssl,sock) == 0)
@@ -934,7 +934,12 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 			int sslerr = SSL_get_error(*ssl, err);
 			if( sslerr == SSL_ERROR_WANT_READ || sslerr == SSL_ERROR_WANT_WRITE || sslerr == SSL_ERROR_WANT_X509_LOOKUP)
 			{
-				
+				if (shouldquit == 1) 
+				{
+					debugmsg("SSLCONNECT","[SslConnect] end(0-2)");		
+					return 0;
+				}
+				debugmsg("SSLCONNECT", "[SslConnect] want read");
 				usleep(50000);
 			}
 			else
@@ -955,7 +960,7 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 	return 1;
 }
 
-int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx)
+int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit)
 {	
 	if(!setnonblocking(sock))
 	{				
@@ -990,7 +995,11 @@ int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx)
 			int sslerr = SSL_get_error(*ssl, err);
 			if( sslerr == SSL_ERROR_WANT_READ || sslerr == SSL_ERROR_WANT_WRITE || sslerr == SSL_ERROR_WANT_X509_LOOKUP)
 			{
-				
+				if (shouldquit == 1) 
+				{
+					debugmsg("SSLACCEPT","[SslAccept] end(0-2)");		
+					return 0;
+				}
 				usleep(50000);
 			}
 			else
@@ -1398,7 +1407,8 @@ int Close(int &sock,string desc)
 	ss << "-----SOCKET---- closing " << desc << " : " << sock;
 	debugmsg("",ss.str());
 	if(sock > 0)
-	{		
+	{	
+		shutdown(sock,2);
 		if(close(sock) != -1)
 		{
 			sock = -1;
@@ -1563,7 +1573,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 		    message = "AUTH TLS failed";	
 			return 0;
 		}	
-		if(!SslConnect(sock,ssl,sslctx))
+		if(!SslConnect(sock,ssl,sslctx,shouldquit))
 		{
 		   
 			return 0;

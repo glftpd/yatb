@@ -8,7 +8,7 @@ class CIp
 	int port;
 	int working;
 	
-	CIp::CIp()
+	CIp()
 	{
 		ip = "";
 		port = 0;

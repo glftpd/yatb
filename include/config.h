@@ -83,10 +83,11 @@ class CConfig
 	int use_fxpiphash;
 	string hash_algo;
 	string iplist_file;
-	int crypted_iplist;
-	int show_fp_on_control;
+	int crypted_iplist;	
 	string fpwhitelist_file;
 	int crypted_fpwhitelist;
+	int fp_new_ip_msg;
+	string fp_msg_nick;
 
 	// section [ADMIN]
 	int usecommands;
