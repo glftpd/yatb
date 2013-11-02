@@ -136,7 +136,7 @@ int random_range(int lowest_number, int highest_number)
   }
 
   int range = highest_number - lowest_number + 1;
-  double r = ((double)rand() / (double)(RAND_MAX+1) );
+  double r = ((double)rand() / ((double)(RAND_MAX)+1) );
   return (lowest_number + abs(int(range * r)));
 }
 
@@ -1749,8 +1749,7 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 	
 	int total = 0;
 	int bytesleft = nrbytes;
-	int rc,len;
-	len = nrbytes;
+	int rc;
 	int count = 0;
 	
 	fd_set data_writefds;

@@ -350,7 +350,7 @@ int main(int argc,char *argv[])
 	
 		
 	//make gethostbyname working after chroot
-	struct sockaddr_in tmpaddr = GetIp("www.glftpd.com",21);
+	//struct sockaddr_in tmpaddr = GetIp("www.glftpd.com",21);
 	
 	char *cwd = getcwd(NULL, 4096);	
 	if (chroot(cwd))

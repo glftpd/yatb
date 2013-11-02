@@ -119,7 +119,7 @@ CControlThread::~CControlThread()
 	{
 		stringstream ss;
 		ss << "user '" << username << "' logged off";
-		syslog(LOG_ERR,ss.str().c_str());
+		syslog(LOG_ERR, "%s", ss.str().c_str());
 	}
 	if (usingssl)
 	{
@@ -340,7 +340,7 @@ void CControlThread::mainloop(void)
 	ss << "Started controlthread " << gettid();
 	if (config.syslog) 
 	{			
-		syslog(LOG_ERR, ss.str().c_str());
+		syslog(LOG_ERR, "%s", ss.str().c_str());
 	}	
 	#endif
 	
@@ -457,9 +457,9 @@ void CControlThread::mainloop(void)
 		// parse idnt command to get client ip
 		string tmp;
 		int pos;
-		if(pos == (int)string::npos) return;
 		idndtcmd = crcut(idndtcmd);
 		pos = idndtcmd.find(":",0);
+		if(pos == (int)string::npos) return;
 		tmp = idndtcmd.substr(pos + 1,idndtcmd.length() - pos - 1);
 		debugmsg(username,"[controlthread] client ip: " + tmp);
 		clientip = tmp;
@@ -612,7 +612,7 @@ void CControlThread::mainloop(void)
 						{
 							stringstream ss;
 							ss << "invalid user '" << username << "' tried to login";
-							syslog(LOG_ERR,ss.str().c_str());
+							syslog(LOG_ERR, "%s", ss.str().c_str());
 						}
 						if (config.trytorelink && !relinked)
 						{
@@ -655,7 +655,7 @@ void CControlThread::mainloop(void)
 						{
 							stringstream ss;
 							ss << "user '" << username << "' logged in";
-							syslog(LOG_ERR,ss.str().c_str());
+							syslog(LOG_ERR, "%s", ss.str().c_str());
 						}
 						gotwelcomemsg++;
 						debugmsg(username,"[controlthread] login successfull");
@@ -679,7 +679,7 @@ void CControlThread::mainloop(void)
 						{
 							stringstream ss;
 							ss << "user '" << username << "' logged in (site full)";
-							syslog(LOG_ERR,ss.str().c_str());
+							syslog(LOG_ERR, "%s", ss.str().c_str());
 						}
 						gotwelcomemsg++;
 						debugmsg(username,"[controlthread] site full");
@@ -695,7 +695,7 @@ void CControlThread::mainloop(void)
 						{
 							stringstream ss;
 							ss << "user '" << username << "' logged in (site closed)";
-							syslog(LOG_ERR,ss.str().c_str());
+							syslog(LOG_ERR, "%s", ss.str().c_str());
 						}
 						gotwelcomemsg++;
 						debugmsg(username,"[controlthread] site closed");
@@ -711,7 +711,7 @@ void CControlThread::mainloop(void)
 						{
 							stringstream ss;
 							ss << "user '" << username << "' logged in (max logins reached)";
-							syslog(LOG_ERR,ss.str().c_str());
+							syslog(LOG_ERR, "%s", ss.str().c_str());
 						}
 						gotwelcomemsg++;
 						debugmsg(username,"[controlthread] max logins reached");
@@ -729,7 +729,7 @@ void CControlThread::mainloop(void)
 							{
 								stringstream ss;
 								ss << "user '" << username << "' failed to log in";
-								syslog(LOG_ERR,ss.str().c_str());
+								syslog(LOG_ERR, "%s", ss.str().c_str());
 							}
 							gotwelcomemsg++;
 							debugmsg(username,"[controlthread] login incorrect");

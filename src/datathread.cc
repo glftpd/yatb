@@ -793,8 +793,7 @@ int CDataThread::SWrite(int sock,char *data,int nrbytes,SSL *ssl)
 	// no select - using blocking sockets
 	int total = 0;
 	int bytesleft = nrbytes;
-	int rc,len;
-	len = nrbytes;
+	int rc;
 	int count = 0;
 	
 	while(total < nrbytes)
