@@ -82,7 +82,7 @@ class CConfig
 	string site_full;
 	string reloadcmd;
 	int usecommands;
-	int showconnectfailmsg;
+	int show_connect_failmsg;
 	string pidfile;
 	string connectfailmsg;
 	int syslog;

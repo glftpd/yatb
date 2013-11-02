@@ -370,7 +370,7 @@ enable/disable all admin commands
 
 --------------------------------------------------------
 
-- showconnectfailmsg=1;
+- show_connect_failmsg=1;
 
 send message to client if connect to site fails
 

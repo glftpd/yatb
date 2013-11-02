@@ -216,6 +216,12 @@ void CForward::mainloop(void)
 		return ;
 	}
 	
+	if(setuid(config.uid) < 0)
+	{
+		debugmsg("-SYSTEM-"," - WARNING: - Could not set uid!");
+					
+	}
+	
 	while(1)
 	{				
 		int tmp_sock;

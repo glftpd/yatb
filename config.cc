@@ -60,7 +60,7 @@ CConfig::CConfig()
 	site_closed = "";
 	site_full = "";
 	usecommands = 0;
-	showconnectfailmsg = 0;
+	show_connect_failmsg = 0;
 	pidfile = "";
 	connectfailmsg = "";
 	syslog = 0;
@@ -775,13 +775,13 @@ int CConfig::readconf(string filename,string key)
    		return 0;
    	}
    	
-   	if ((val=getkey("showconnectfailmsg",daten)) != "ERROR")
+   	if ((val=getkey("show_connect_failmsg",daten)) != "ERROR")
    	{
-   		showconnectfailmsg = atoi(val.c_str());
+   		show_connect_failmsg = atoi(val.c_str());
    	}
    	else
    	{
-   		cout << "showconnectfailmsg missing\n";
+   		cout << "show_connect_failmsg missing\n";
    		
    		return 0;
    	}

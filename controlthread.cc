@@ -6,7 +6,6 @@
 #include "lock.h"
 #include "tls.h"
 
-
 // c wrapper for creating main connection thread
 void *makethread(void* pData)
 {
@@ -198,7 +197,7 @@ int CControlThread::tryrelink(int state)
 	if(!Connect(site_sock,config.relink_ip,config.relink_port,config.connect_timeout,shouldquit))
 	{
 		debugmsg(username, "[relink] could not connect to relinksite!",errno);
-		if(config.showconnectfailmsg) { Write(client_sock,"427 Login failed!\r\n",clientssl); }
+		if(config.show_connect_failmsg) { Write(client_sock,"427 Login failed!\r\n",clientssl); }
 		return 0;
 	}
 	
@@ -361,7 +360,7 @@ void CControlThread::mainloop(void)
 			
 	if(!Connect(site_sock,config.site_ip,config.site_port,config.connect_timeout,shouldquit))
 	{
-		if(config.showconnectfailmsg) { Write(client_sock,config.connectfailmsg + "\r\n",clientssl); }
+		if(config.show_connect_failmsg) { Write(client_sock,config.connectfailmsg + "\r\n",clientssl); }
 		debugmsg(username, "[controlthread] could not connect to site!",errno);
 		return;
 	}

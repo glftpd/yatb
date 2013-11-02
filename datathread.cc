@@ -182,24 +182,25 @@ void CDataThread::dataloop(void)
 		if ((datalisten_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
 		{
 			debugmsg(username, "[datathread] unable to create listen sock!",errno);		
-			
+			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
 			return;
 		}
 		if(!SocketOption(datalisten_sock,SO_REUSEADDR))
 		{
 			debugmsg(username,"setsockopt error!");
+			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
 			return;
 		}
 		if (!Bind(datalisten_sock, config.listen_ip, newport))
 		{
 			debugmsg(username,"Unable to bind to port!");
-			
+			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
 			return ;
 		}
 		if (listen(datalisten_sock, config.pending) == -1)
 		{
 			debugmsg(username,"Unable to listen!");
-			
+			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
 			return ;
 		}
 		string clip;
