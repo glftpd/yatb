@@ -264,6 +264,28 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 			}
 		}
 	}
+	else
+	{
+		int err;
+		socklen_t errlen = sizeof(err);
+		if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&errlen) < 0)
+		{
+			debugmsg("-SYSTEM-","[Connect] end(0-4)");
+			return 0;
+		}
+		if(err)
+		{
+			debugmsg("-SYSTEM-","[Connect] end(0-5)");
+			return 0;
+		}
+		if(!SocketOption(sock,SO_KEEPALIVE))
+		{
+			debugmsg("-SYSTEM-", "[Connect] client setsockopt error!",errno);
+			return 0;
+		}
+		debugmsg("-SYSTEM-","[Connect] end(1)");
+		return 1;
+	}
 	
 	return 0;
 }
@@ -312,6 +334,7 @@ int Accept(int &listensock,int &newsock,string &clientip,int &clientport,int sec
 	}
 	else
 	{
+		// no timeout? block and wait
 		if(!setblocking(listensock))
 		{
 			return 0;
@@ -325,6 +348,10 @@ int Accept(int &listensock,int &newsock,string &clientip,int &clientport,int sec
 	}
 	clientip = inet_ntoa(adr.sin_addr);
 	clientport = ntohs(adr.sin_port);
+	if(!setnonblocking(newsock))
+		{
+			return 0;
+		}
 	if(!SocketOption(newsock,SO_KEEPALIVE))
 	{
 		debugmsg("-SYSTEM-", "[Accept] client setsockopt error!",errno);
