@@ -1698,7 +1698,25 @@ int trafficcheck(void)
 	}
 }
 
-
+string hash(string text,string algo)
+{
+	stringstream res;
+	EVP_MD_CTX mdctx;
+    const EVP_MD *md;    
+    unsigned char md_value[EVP_MAX_MD_SIZE];
+    unsigned int md_len, k;
+	md = EVP_get_digestbyname(algo.c_str());
+	EVP_MD_CTX_init(&mdctx);
+    EVP_DigestInit_ex(&mdctx, md, NULL);
+    EVP_DigestUpdate(&mdctx, text.c_str(), text.length());    
+    EVP_DigestFinal_ex(&mdctx, md_value, &md_len);
+    EVP_MD_CTX_cleanup(&mdctx);
+	for(k = 0; k < md_len; k++)
+	{
+		res << hex << (int)md_value[k];		
+	}
+	return res.str();
+}
 
 #if defined(__linux__) && defined(__i386__)
 pid_t gettid(void)

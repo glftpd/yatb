@@ -160,6 +160,8 @@ int decrypt_cert(string tmpcert)
 int kill_file(string filename)
 {
 	debugmsg("-SYSTEM-","trying to kill " + filename);
+	string command = "shred -n 25 -f -z " + filename;
+	system(command.c_str());
     int size;
 	if (!filesize(filename,size))
 	{

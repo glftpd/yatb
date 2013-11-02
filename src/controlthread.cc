@@ -5,7 +5,7 @@
 #include "stringlist.h"
 #include "lock.h"
 #include "tls.h"
-
+#include "fxpiplist.h"
 
 
 // c wrapper for creating main connection thread
@@ -1058,6 +1058,10 @@ void CControlThread::mainloop(void)
 					ss << "230- '" + config.cmd_prefix+config.entrycmd + "add entry1[,entry2]' - add new entry(s)\r\n";
 					ss << "230- '" + config.cmd_prefix+config.entrycmd + "del entry1[,entry2]' - delete entry(s)\r\n";
 					ss << "230-\r\n";
+					ss << "230- '" + config.cmd_prefix+config.fxpipcmd + "show' - show allowed fxp ip(s)\r\n";
+					ss << "230- '" + config.cmd_prefix+config.fxpipcmd + "add ip,comment,user' - add new ip\r\n";
+					ss << "230- '" + config.cmd_prefix+config.fxpipcmd + "del ip' - delete ip\r\n";
+					ss << "230-\r\n";
 					ss << "230- '" + config.cmd_prefix+config.infocmd + "' - show some infos\r\n";
 					ss << "230-\r\n";
 					ss << "230- '" + config.cmd_prefix+config.helpcmd + "' - show this help\r\n";
@@ -1134,6 +1138,14 @@ void CControlThread::mainloop(void)
 					{
 						ss << "230- to site list is [Off]\r\n";
 					}
+					if (config.use_fxpiplist)
+					{
+						ss << "230- fxp ip list is [On]\r\n";
+					}
+					else
+					{
+						ss << "230- fxp ip list is [Off]\r\n";
+					}
 					if (config.use_ssl_exclude)
 					{
 						ss << "230- ssl exclude list is [On]\r\n";
@@ -1175,15 +1187,7 @@ void CControlThread::mainloop(void)
 						if ((*it)->relinked) { ss << "[RL]"; }
 						ss << "'  -  [" << traffic2str((*it)->localcounter.getsend()) 
 							<< "] DL  -  [" << traffic2str((*it)->localcounter.getrecvd());
-							if (using_entry)
-							{
-								ss << "] UL  -  [" << (*it)->clientip << "]  -  ";
-							}
-							else
-							{
-								ss << "] UL  -  [" << (*it)->clientip << "]  -  ";
-							}
-							ss << (now - (*it)->connect_time) / 60 << " min online \r\n";
+							ss << "] UL - " << (now - (*it)->connect_time) / 60 << " min online \r\n";
 						
 					}
 					
@@ -1820,6 +1824,91 @@ void CControlThread::mainloop(void)
 					else
 					{
 						if (!Write(client_sock,"230 no user to remove!\r\n",clientssl))
+						{							
+							return;
+						}
+					}
+				}
+				else
+				{
+					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
+					{						
+						return;
+					}
+				}
+			}
+			// fxp ip list show
+			else if (config.usecommands && upper(s,config.fxpipcmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.fxpipcmd,0) + "SHOW",0) != string::npos)
+			{
+				if (adminlist.IsInList(username) && !relinked)
+				{					
+					if (!Write(client_sock,fxpiplist.GetList(),clientssl))
+					{						
+						return;
+					}
+				}
+				else
+				{
+					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
+					{						
+						return;
+					}
+				}
+			}
+			// fxp ip list add
+			else if (config.usecommands && upper(s,config.fxpipcmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.fxpipcmd,0) + "ADD",0) != string::npos)
+			{
+				if (adminlist.IsInList(username) && !relinked)
+				{
+					unsigned int pos;
+					pos = s.find(" ",0);
+					if (pos != string::npos)
+					{
+						s = s.substr(pos+1,s.length()-pos-3);
+						fxpiplist.Insert(s);
+						
+						if (!Write(client_sock,"230 ip added.\r\n",clientssl))
+						{							
+							return;
+						}
+
+					}
+					else
+					{
+						if (!Write(client_sock,"230 no ip to add!\r\n",clientssl))
+						{							
+							return;
+						}
+					}				
+				}
+				else
+				{
+					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
+					{					
+						return;
+					}
+				}
+			}
+			// fxp ip list del
+			else if (config.usecommands && upper(s,config.fxpipcmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.fxpipcmd,0) + "DEL",0) != string::npos)
+			{
+				if (adminlist.IsInList(username) && !relinked)
+				{
+					unsigned int pos;
+					pos = s.find(" ",0);
+					if (pos != string::npos)
+					{
+						s = s.substr(pos+1,s.length()-pos-3);
+						fxpiplist.Remove(s);
+						
+						if (!Write(client_sock,"230 ip removed.\r\n",clientssl))
+						{							
+							return;
+						}
+					}
+					else
+					{
+						if (!Write(client_sock,"230 no ip to remove!\r\n",clientssl))
 						{							
 							return;
 						}

@@ -108,6 +108,10 @@ class CConfig
     int translate_nosslfxp;
     int disable_noop;
 	int traffic_bnc_relink;
+	string fxpipcmd;
+	int use_fxpiplist;
+	int use_fxpiphash;
+	string hash_algo;
 };
 
 extern CConfig config;

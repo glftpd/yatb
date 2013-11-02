@@ -84,6 +84,10 @@ CConfig::CConfig()
     disable_noop = 0;
     max_numlogins = "";
 	relink_notls = 0;
+	fxpipcmd = "";
+	use_fxpiplist = 0;
+	use_fxpiphash = 0;
+	hash_algo = "sha256";
 }
 
 CConfig::~CConfig()
@@ -1063,6 +1067,50 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "traffic_bnc_relink missing\n";
+   		
+   		ok = 0;
+   	}
+	
+	if ((val=getkey("fxpipcmd",daten)) != "ERROR")
+   	{
+   		fxpipcmd = val;
+   	}
+   	else
+   	{
+   		cout << "fxpipcmd missing\n";
+   		
+   		ok = 0;
+   	}
+	
+	if ((val=getkey("use_fxpiplist",daten)) != "ERROR")
+   	{
+   		use_fxpiplist = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "use_fxpiplist missing\n";
+   		
+   		ok = 0;
+   	}
+
+	if ((val=getkey("use_fxpiphash",daten)) != "ERROR")
+   	{
+   		use_fxpiphash = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "use_fxpiphash missing\n";
+   		
+   		ok = 0;
+   	}
+
+	if ((val=getkey("hash_algo",daten)) != "ERROR")
+   	{
+   		hash_algo = val;
+   	}
+   	else
+   	{
+   		cout << "hash_algo missing\n";
    		
    		ok = 0;
    	}

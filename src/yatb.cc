@@ -13,6 +13,7 @@
 #include "tls.h"
 #include "forward.h"
 #include "iplist.h"
+#include "fxpiplist.h"
 
 #ifndef SOLARIS
 #define SOLARIS (defined(sun) && (defined(__svr4__) || defined(__SVR4)))
@@ -59,6 +60,7 @@ int listen_sock;
 struct sockaddr_in listen_addr;
 long int nr_logins=0;
 CStringlist adminlist,fxpfromsitelist,fxptositelist,sslexcludelist,entrylist;
+CFxpiplist fxpiplist;
 time_t start_time;
 
 int use_blowconf = 1;

@@ -5,6 +5,7 @@
 #include "stringlist.h"
 #include "counter.h"
 #include "tls.h"
+#include "fxpiplist.h"
 
 // c wrapper for creating data connection thread
 void *makedatathread(void* pData)
@@ -377,6 +378,15 @@ void CDataThread::dataloop(void)
 		{
 			// fxp
 			debugmsg(username, "[datathread] passive - fxp");
+			if(config.use_fxpiplist)
+			{
+				// check ip ip is allowed or user is admin
+				if(!fxpiplist.IsInList(clip) && !adminlist.IsInList(username))
+				{
+					controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+					return;
+				}
+			}
 			if(config.enforce_tls && config.enforce_tls_fxp && (!sslprotp || !usingssl))
 			{
 				if((config.use_ssl_exclude && sslexcludelist.IsInList(username)) || relinked)
@@ -431,6 +441,15 @@ void CDataThread::dataloop(void)
 		{
 			// fxp
 			debugmsg(username, "[datathread] active - fxp");
+			if(config.use_fxpiplist)
+			{
+				// check ip ip is allowed or user is admin
+				if(!fxpiplist.IsInList(activeip) && !adminlist.IsInList(username))
+				{
+					controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+					return;
+				}
+			}
 			if(config.enforce_tls && config.enforce_tls_fxp && (!sslprotp || !usingssl))
 			{
 				if((config.use_ssl_exclude && sslexcludelist.IsInList(username)) || relinked)

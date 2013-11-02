@@ -46,12 +46,17 @@ ssl_relink=0;
 relink_notls=0;
 traffic_bnc_relink=0;
 
-[ Admin ]
-admin_list=hawk;
+[ Fxp ]
 use_fxpfromsite_list=0;
 fxp_fromsite_list=;
 use_fxptosite_list=0;
 fxp_tosite_list=;
+use_fxpiplist=0;
+use_fxpiphash=0;
+hash_algo=sha256;
+
+[ Admin ]
+admin_list=hawk;
 cmd_prefix=e;
 infocmd=info;
 helpcmd=help;
@@ -62,6 +67,7 @@ sslexcludecmd=nossl;
 reloadcmd=reload;
 entrycmd=entry;
 killcmd=kill;
+fxpipcmd=fxpip;
 usecommands=1;
 
 [ Ftpd setup ]
