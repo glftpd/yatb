@@ -4,6 +4,8 @@
 
 static MUTEX_TYPE *mutex_buf = NULL;
 
+static DH *globaldh = NULL;
+
 static void locking_function(int mode, int n, const char * file, int line)
 {
 	stringstream ss;
@@ -118,23 +120,87 @@ DH *tmp_dh_cb(SSL *ssl, int is_export, int keylength)
 {
 	stringstream ss;
 	ss << is_export << keylength << ssl;
-	debugmsg("SYSTEM","[tmp_dh_cb] start");
-	FILE *fp = fopen(config.cert_path.c_str(), "r");
-	if (fp == NULL) 
-	{ 
-		debugmsg("SYSTEM","[tmp_dh_cb] could not open file!"); 
-		return NULL;
-	}
-	else
-	{
-		DH *dh = NULL;
-		dh = PEM_read_DHparams(fp, NULL, NULL, NULL);
-		fclose(fp);
-		if (dh == NULL) { debugmsg("SYSTEM","[tmp_dh_cb] DH ERROR!!!"); }
-		debugmsg("SYSTEM","[tmp_dh_cb] end");
-		return dh;
-	}
+	
+	return globaldh;
+	
 }
+
+int decrypt_cert(string tmpcert)
+{
+	int size;
+	if (!filesize(config.cert_path,size))
+	{
+		debugmsg("-SYSTEM-", "cert decrypt error");
+		return 0;
+	}
+	
+	unsigned char *in,*out;
+	in = new unsigned char [size];
+	out = new unsigned char [size];
+	in = readfile(config.cert_path,size);
+	if(!decrypt(cert_bk,in,out,size))
+	{
+		debugmsg("-SYSTEM-", "cert decrypt error");
+		memset(in, 0,size);
+		memset(out, 0,size);
+		delete in;
+		delete out;
+		return 0;
+	}
+	if (!writefile(tmpcert,out,size))
+	{
+		memset(in, 0,size);
+		memset(out, 0,size);
+		delete in;
+		delete out;
+		debugmsg("-SYSTEM-", "cert decrypt error");
+		return 0;
+	}
+	memset(in, 0,size);
+	memset(out, 0,size);
+	delete in;
+	delete out;
+	return 1;
+}
+
+
+int kill_cert(string tmpcert)
+{
+    int size;
+	if (!filesize(tmpcert,size))
+	{
+		debugmsg("-SYSTEM-", "error getting filesize");
+		return 0;
+	}
+    unsigned char *out;
+    out = new unsigned char [size];
+    memset(out, 0,size);
+    if (!writefile(tmpcert,out,size))
+	{		
+		delete out;
+		debugmsg("-SYSTEM-", "cert write error");
+		return 0;
+	}
+    memset(out, 1,size);
+    if (!writefile(tmpcert,out,size))
+	{		
+		delete out;
+		debugmsg("-SYSTEM-", "cert write error");
+		return 0;
+	}
+    memset(out, 2,size);
+    if (!writefile(tmpcert,out,size))
+	{		
+		delete out;
+		debugmsg("-SYSTEM-", "cert write error");
+		return 0;
+	}
+    delete out;
+    string command = "rm " + tmpcert;
+    system(command.c_str());
+    return 1;
+}
+
 
 int ssl_setup()
 {
@@ -155,12 +221,27 @@ int ssl_setup()
 		return 0;
 	}
 
-  //SSL_CTX_set_options(clientsslctx, SSL_OP_NO_SSLv2);
+  
 	SSL_CTX_set_default_verify_paths(clientsslctx);
 	SSL_CTX_set_options(clientsslctx,SSL_OP_ALL);
 	SSL_CTX_set_mode(clientsslctx,SSL_MODE_AUTO_RETRY);
-
-	if (SSL_CTX_use_certificate_file(clientsslctx,config.cert_path.c_str(),SSL_FILETYPE_PEM) <= 0)
+	
+	string certfile = "certtmp";
+	
+	if(!config.crypted_cert)
+	{
+		certfile = config.cert_path;
+	}
+	else
+	{
+		if(!decrypt_cert(certfile))
+		{
+			debugmsg("-SYSTEM-", "cert decrypt error");
+			return 0;
+		}
+	}
+	
+	if (SSL_CTX_use_certificate_file(clientsslctx,certfile.c_str(),SSL_FILETYPE_PEM) <= 0)
 	{
 		if(config.syslog)
 		{
@@ -169,7 +250,7 @@ int ssl_setup()
 		debugmsg("-SYSTEM-", "error loading cert file!");
 		return 0;
 	}
-	if (SSL_CTX_use_PrivateKey_file(clientsslctx, config.cert_path.c_str(), SSL_FILETYPE_PEM) <=0 )
+	if (SSL_CTX_use_PrivateKey_file(clientsslctx, certfile.c_str(), SSL_FILETYPE_PEM) <=0 )
 	{
 		if(config.syslog)
 		{
@@ -178,7 +259,24 @@ int ssl_setup()
 		debugmsg("-SYSTEM-", "error loading private key!");
 		return 0;
 	}
+	
+	FILE *fp = fopen(certfile.c_str(), "r");
+	if (fp == NULL) 
+	{ 
+		debugmsg("SYSTEM","[tmp_dh_cb] could not open file!"); 
+		return 0;
+	}
+	globaldh = PEM_read_DHparams(fp, NULL, NULL, NULL);
+	fclose(fp);
 
+    if(config.crypted_cert)
+    {
+        if(!kill_cert(certfile))
+        {
+            debugmsg("SYSTEM","error deleting tmp cert"); 
+        }
+    }
+    
 	if ( !SSL_CTX_check_private_key(clientsslctx))
 	{
 		if(config.syslog)

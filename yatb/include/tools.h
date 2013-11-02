@@ -45,6 +45,14 @@ string traffic2str(double);
 
 int printsockopt(int, string );
 
+int filesize(string ,int &);
+unsigned char *readfile(string ,int );
+int writefile(string ,unsigned char *,int );
+int decrypt(string ,unsigned char *,unsigned char *,int );
+int encrypt(string ,unsigned char *,unsigned char *,int );
+
+int Login(int &,string ,int ,string ,string ,int ,SSL **,SSL_CTX **);
+
 #if defined(__linux__) && defined(__i386__)
 pid_t gettid(void);
 #endif

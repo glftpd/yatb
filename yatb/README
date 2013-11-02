@@ -50,6 +50,12 @@ cron job:
 
 edit bnctest.sh to fit your needs and add to crontab
 
+config reload:
+--------------
+
+the config can be reloaded via kill -HUP command
+
+
 options in config file:
 -----------------------
 
@@ -449,6 +455,18 @@ will speed up dirlisting with gl 1.32
 
 command prefix for all admin commands
 ex. "e" for entrys
+
+--------------------------------------------------------
+
+- crypted_cert=0;
+
+when enabled a crypted cert file is used
+
+--------------------------------------------------------
+
+- ssl_relink=0;
+
+when enabled auth tls is used for relinking
 
 --------------------------------------------------------
 

@@ -286,7 +286,7 @@ void CDataThread::dataloop(void)
 	if(!config.ssl_forward) debugmsg(username, "[datathread] not using ssl forward");
 	
 	// ssl stuff
-	if(!config.ssl_forward && usingssl && sslprotp)
+	if((!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink))
 	{
 		if(!SslConnect(datasite_sock,&sitessl,&sitesslctx))
 		{
@@ -295,7 +295,7 @@ void CDataThread::dataloop(void)
 		}
 	}
 	
-	if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp))
+	if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink))
 	{
 		if(!SslAccept(dataclient_sock,&clientssl,&clientsslctx))
 		{

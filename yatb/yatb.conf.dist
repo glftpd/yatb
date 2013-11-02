@@ -16,6 +16,7 @@ traffic_bnc=1;
 
 [ SSL ]
 cert_path=dsa.pem;
+crypted_cert=0;
 enforce_tls=1;
 enforce_tls_fxp=0;
 ssl_forward=1;
@@ -33,6 +34,7 @@ relink_ip=1.2.3.4;
 relink_port=21;
 relink_user=anonymous;
 relink_pass=a@b.de;
+ssl_relink=0;
 
 [ Admin ]
 admin_list=hawk;

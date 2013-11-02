@@ -72,6 +72,7 @@ CConfig::CConfig()
 	no_idnt_cmd = 0;
 	ssl_ascii_cache = 0;
 	cmd_prefix = "";
+    ssl_relink = 0;
 }
 
 CConfig::~CConfig()
@@ -126,7 +127,7 @@ int CConfig::readconf(string filename,string key)
 		conffile.read((char*)bufferin,end-start);
 		conffile.close();
 		unsigned char ivec[8];
-		memset(ivec,0, sizeof(ivec));
+		memset(ivec,0, 8);
 		int ipos = 0;
 		outlen = end-start;
 		string daten;
@@ -142,6 +143,8 @@ int CConfig::readconf(string filename,string key)
 	
 			if(!EVP_CipherUpdate(&ctx, bufferout, &outlen, bufferin, end-start))
 			{
+				memset(bufferin,0,end-start);
+				memset(bufferout,0,end-start );
 				delete [] bufferin;
 	 			delete [] bufferout;
 				return 0;
@@ -924,6 +927,33 @@ int CConfig::readconf(string filename,string key)
    		return 0;
    	}
    	
+   	if ((val=getkey("crypted_cert",daten)) != "ERROR")
+   	{
+   		crypted_cert = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "crypted_cert missing\n";
+   		
+   		return 0;
+   	}
+
+    if ((val=getkey("ssl_relink",daten)) != "ERROR")
+   	{
+   		ssl_relink = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "ssl_relink missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	for(unsigned int i=0;i < daten.length();i++)
+   	{
+   		daten[i] = '0';
+   	}
+		
  		return 1;
 	}
 

@@ -16,6 +16,7 @@ int THREAD_cleanup(void);
 
 
 extern SSL_CTX *clientsslctx;
+extern string cert_bk;
 
 struct CRYPTO_dynlock_value
 {
@@ -23,7 +24,9 @@ struct CRYPTO_dynlock_value
 };
 
 
+int decrypt_cert(string);
+int kill_cert(string);
 
-int ssl_setup();
+int ssl_setup(void);
 
 #endif

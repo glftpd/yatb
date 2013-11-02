@@ -95,6 +95,8 @@ class CConfig
 	int no_idnt_cmd;
 	int ssl_ascii_cache;
 	string cmd_prefix;
+	int crypted_cert;
+    int ssl_relink;
 };
 
 extern CConfig config;

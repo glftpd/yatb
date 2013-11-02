@@ -62,6 +62,7 @@ long *lock_count;
 SSL_CTX *clientsslctx;
 CLock list_lock,config_lock,globals_lock,sock_lock;
 string bk = "";
+string cert_bk;
 string conffile;
 
 void reload(int)
@@ -122,12 +123,15 @@ int main(int argc,char *argv[])
 		
 		#ifndef config_key
 			char *k;
-			k = getpass("Enter blowfish key: ");
+			k = getpass("Enter config blowfish key: ");
 			bk = k;
+			memset(k, 0,strlen(k));
+		   
 		#endif
 		
 		#ifdef config_key
 			bk = config_key;
+			memset(config_key, 0,strlen(config_key));
 		#endif
 		
 		if (!config.readconf(conffile,bk))
@@ -142,6 +146,15 @@ int main(int argc,char *argv[])
 		{		
 			return -1;
 		}
+	}
+	
+	if(config.crypted_cert)
+	{
+		char *ck;
+		ck = getpass("Enter cert blowfish key: ");
+		cert_bk = ck;
+		memset(ck, 0,strlen(ck));
+	  
 	}
 	
 	adminlist.Insert(config.admin_list);

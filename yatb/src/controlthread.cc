@@ -177,7 +177,7 @@ void CControlThread::deletedatathread(void)
 int CControlThread::tryrelink(int state)
 {
 	debugmsg(username,"[relink] start");
-	if (site_sock > -1) { close(site_sock); }
+	Close(site_sock,"site_sock");
 	if (sitesslctx != NULL) { SSL_CTX_free(sitesslctx); sitesslctx = NULL; }
 	if (sitessl != NULL) { SSL_free(sitessl); sitessl = NULL; }
 	
@@ -198,38 +198,18 @@ int CControlThread::tryrelink(int state)
 			return 0;
 		}
 	}
-	
-	if(!Connect(site_sock,config.relink_ip,config.relink_port,config.connect_timeout,shouldquit))
-	{
-		debugmsg(username, "[relink] could not connect to relinksite!",errno);
+
+    if(!Login(site_sock,config.relink_ip,config.relink_port,config.relink_user,config.relink_pass,config.ssl_relink,&sitessl,&sitesslctx))
+    {
+        debugmsg(username, "[relink] could not connect to relinksite!",errno);
 		if(config.show_connect_failmsg) { Write(client_sock,"427 Login failed!\r\n",clientssl); }
-		return 0;
-	}
+    }
+
+	
 	
 	string s;
-	if(! Read(site_sock,NULL,s))
-	{
-		return 0;
-	}
-	debugmsg(username,"[relink] " +s);
-	if(!Write(site_sock,"USER " + config.relink_user + "\r\n",NULL))
-	{
-		return 0;
-	}
-	if(!Read(site_sock,NULL,s))
-	{
-		return 0;
-	}
-	debugmsg(username,"[relink] " + s);
-	if(!Write(site_sock,"PASS " + config.relink_pass + "\r\n",NULL))
-	{
-		return 0;
-	}
-	if(!Read(site_sock,NULL,s))
-	{
-		return 0;
-	}
-	debugmsg(username,"[relink] " + s);
+	
+	
 
 	if (state)
 	{
@@ -267,10 +247,12 @@ int CControlThread::tryrelink(int state)
 			}
 		}
 	}
-	if (!Write(client_sock,s,clientssl))
+
+	if (!Write(client_sock,"230 user " + username + " logged in.\r\n",clientssl))
 	{
 		return 0;
 	}
+
 	relinked = 1;
 
 	gotusercmd = 1;

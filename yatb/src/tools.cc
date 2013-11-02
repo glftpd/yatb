@@ -261,7 +261,7 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 				}
 				if(err)
 				{
-					debugmsg("CONNECT","[Connect] end(0-5)");
+					debugmsg("CONNECT","[Connect] end(0-5)",err);
 					return 0;
 				}
 				if(!SocketOption(sock,SO_KEEPALIVE))
@@ -439,7 +439,7 @@ int IsEndline(string tmp)
 	{
 		//multiple lines
 		
-		if(tmp[pos2+5] != '-')
+		if(tmp[pos2+5] != '-' && tmp[pos2+4] != ' ')
 		{			
 			return 1;
 		}
@@ -1328,6 +1328,208 @@ int Close(int &sock,string desc)
 		sock_lock.UnLock();
 		return 1;
 	}
+}
+
+int filesize(string filename,int &s)
+{
+	ifstream ifile(filename.c_str(),ios::binary | ios::in);
+	if (!ifile)
+	{
+		return 0;
+	}
+	int start,end;
+	start = ifile.tellg();
+	ifile.seekg(0,ios::end);
+	end = ifile.tellg();
+	ifile.seekg(0,ios::beg);
+	s = end-start;
+	return 1;
+}
+
+unsigned char *readfile(string filename,int s)
+{
+	ifstream ifile(filename.c_str(),ios::binary | ios::in);
+	unsigned char *tmp;
+	tmp = new unsigned char [s];
+	ifile.read((char*)tmp,s);
+	ifile.close();
+	return tmp;
+}
+
+int writefile(string filename,unsigned char *data,int s)
+{
+	ofstream ofile(filename.c_str(),ios::binary | ios::out | ios::trunc);
+	if (!ofile)
+	{
+		return 0;
+	}
+	ofile.write((char*)data,s);
+	ofile.close();
+	return 1;
+}
+
+int decrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
+{
+	unsigned char ivec[8];
+	memset(ivec,0, 8);
+	int ipos = 0;
+	int outlen = s;
+
+	EVP_CIPHER_CTX ctx;
+	EVP_CIPHER_CTX_init(&ctx);
+        EVP_CipherInit_ex(&ctx, EVP_bf_cfb(), NULL, NULL, NULL,ipos );
+        EVP_CIPHER_CTX_set_key_length(&ctx, key.length());
+        EVP_CipherInit_ex(&ctx, NULL, NULL,(unsigned char*)key.c_str(), ivec,ipos );
+
+	if(!EVP_CipherUpdate(&ctx, dataout, &outlen, datain, s))
+	{
+		return 0;
+	}
+
+ 	EVP_CIPHER_CTX_cleanup(&ctx);
+ 	for (unsigned int i=0;i<key.length();i++) { key[i] = '0'; }
+        return 1;
+}
+
+int encrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
+{
+	unsigned char ivec[8];
+	memset(ivec, 0,8);
+	int outlen = s;
+
+	EVP_CIPHER_CTX ctx;
+	EVP_CIPHER_CTX_init(&ctx);
+        EVP_EncryptInit_ex(&ctx, EVP_bf_cfb(), NULL, NULL, NULL );
+        EVP_CIPHER_CTX_set_key_length(&ctx, key.length());
+        EVP_EncryptInit_ex(&ctx, NULL, NULL, (unsigned char*)key.c_str(), ivec );
+
+	if(!EVP_EncryptUpdate(&ctx, dataout, &outlen, datain, s))
+	{
+		return 0;
+	}
+
+ 	EVP_CIPHER_CTX_cleanup(&ctx);
+ 	for (unsigned int i=0;i<key.length();i++) { key[i] = '0'; }
+        return 1;
+}
+
+int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **ssl,SSL_CTX **sslctx)
+{
+	unsigned int pos;
+	
+	int shouldquit = 0;
+	if (!Connect(sock,ip,port,5,shouldquit))
+	{		
+		debugmsg("LOGIN","can't connect");
+		return 0;
+	}
+	string reply = "";
+	while(!IsEndline(reply))
+	{
+		string tmp;
+		if(!control_read(sock,*ssl,tmp))
+		{
+		   debugmsg("LOGIN","read error");
+			return 0;
+		}
+		reply += tmp;
+	}	
+	if(usessl)
+	{
+		if(!control_write(sock,"AUTH TLS\r\n",*ssl))
+		{
+		   debugmsg("LOGIN","write error");
+			return 0;
+		}
+		reply = "";
+		while(!IsEndline(reply))
+		{
+			string tmp;
+			if(!control_read(sock,*ssl,tmp))
+			{
+				debugmsg("LOGIN","read error");
+				return 0;
+			}
+			reply += tmp;
+		}
+		
+		pos = reply.find("AUTH TLS successful",0);
+		if(pos == string::npos)
+		{
+		    	
+			return 0;
+		}	
+		if(!SslConnect(sock,ssl,sslctx))
+		{
+		   
+			return 0;
+		}
+	}
+	if(!control_write(sock,"user " + user + "\r\n",*ssl))
+	{
+	   debugmsg("LOGIN","write error");
+		return 0;
+	}
+	reply = "";
+	while(!IsEndline(reply))
+	{
+		string tmp;
+		if(!control_read(sock,*ssl,tmp))
+		{
+		   debugmsg("LOGIN","read error");
+			return 0;
+		}
+		reply += tmp;
+	}
+	// standard gl message
+	pos = reply.find("331 Password required for",0);
+	if(pos == string::npos)
+	{
+		// standard anonymous ftp message
+		pos = reply.find("login ok",0);
+		if(pos == string::npos)
+		{
+			pos = reply.find("specify the password",0);
+			if(pos == string::npos)
+			{ 	
+				return 0;      
+			}
+		}
+	}
+	if(!control_write(sock,"pass " + pass + "\r\n",*ssl))
+	{
+		debugmsg("LOGIN","write error");
+		return 0;
+	}
+	reply = "";
+	while(!IsEndline(reply))
+	{
+		string tmp;
+		if(!control_read(sock,*ssl,tmp))
+		{
+			debugmsg("LOGIN","read error");
+			return 0;
+		}
+		reply += tmp;
+	}
+	//standard gl message	
+	pos = reply.find("logged in.",0);
+	if(pos == string::npos)
+	{		
+		// standard anonymous ftp message
+		pos = reply.find("access granted",0);
+		if(pos == string::npos)
+		{
+			pos = reply.find("Login successful",0);
+			if(pos == string::npos)
+			{
+				  	
+				return 0;
+			}
+		}
+	}
+   
+	return 1;
 }
 
 #if defined(__linux__) && defined(__i386__)
