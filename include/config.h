@@ -107,6 +107,7 @@ class CConfig
     string opt_dh_file;
     int translate_nosslfxp;
     int disable_noop;
+	int traffic_bnc_relink;
 };
 
 extern CConfig config;

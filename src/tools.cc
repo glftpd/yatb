@@ -1569,8 +1569,8 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 	}
 	if(!control_write(sock,"user " + user + "\r\n",*ssl))
 	{
-	   debugmsg("LOGIN","write error");
-	   message = "write error";
+		debugmsg("LOGIN","write error");
+		message = "write error";
 		return 0;
 	}
 	reply = "";
@@ -1579,6 +1579,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 		message = "read error";
 		return 0;
 	}
+	debugmsg("LOGIN",reply);
 	int code = 0;
 	if(!FtpCode(reply,code))
 	{
@@ -1598,6 +1599,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 			{ 	
 				if(code != 331 && code != 230)
 				{
+					debugmsg("LOGIN","login failed");
 					message = "login failed";
 					return 0;
 				}
@@ -1618,6 +1620,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 			message = "read error";
 			return 0;
 		}
+		debugmsg("LOGIN",reply);
 		if(!FtpCode(reply,code))
 		{
 			message = "ftpcode error";
@@ -1636,6 +1639,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 				{
 					if(code != 230)
 					{
+						debugmsg("LOGIN","login failed");
 						message = "login failed";  	
 						return 0;
 					}
@@ -1645,10 +1649,12 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 	}
    if(usessl)
    {
+	   debugmsg("LOGIN","ssl login ok");
    		message = "SSL login successfull";
    }
    else
    {
+	   debugmsg("LOGIN","normal login ok");
    		message = "Login successfull";
    }
 	return 1;

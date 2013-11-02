@@ -195,7 +195,7 @@ int CControlThread::tryrelink(int state)
 	
 	if (config.listen_ip != "")
 	{
-		if(!Bind(site_sock,config.relink_ip,0))
+		if(!Bind(site_sock,config.listen_ip,0))
 		{
 			debugmsg(username,"[controlthread] connect ip - could not bind",errno);
 			return 0;
@@ -535,7 +535,7 @@ void CControlThread::mainloop(void)
 						}
 						
 					}
-					if (IsEndline(s) && upper(s,s.length()).find(upper(config.user_access_denied,config.user_access_denied.length()),0) != string::npos)
+					if (!relinked && IsEndline(s) && upper(s,s.length()).find(upper(config.user_access_denied,config.user_access_denied.length()),0) != string::npos)
 					{
 						debugmsg(username,"[controlthread] reply: " + s);
 						debugmsg(username,"[controlthread] user incorrect");
@@ -549,9 +549,7 @@ void CControlThread::mainloop(void)
 						{
 							debugmsg(username,"[controlthread] trying to relink");
 							if (!tryrelink(1))
-							{
-								
-								
+							{								
 								return;
 							}
 						}
@@ -568,9 +566,12 @@ void CControlThread::mainloop(void)
 					}
 					else
 					{
-						if (!Write(client_sock,s,clientssl))
-						{						
-							return;
+						if(!relinked)
+						{
+							if (!Write(client_sock,s,clientssl))
+							{						
+								return;
+							}
 						}
 					}
 				}
@@ -693,7 +694,7 @@ void CControlThread::mainloop(void)
 
 					}
 				}
-				else if (gotpasvcmd && config.traffic_bnc && !gotportcmd)
+				else if ((gotpasvcmd && config.traffic_bnc && !gotportcmd) || (gotpasvcmd && relinked && config.traffic_bnc_relink))
 				{			
 					
 					debugmsg(username,"[controlthread] create datathread");
@@ -742,7 +743,7 @@ void CControlThread::mainloop(void)
 					cpsvcmd = 0;
 	
 				}
-				else if (gotportcmd && config.traffic_bnc)
+				else if ((gotportcmd && config.traffic_bnc) || (relinked && config.traffic_bnc_relink && gotportcmd))
 				{
 					activecon = 1;
 					debugmsg(username,"[controlthread] create datathread");
@@ -834,7 +835,7 @@ void CControlThread::mainloop(void)
 			{
 
 				s = "ABOR\r\n";
-				if(config.traffic_bnc)
+				if(config.traffic_bnc || (relinked && config.traffic_bnc_relink))
 				{
 					deletedatathread();	
 				}
@@ -972,7 +973,7 @@ void CControlThread::mainloop(void)
 			}
 			else if (upper(s,5).find("PASV",0) != string::npos)
 			{
-				if (config.traffic_bnc)
+				if (config.traffic_bnc || (relinked && config.traffic_bnc_relink))
 				{
 					deletedatathread();
 					gotpasvcmd = 1;
@@ -991,15 +992,7 @@ void CControlThread::mainloop(void)
 				debugmsg(username,"[controlthread] port command");
 				gotportcmd = 1;
 				portcmd = s;
-				if (!config.traffic_bnc)
-				{
-					if(!Write(site_sock,s,sitessl))
-					{						
-						return;
-					}
-					
-				}
-				else
+				if(config.traffic_bnc || (relinked && config.traffic_bnc_relink))
 				{
 					deletedatathread();				
 					if (!Write(site_sock,"PASV\r\n",sitessl))
@@ -1007,11 +1000,19 @@ void CControlThread::mainloop(void)
 						return;
 					}
 				}
+				else
+				{
+					if(!Write(site_sock,s,sitessl))
+					{						
+						return;
+					}
+					
+				}
 			}
 			
 			else if(upper(s,5).find("QUIT",0) != string::npos)
 			{				
-				if (config.send_traffic_info)
+				if (config.send_traffic_info&& !relinked)
 				{
 					stringstream ss;
 					
@@ -1211,7 +1212,7 @@ void CControlThread::mainloop(void)
 			
 			else if (upper(s,5).find("CPSV",0) != string::npos)
 			{
-				if (config.traffic_bnc)
+				if (config.traffic_bnc || (relinked && config.traffic_bnc_relink))
 				{
 					deletedatathread();
 					gotpasvcmd = 1;

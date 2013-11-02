@@ -44,6 +44,7 @@ relink_user=anonymous;
 relink_pass=a@b.de;
 ssl_relink=0;
 relink_notls=0;
+traffic_bnc_relink=0;
 
 [ Admin ]
 admin_list=hawk;

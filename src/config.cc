@@ -1055,6 +1055,17 @@ int CConfig::readconf(string filename,string key)
    		
    		ok = 0;
    	}
+	
+	if ((val=getkey("traffic_bnc_relink",daten)) != "ERROR")
+   	{
+   		traffic_bnc_relink = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "traffic_bnc_relink missing\n";
+   		
+   		ok = 0;
+   	}
 
    	for(unsigned int i=0;i < daten.length();i++)
    	{
