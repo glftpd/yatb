@@ -202,7 +202,10 @@ int CControlThread::tryrelink(int state)
 		if(config.show_connect_failmsg) { Write(client_sock,"427 Login failed!\r\n",clientssl); }
 		return 0;
 	}
-	
+	if(!setblocking(site_sock))
+	{
+		return 0;
+	}
 	string s;
 	if(! Read(site_sock,NULL,s))
 	{
@@ -282,6 +285,14 @@ int CControlThread::trytls(void)
 {
 	debugmsg(username,"[trytls] trying tls connection");
 	username = "-TRYTLS-";
+	if(!setnonblocking(site_sock))
+	{
+		return 0;
+	}
+	if(!setnonblocking(client_sock))
+	{
+		return 0;
+	}
 	if(!SslConnect(site_sock,&sitessl,&sitesslctx))
 	{
 		debugmsg(username,"[trytls] ssl connect failed");
@@ -293,7 +304,14 @@ int CControlThread::trytls(void)
 		debugmsg(username,"[trytls] ssl accept failed");
 		return 0;
 	}	
-	
+	if(!setblocking(site_sock))
+	{
+		return 0;
+	}
+	if(!setblocking(client_sock))
+	{
+		return 0;
+	}
 	debugmsg(username, "[trytls] end trytls");
 	usingssl = 1;
 	username = "-AFTERTRYTLS-";
@@ -376,6 +394,14 @@ void CControlThread::mainloop(void)
 		return;
 	}
 	
+	if(!setblocking(site_sock))
+	{
+		return;
+	}
+	if(!setblocking(client_sock))
+	{
+		return;
+	}
 	printsockopt(site_sock,"site_sock");
 	printsockopt(client_sock,"client_sock");
 	

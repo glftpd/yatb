@@ -499,6 +499,11 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 	if (Connect(ident_sock,ip,113,timeout,shouldquit) )
 	{				
 		debugmsg("-SYSTEM-","[Ident] try to read ident reply");
+		if(!setblocking(ident_sock))
+		{
+			close(ident_sock);				
+			return 0;
+		}
 		FD_ZERO(&readfds);
 		FD_SET(ident_sock, &readfds);
 		stringstream ss;
@@ -598,13 +603,17 @@ int control_write(int sock,string s,SSL *sslcon)
 		{
 			if (sslcon != NULL)
 			{
-				if(count == 3) return 0;
+				if(count == 3) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then 3 retries
 				int err = SSL_get_error(sslcon,n);
 				
-				if (err == SSL_ERROR_WANT_READ) { count++; continue; }
-				if (err == SSL_ERROR_WANT_WRITE) { count++; continue; }
-				if (err == SSL_ERROR_WANT_X509_LOOKUP) { count++; continue; }				
+				if (err == SSL_ERROR_WANT_READ) { usleep(2000);count++; continue; }
+				if (err == SSL_ERROR_WANT_WRITE) { usleep(2000);count++; continue; }
+				if (err == SSL_ERROR_WANT_X509_LOOKUP) { usleep(2000);count++; continue; }				
 				
+			}
+			else
+			{
+				if (errno == EAGAIN) { usleep(2000);count++; continue; }
 			}
 			
 			break;
@@ -682,15 +691,18 @@ int control_read(int sock,SSL *sslcon,string &str)
 			{
 				if (sslcon != NULL)
 				{
-					if(count == 3) return 0;
+					if(count == 3) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then 3 retries
 					int err = SSL_get_error(sslcon,rc);
 					
-					if (err == SSL_ERROR_WANT_READ) { count++; continue; }
-					if (err == SSL_ERROR_WANT_WRITE) { count++; continue; }
-					if (err == SSL_ERROR_WANT_X509_LOOKUP) { count++; continue; }					
+					if (err == SSL_ERROR_WANT_READ) { usleep(2000);count++; continue; }
+					if (err == SSL_ERROR_WANT_WRITE) { usleep(2000);count++; continue; }
+					if (err == SSL_ERROR_WANT_X509_LOOKUP) { usleep(2000);count++; continue; }					
 					
 				}
-				
+				else
+				{
+					if (errno == EAGAIN) { usleep(2000);count++; continue; }
+				}
 				delete [] buffer;
 				return 0;
 			}
