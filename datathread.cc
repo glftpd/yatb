@@ -364,7 +364,7 @@ void CDataThread::dataloop(void)
 			
 	}
 	
-	fd_set data_readfds,data_writefds;
+	fd_set data_readfds;
 	
 	
 	
@@ -409,27 +409,12 @@ void CDataThread::dataloop(void)
 				break;
 			}
 			
-			FD_ZERO(&data_writefds);
-			FD_SET(dataclient_sock,&data_writefds);
-			struct timeval tv;
-			tv.tv_sec = config.read_write_timeout;
-			tv.tv_usec = 0;
-			if (select(dataclient_sock+1, NULL, &data_writefds, NULL, &tv) < 1)
-			{
-				debugmsg(username,"[datathread] write timeout",errno);
-				return;
-			}
-			if (FD_ISSET(dataclient_sock, &data_writefds))
-			{
-				if(!Write(dataclient_sock,buffer,rc,clientssl))
-				{					
-					break;
-				}
-			}
-			else
-			{
+			
+			if(!Write(dataclient_sock,buffer,rc,clientssl))
+			{					
 				break;
 			}
+			
 				
 
 		}
@@ -445,27 +430,13 @@ void CDataThread::dataloop(void)
 				break;
 			}
 			
-			FD_ZERO(&data_writefds);
-			FD_SET(datasite_sock,&data_writefds);
-			struct timeval tv;
-			tv.tv_sec = config.read_write_timeout;
-			tv.tv_usec = 0;
-			if (select(datasite_sock+1, NULL, &data_writefds, NULL, &tv) < 1)
-			{
-				debugmsg(username,"[datathread] write timeout",errno);
-				return;
-			}
-			if (FD_ISSET(datasite_sock, &data_writefds))
-			{
-				if(!Write(datasite_sock,buffer,rc,sitessl))
-				{				
-					break;
-				}
-			}
-			else
-			{
+			
+			if(!Write(datasite_sock,buffer,rc,sitessl))
+			{				
 				break;
 			}
+			
+			
 
 		}
 
@@ -482,7 +453,7 @@ int CDataThread::Read(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 {
 	if(!DataRead(sock ,buffer,nrbytes,ssl))
 	{
-		debugmsg(username,"[DataRead] read failed!");
+		debugmsg(username,"[DataRead] read failed!",errno);
 		return 0;
 	}
 	if(sock == dataclient_sock)
@@ -500,7 +471,7 @@ int CDataThread::Write(int sock,char *data,int nrbytes,SSL *ssl)
 {
 	if(!DataWrite(sock,data,nrbytes,ssl))
 	{
-		debugmsg(username,"[DataWrite] write failed!");
+		debugmsg(username,"[DataWrite] write failed!",errno);
 		return 0;
 	}
 	if(sock == dataclient_sock)

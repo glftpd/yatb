@@ -85,7 +85,7 @@ class CFwData
 			return;
 		}
 		
-		fd_set data_readfds,data_writefds;
+		fd_set data_readfds;
 		
 		while(1)
 		{
@@ -123,22 +123,12 @@ class CFwData
 				{					
 					break;
 				}
-				FD_ZERO(&data_writefds);
-				FD_SET(client_sock,&data_writefds);
-				struct timeval tv;
-				tv.tv_sec = config.read_write_timeout;
-				tv.tv_usec = 0;
-				if (select(client_sock+1, NULL, &data_writefds, NULL, &tv) < 1)
+				
+				if(!DataWrite(client_sock,buffer,rc,clientssl))
 				{					
 					break;
 				}
-				if (FD_ISSET(client_sock, &data_writefds))
-				{
-					if(!DataWrite(client_sock,buffer,rc,clientssl))
-					{					
-						break;
-					}
-				}
+				
 				
 
 			}
@@ -153,22 +143,12 @@ class CFwData
 				{					
 					break;
 				}
-				FD_ZERO(&data_writefds);
-				FD_SET(server_sock,&data_writefds);
-				struct timeval tv;
-				tv.tv_sec = config.read_write_timeout;
-				tv.tv_usec = 0;
-				if (select(server_sock+1, NULL, &data_writefds, NULL, &tv) < 1)
-				{					
+				
+				if(!DataWrite(server_sock,buffer,rc,sitessl))
+				{				
 					break;
 				}
-				if (FD_ISSET(server_sock, &data_writefds))
-				{
-					if(!DataWrite(server_sock,buffer,rc,sitessl))
-					{				
-						break;
-					}
-					}
+					
 	
 			}
 			

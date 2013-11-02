@@ -942,53 +942,97 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 	int rc,len;
 	len = nrbytes;
 	int count = 0;
-	while(total < nrbytes)
+	
+	fd_set data_writefds;
+	FD_ZERO(&data_writefds);
+	FD_SET(sock,&data_writefds);
+	struct timeval tv;
+	tv.tv_sec = config.read_write_timeout;
+	tv.tv_usec = 0;
+	if (select(sock+1, NULL, &data_writefds, NULL, &tv) < 1)
 	{
-		
-			if(ssl == NULL)
-			{		
-				rc = send(sock,data+total,bytesleft,0);
-			}
-			else
-			{
-				rc = SSL_write(ssl,data+total,bytesleft);
-			}
-			if(rc > 0)
-			{
-				total += rc;
-				bytesleft -= rc;
-			}
-			else if (rc == 0)
-			{
-				debugmsg("-SYSTEM-","[data_write] connection closed",errno);
-			}
-			else
-			{
-				if(count == config.retry_count) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then x retries
-				if (ssl != NULL)
-				{
-					
-					int err = SSL_get_error(ssl,rc);
-					
-					if (err == SSL_ERROR_WANT_READ) { usleep(2000);count++; continue; }
-					if (err == SSL_ERROR_WANT_WRITE) { usleep(2000);count++; continue; }
-					if (err == SSL_ERROR_WANT_X509_LOOKUP) { usleep(2000);count++; continue; }					
-					
+		debugmsg("DATAWRITE"," write timeout",errno);
+		return 0;
+	}
+	if (FD_ISSET(sock, &data_writefds))
+	{
+				
+		while(total < nrbytes)
+		{
+			
+				if(ssl == NULL)
+				{		
+					rc = send(sock,data+total,bytesleft,0);
 				}
 				else
 				{
-					if (errno == EAGAIN) { usleep(2000);count++; continue; }
+					rc = SSL_write(ssl,data+total,bytesleft);
 				}
-				debugmsg("-SYSTEM-","[data_write] error!",errno);  
-				return 0; 
+				if(rc > 0)
+				{
+					total += rc;
+					bytesleft -= rc;
+				}
+				else if (rc == 0)
+				{
+					debugmsg("DATAWRITE","[data_write] connection closed",errno);
+					return 0;
+				}
+				else
+				{
+					if(count == config.retry_count) { debugmsg("DATAWRITE","retry count reached"); return 0; } // not more then x retries
+					if (ssl != NULL)
+					{
+						
+						int err = SSL_get_error(ssl,rc);
+						
+						if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_X509_LOOKUP) 
+						{ 
+							debugmsg("DATAWRITE","want read/write error");
+							fd_set data_writefds;
+							FD_ZERO(&data_writefds);
+							FD_SET(sock,&data_writefds);
+							struct timeval tv;
+							tv.tv_sec = config.read_write_timeout;
+							tv.tv_usec = 0;
+							if (select(sock+1, NULL, &data_writefds, NULL, &tv) < 1)
+							{
+								debugmsg("DATAWRITE"," write timeout",errno);
+								return 0;
+							}
+							if (FD_ISSET(sock, &data_writefds))
+							{
+								count++; 
+								continue; 
+							}
+							else
+							{
+								return 0;
+							}
+						}
+							
+						
+					}
+					else
+					{
+						debugmsg("DATAWRITE","eagain error");
+						if (errno == EAGAIN) { usleep(2000);count++; continue; }
+					}
+					debugmsg("DATAWRITE","[data_write] error!",errno);  
+					return 0; 
+				}
 			}
-		}
 		
 		
 		
 	
-	return 1;	
-	
+		return 1;	
+	}
+	else
+	{
+		debugmsg("DATAWRITE"," fdset error",errno);
+		return 0;
+	}
 }
 
 int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
@@ -1024,13 +1068,36 @@ int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 				{
 					int err = SSL_get_error(ssl,rc);
 					
-					if (err == SSL_ERROR_WANT_READ) { usleep(2000);count++; continue; }
-					if (err == SSL_ERROR_WANT_WRITE) { usleep(2000);count++; continue; }
-					if (err == SSL_ERROR_WANT_X509_LOOKUP) { usleep(2000);count++; continue; }					
+					if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_X509_LOOKUP) 
+					{ 
+						debugmsg("DATAREAD","want read/write error");
+						fd_set data_readfds;
+						FD_ZERO(&data_readfds);
+						FD_SET(sock,&data_readfds);
+						struct timeval tv;
+						tv.tv_sec = config.read_write_timeout;
+						tv.tv_usec = 0;
+						if (select(sock+1, &data_readfds, NULL, NULL, &tv) < 1)
+						{
+							debugmsg("DATAREAD"," write timeout",errno);
+							return 0;
+						}
+						if (FD_ISSET(sock, &data_readfds))
+						{
+							count++; 
+							continue; 
+						}
+						else
+						{
+							return 0;
+						}
+					}
+					
 					
 				}
 				else
 				{
+					debugmsg("DATAREAD","eagain error");
 					if (errno == EAGAIN) { usleep(2000);count++; continue; }
 				}
 				debugmsg("-SYSTEM-","[data_read] error!"); 
