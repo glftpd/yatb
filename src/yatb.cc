@@ -12,6 +12,7 @@
 #include "tools.h"
 #include "tls.h"
 #include "forward.h"
+#include "iplist.h"
 
 #ifndef SOLARIS
 #define SOLARIS (defined(sun) && (defined(__svr4__) || defined(__SVR4)))
@@ -51,6 +52,7 @@ daemon(int nochdir, int noclose)
 #endif
 
 CConfig config;
+CIplist iplist;
 list<CControlThread*> conlist;
 CCounter totalcounter,daycounter,weekcounter,monthcounter;
 int listen_sock;
@@ -81,6 +83,7 @@ void reload(int)
 	else
 	{
 		config = tmpconf;
+		iplist.readlist(config.site_ip,config.site_port);
 		debugmsg("SYSTEM","config reloaded");						
 		
 	}
@@ -217,7 +220,11 @@ int main(int argc,char *argv[])
 	fxptositelist.Insert(config.fxp_tosite_list);
 	sslexcludelist.Insert(config.sslexclude_list);
 	entrylist.Insert(config.entry_list);
-	
+	if(!iplist.readlist(config.site_ip,config.site_port))
+	{
+		debugmsg("-SYSTEM-","error in ip/port list");
+		return -1;
+	}
 	
 	
 	// fork or exit
@@ -397,9 +404,14 @@ int main(int argc,char *argv[])
 				debugmsg("-SYSTEM-","[main] list create start");
 				// create a new connection and put it into the list
 				list_lock.Lock();
-			
+				
+				string sip; // site ip
+				int sport; // site port
+				
+				iplist.getip(sip,sport);
+								
 				CControlThread *tmp;
-				tmp = new CControlThread(tmp_sock,clientip,clientport);
+				tmp = new CControlThread(tmp_sock,clientip,clientport,sip,sport);
 				conlist.push_back(tmp);
 			
 				list_lock.UnLock();

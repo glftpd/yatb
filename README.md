@@ -87,6 +87,7 @@ listen port for the bnc
 
 if you want to use entry(s) add ips here
 only connections from this ip(s) are accepted
+seperator is ,
 
 --------------------------------------------------------
 
@@ -106,12 +107,15 @@ if set listen_interface is ignored
 - site_ip=1.2.3.4;
 
 ip of ftp server to connect to
+(can be list of ips seperated by ',')
+(in this case site_port must be list of the same size)
 
 --------------------------------------------------------
 
 - site_port=123;
 
 listen port of ftp server to connect to
+(can be list of ports seperated by ',')
 
 --------------------------------------------------------
 
@@ -124,6 +128,7 @@ ip used to connect to site (not needed)
 - server_string=220 FTP server ready.;
 
 server string displayed after connect
+(make sure 4. char is space)
 
 --------------------------------------------------------
 
@@ -216,13 +221,14 @@ you can shift this if you set add_to_passive to 10 or -10 for example
 - port_range_start=28001;
 - port_range_end=30000;
 
-port number for relinked data connections is picked from this range
+port number for _relinked_ data connections is picked from this range
 
 --------------------------------------------------------
 
 - use_port_range=1;
 
 if enabled port number is taken from specified range else same as ftpd uses
+(relinking only!)
 
 --------------------------------------------------------
 
@@ -282,7 +288,7 @@ users allowed to fxp from site
 
 - use_fxptosite_list=0;
 
-if enabled only users in fxp_fromsite_list are allowed to fxp to site
+if enabled only users in fxp_tosite_list are allowed to fxp to site
 
 --------------------------------------------------------
 

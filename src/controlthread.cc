@@ -30,11 +30,12 @@ void *makethread(void* pData)
 
 
 // constructor
-CControlThread::CControlThread(int fd,string cip,int cport)
+CControlThread::CControlThread(int fd,string cip,int cport,string sip,int sport)
 {
 	debugmsg("-SYSTEM-","[konstruktor] start");
 	client_sock = fd;
-	
+	site_ip = sip;
+	site_port = sport;
 	site_sock = -1;
 	sitessl = NULL;
 	clientssl = NULL;
@@ -357,7 +358,7 @@ void CControlThread::mainloop(void)
 	
 	debugmsg(username,"[controlthread] try to connect to site");
 			
-	if(!Connect(site_sock,config.site_ip,config.site_port,config.connect_timeout,shouldquit))
+	if(!Connect(site_sock,site_ip,site_port,config.connect_timeout,shouldquit))
 	{
 		if(config.show_connect_failmsg) { Write(client_sock,config.connectfailmsg + "\r\n",clientssl); }
 		debugmsg(username, "[controlthread] could not connect to site!",errno);
@@ -1214,7 +1215,7 @@ void CControlThread::mainloop(void)
 					else
 					{
 						config = tmpconf;
-												
+						iplist.readlist(config.site_ip,config.site_port);						
 						if (!Write(client_sock,"230 config reloaded.\r\n",clientssl))
 						{							
 							return;

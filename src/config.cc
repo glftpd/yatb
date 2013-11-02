@@ -7,7 +7,7 @@ CConfig::CConfig()
 	listen_port = 0;
 	site_ip = "";
 	connect_ip = "";
-	site_port = 0;
+	site_port = "";
 	listen_interface = "";
 	listen_ip = "";
 	server_string  = "";
@@ -211,7 +211,7 @@ int CConfig::readconf(string filename,string key)
 		
    	if ((val=getkey("site_port",daten)) != "ERROR")
    	{
-   		site_port = atoi(val.c_str());
+   		site_port = val.c_str();
    	}
    	else
    	{

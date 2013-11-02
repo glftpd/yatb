@@ -24,7 +24,7 @@ class CConfig
 	int listen_port;
 	string site_ip;
 	string connect_ip;
-	int site_port;
+	string site_port;
 	string listen_interface;
 	string listen_ip;
 	string server_string;

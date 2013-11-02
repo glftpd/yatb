@@ -5,6 +5,7 @@
 #include "global.h"
 #include "counter.h"
 #include "lock.h"
+#include "iplist.h"
 
 class CDataThread;
 
@@ -16,7 +17,7 @@ class CControlThread
 	pthread_t tid; // thread id
 
 
-	CControlThread(int,string,int);
+	CControlThread(int,string,int,string,int);
 	~CControlThread();
 	int DirectionSet(void); //returns 1 if transfer direction is set
 	void SetDirection(int); 
@@ -79,6 +80,8 @@ class CControlThread
 	CLock writelock;
 	string clientip;
 	int clientport;
+	string site_ip;
+	int site_port;
 };
 
 extern list<CControlThread*> conlist;
@@ -94,6 +97,8 @@ extern string bk;
 extern string conffile;
 
 extern string yatbfilename;
+
+extern CIplist iplist;
 
 #endif
 
