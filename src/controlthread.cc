@@ -1188,8 +1188,37 @@ void CControlThread::mainloop(void)
 					gotpasvcmd = 1;
 					sslprotp = 1;
 					cpsvcmd = 1;
-					if(!Write(site_sock,"CPSV\r\n",sitessl))
-					{					
+					if(config.ssl_forward == 0)
+					{
+						if(!Write(site_sock,"PASV\r\n",sitessl))
+						{					
+							return;
+						}
+					}
+					else
+					{
+						if(!Write(site_sock,"CPSV\r\n",sitessl))
+						{					
+							return;
+						}
+					}
+				}
+				else
+				{
+					if (!Write(site_sock,s,sitessl))
+					{											
+						return;
+					}
+				}
+			}
+			else if (upper(s,8).find("SSCN ON",0) != string::npos)
+			{
+				debugmsg(username,"[controlthread] sscn on command");
+				cpsvcmd = 1;
+				if(config.ssl_forward == 0 && config.traffic_bnc)
+				{
+					if (!Write(client_sock,"200 SSCN:CLIENT METHOD\r\n",clientssl))
+					{						
 						return;
 					}
 				}
@@ -1732,7 +1761,15 @@ void CControlThread::mainloop(void)
 					return;
 				}				
 			}
-			
+			else if (upper(s,5).find("NLST",0) != string::npos)
+			{
+				direction = "download";
+				SetDirection(1);
+				if (!Write(site_sock,s,sitessl))
+				{											
+					return;
+				}				
+			}
 			else
 			{
 				if (!Write(site_sock,s,sitessl))

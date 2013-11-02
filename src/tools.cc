@@ -846,7 +846,7 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 	if(SSL_set_fd(*ssl,sock) == 0)
 	{
 		debugmsg("SSLCONNECT", "[SslConnect] ssl set fd failed!");
-		debugmsg("SSLCONNECT","[SslAccept] " +  (string)ERR_error_string(ERR_get_error(), NULL));
+		debugmsg("SSLCONNECT","[SslConnect] " +  (string)ERR_error_string(ERR_get_error(), NULL));
 		return 0;
 	}
 	debugmsg("SSLCONNECT","[SslConnect] try to connect...");
@@ -869,7 +869,7 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 			else
 			{
 				debugmsg("SSLCONNECT", "[SslConnect] TLS Connection failed!");
-				debugmsg("SSLCONNECT","[SslAccept] " +  (string)ERR_error_string(ERR_get_error(), NULL));
+				debugmsg("SSLCONNECT","[SslConnect] " +  (string)ERR_error_string(ERR_get_error(), NULL));
 				return 0;
 			}
 		}

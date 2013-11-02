@@ -67,7 +67,7 @@ CDataThread::CDataThread(int cpsv, int tt, int pp, int rl, int ussl, int actvcon
 	clientssl = NULL;
 	sitessl = NULL;
 	sitesslctx = NULL;
-	
+	tmpctx = NULL;
 	buffer = new char[config.buffersize];
 	
 	controlthread = ct;
@@ -137,6 +137,13 @@ void CDataThread::closeconnection(void)
 			debugmsg(username, "[closeconnection free sitesslctx");
 			SSL_CTX_free(sitesslctx); 
 			sitesslctx = NULL; 
+		}
+		
+		if (tmpctx != NULL) 
+		{ 
+			debugmsg(username, "[closeconnection free tmpctx");
+			SSL_CTX_free(tmpctx); 
+			tmpctx = NULL; 
 		}
 		
 		debugmsg(username, "[closeconnection] free ssl error queue");
@@ -285,6 +292,8 @@ void CDataThread::dataloop(void)
 	if(sslprotp) debugmsg(username, "[datathread] protection set to private");
 	if(!config.ssl_forward) debugmsg(username, "[datathread] not using ssl forward");
 	
+	
+	
 	// ssl stuff
 	if((!config.ssl_forward && usingssl && sslprotp && !relinked) || (relinked && config.ssl_relink))
 	{
@@ -298,7 +307,7 @@ void CDataThread::dataloop(void)
 	if(!cpsvcmd)
 	{
 		debugmsg(username,"[datathread] no cpsv command");
-		if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink) || (!relinked && usingssl && !sslprotp && config.translate_nosslfxp))
+		if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink))
 		{
 			debugmsg(username,"[datathread] client ssl accept");
 			if(!SslAccept(dataclient_sock,&clientssl,&clientsslctx))
@@ -311,10 +320,10 @@ void CDataThread::dataloop(void)
 	else
 	{
 		debugmsg(username,"[datathread] cpsv command");
-		if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink) || (!relinked && usingssl && !sslprotp && config.translate_nosslfxp))
+		if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink))
 		{
 			debugmsg(username,"[datathread] client ssl connect");
-			if(!SslConnect(dataclient_sock,&clientssl,&clientsslctx))
+			if(!SslConnect(dataclient_sock,&clientssl,&tmpctx))
 			{
 				debugmsg(username, "[datathread] ssl connect failed",errno);
 				return;

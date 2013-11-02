@@ -35,7 +35,7 @@ class CDataThread
 	int Read(int  ,char *,int &,SSL *);
 	
 	SSL *sitessl,*clientssl;
-	SSL_CTX *sitesslctx;
+	SSL_CTX *sitesslctx,*tmpctx;
 	
 	int datalisten_sock,datasite_sock,dataclient_sock;
 
