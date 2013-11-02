@@ -612,11 +612,27 @@ void CControlThread::mainloop(void)
 						if(config.syslog)
 						{
 							stringstream ss;
-							ss << "user '" << username << "' logged in (site full)";
+							ss << "user '" << username << "' logged in (site closed)";
 							syslog(LOG_ERR,ss.str().c_str());
 						}
 						gotwelcomemsg++;
 						debugmsg(username,"[controlthread] site closed");
+						if(!Write(client_sock,s,clientssl))
+						{								
+							return;
+						}							
+						return;
+					}
+					else if (IsEndline(s) && upper(s,s.length()).find(upper(config.max_numlogins,config.max_numlogins.length()),0) != string::npos)
+					{
+						if(config.syslog)
+						{
+							stringstream ss;
+							ss << "user '" << username << "' logged in (max logins reached)";
+							syslog(LOG_ERR,ss.str().c_str());
+						}
+						gotwelcomemsg++;
+						debugmsg(username,"[controlthread] max logins reached");
 						if(!Write(client_sock,s,clientssl))
 						{								
 							return;

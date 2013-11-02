@@ -45,6 +45,7 @@ class CConfig
 	string relink_pass;
 	string user_access_denied;
 	string user_login_success;
+	string max_numlogins;
 	int add_to_passive_port;
 	
 	int port_range_start;

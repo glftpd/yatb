@@ -82,6 +82,7 @@ CConfig::CConfig()
     opt_dh_file = "";
     translate_nosslfxp = 0;
     disable_noop = 0;
+    max_numlogins = "";
 }
 
 CConfig::~CConfig()
@@ -1028,6 +1029,17 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "disable_noop missing\n";
+   		
+   		ok = 0;
+   	}
+   	
+   	if ((val=getkey("max_numlogins",daten)) != "ERROR")
+   	{
+   		max_numlogins = val;
+   	}
+   	else
+   	{
+   		cout << "max_numlogins missing\n";
    		
    		ok = 0;
    	}

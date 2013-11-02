@@ -523,6 +523,12 @@ if enabled, noop command is not send to site
 
 --------------------------------------------------------
 
+max_numlogins=Sorry, your account is restricted to;
+
+if max. number of logins is reached, this msg is send
+
+--------------------------------------------------------
+
 special bnc commands:
 ---------------------
 

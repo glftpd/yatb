@@ -1,4 +1,3 @@
-// dummy
 [ Debug ]
 debug=0;
 log_to_screen=0;
@@ -71,6 +70,7 @@ user_access_denied=access denied.;
 user_login_success=logged in.;
 site_closed=The server has been shut down, try again later.;
 site_full=The site is full, try again later.;
+max_numlogins=Sorry, your account is restricted to;
 show_connect_failmsg=1;
 connectfailmsg=427 Connection failed!;
 

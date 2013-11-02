@@ -360,7 +360,7 @@ void CDataThread::dataloop(void)
 		{
 			// direct download
 			debugmsg(username, "[datathread] passive - direct dl");
-			if(config.enforce_tls && config.enforce_tls && (!sslprotp || !usingssl))
+			if(config.enforce_tls && (!sslprotp || !usingssl))
 			{
 				if(config.use_ssl_exclude && sslexcludelist.IsInList(username))
 				{
@@ -414,7 +414,7 @@ void CDataThread::dataloop(void)
 		{
 			// direct download
 			debugmsg(username, "[datathread] active - direct dl");
-			if(config.enforce_tls && config.enforce_tls && (!sslprotp || !usingssl))
+			if(config.enforce_tls && (!sslprotp || !usingssl))
 			{
 				if(config.use_ssl_exclude && sslexcludelist.IsInList(username))
 				{

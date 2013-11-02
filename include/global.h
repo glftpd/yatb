@@ -33,8 +33,8 @@
 
 using namespace std;
 
-#define version "Yet another traffic bouncer 1.2.7 (c) Hawk/PPX"
-#define builddate "16.10.2005"
+#define version "Yet another traffic bouncer 1.2.8 (c) Hawk/PPX"
+#define builddate "08.11.2005"
 
 #if defined(__GNUC__) && __GNUC__ < 3
 #define ios_base ios
