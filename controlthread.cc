@@ -349,10 +349,11 @@ void CControlThread::mainloop(void)
 	}
 		
 	connect_time = time(NULL);
-	debugmsg(username,"[controlthread] try to get ident reply");
+	
 	string ident_user = "*";
 	if (config.use_ident)
-	{		
+	{	
+		debugmsg(username,"[controlthread] try to get ident reply");
 		if(Ident(clientip,clientport,config.listen_port,config.connect_ip,ident_user,config.ident_timeout))
 		{
 		}
@@ -405,7 +406,7 @@ void CControlThread::mainloop(void)
 	printsockopt(site_sock,"site_sock");
 	printsockopt(client_sock,"client_sock");
 	
-	if (!using_entry)
+	if (!using_entry && !config.no_idnt_cmd)
 	{
 	
 		stringstream idnt_cmd;
@@ -419,7 +420,7 @@ void CControlThread::mainloop(void)
 		}	
 	
 	}
-	else
+	else if(!config.no_idnt_cmd)
 	{
 		//using entry? get IDNT cmd first
 		if(!Read(client_sock,clientssl,idndtcmd))

@@ -432,6 +432,12 @@ maximum # of retries for EAGAIN/SSL_WANT_READ/WRITE errors
 
 --------------------------------------------------------
 
+- no_idnt_cmd=0;
+
+don't send/wait for IDNT command
+
+--------------------------------------------------------
+
 special bnc commands:
 ---------------------
 

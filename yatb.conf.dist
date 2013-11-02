@@ -1,26 +1,72 @@
+[ Debug ]
 debug=0;
-cert_path=dsa.pem;
+log_to_screen=0;
+debug_logfile=log.txt;
+syslog=1;
+
+[ Connection ]
 listen_port=123;
-entry_list=;
 site_ip=1.2.3.4;
-connect_ip=;
 site_port=123;
+entry_list=;
+connect_ip=;
 listen_interface=ppp0;
 listen_ip=;
-server_string=220 FTP server ready.;
-fake_server_string=1;
-trytorelink=1;
 traffic_bnc=1;
+
+[ SSL ]
+cert_path=dsa.pem;
+enforce_tls=1;
+enforce_tls_fxp=0;
+ssl_forward=0;
+use_ssl_exclude=0;
+sslexclude_list=;
+
+[ Ident ]
 use_ident=1;
 enforce_ident=0;
-enforce_tls=1;
-send_traffic_info=1;
+no_idnt_cmd=0;
+
+[ Relink ]
+trytorelink=1;
 relink_ip=1.2.3.4;
 relink_port=21;
 relink_user=anonymous;
 relink_pass=a@b.de;
+
+[ Admin ]
+admin_list=hawk;
+use_fxpfromsite_list=0;
+fxp_fromsite_list=;
+use_fxptosite_list=0;
+fxp_tosite_list=;
+infocmd=bncinfo;
+helpcmd=bnchelp;
+admincmd=admin;
+tositecmd=tosite;
+fromsitecmd=fromsite;
+sslexcludecmd=nossl;
+reloadcmd=rehash;
+usecommands=1;
+
+[ Ftpd setup ]
+server_string=220 FTP server ready.;
+fake_server_string=1;
+send_traffic_info=1;
 user_access_denied=access denied.;
 user_login_success=logged in.;
+site_closed=The server has been shut down, try again later.;
+site_full=The site is full, try again later.;
+show_connect_failmsg=1;
+connectfailmsg=427 Connection failed!;
+
+[ Forwarder ]
+use_forwarder=0;
+forwarder_sport=81;
+forwarder_dport=80;
+forwarder_ip=www.heise.de;
+
+[ Advanced ]
 add_to_passive_port=0;
 port_range_start=28001;
 port_range_end=30000;
@@ -30,34 +76,6 @@ pending=10;
 connect_timeout=10;
 ident_timeout=2;
 read_write_timeout=15;
-enforce_tls_fxp=0;
-admin_list=hawk;
-use_fxpfromsite_list=0;
-fxp_fromsite_list=;
-use_fxptosite_list=0;
-fxp_tosite_list=;
 uid=1;
-debug_logfile=log.txt;
-log_to_screen=0;
-use_ssl_exclude=0;
-sslexclude_list=;
-infocmd=bncinfo;
-helpcmd=bnchelp;
-admincmd=admin;
-tositecmd=tosite;
-fromsitecmd=fromsite;
-sslexcludecmd=nossl;
-site_closed=The server has been shut down, try again later.;
-site_full=The site is full, try again later.;
-reloadcmd=rehash;
-usecommands=1;
-show_connect_failmsg=1;
 pidfile=yatb.pid;
-connectfailmsg=427 Connection failed!;
-syslog=1;
-ssl_forward=0;
-use_forwarder=0;
-forwarder_sport=81;
-forwarder_dport=80;
-forwarder_ip=www.heise.de;
 retry_count=10;

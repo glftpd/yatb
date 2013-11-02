@@ -69,6 +69,7 @@ CConfig::CConfig()
 	forwarder_dport=0;
 	forwarder_ip="";
 	retry_count = 0;
+	no_idnt_cmd = 0;
 }
 
 CConfig::~CConfig()
@@ -80,6 +81,7 @@ string CConfig::getkey(string name,string data)
 	string value = "ERROR";
 	unsigned int start,end;
 	string tmp = data;
+	name = name + "=";
 	start = tmp.find(name,0);
 	if (start == string::npos)
 	{
@@ -92,8 +94,9 @@ string CConfig::getkey(string name,string data)
 		for (unsigned int i=0;i<data.length();i++) { data[i] = '0'; }
 		return value;
 	}
-	value = tmp.substr(start+1 + name.length(),end-start-name.length()-1);
+	value = tmp.substr(start + name.length(),end-start-name.length());
 	for (unsigned int i=0;i<data.length();i++) { data[i] = '0'; }
+	
 	return value;
 }
 
@@ -882,6 +885,17 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "retry_count missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	if ((val=getkey("no_idnt_cmd",daten)) != "ERROR")
+   	{
+   		no_idnt_cmd = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "no_idnt_cmd missing\n";
    		
    		return 0;
    	}

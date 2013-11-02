@@ -610,9 +610,32 @@ int control_write(int sock,string s,SSL *sslcon)
 				if(count == config.retry_count) { debugmsg("CONTROLWRITE","retry count reached"); return 0; } // not more then x retries
 				int err = SSL_get_error(sslcon,n);
 				
-				if (err == SSL_ERROR_WANT_READ) { usleep(2000);count++; continue; }
-				if (err == SSL_ERROR_WANT_WRITE) { usleep(2000);count++; continue; }
-				if (err == SSL_ERROR_WANT_X509_LOOKUP) { usleep(2000);count++; continue; }				
+				if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_X509_LOOKUP) 
+				{ 
+					debugmsg("CONTROLWRITE","want read/write error");
+					fd_set data_writefds;
+					FD_ZERO(&data_writefds);
+					FD_SET(sock,&data_writefds);
+					struct timeval tv;
+					tv.tv_sec = config.read_write_timeout;
+					tv.tv_usec = 0;
+					if (select(sock+1, NULL, &data_writefds, NULL, &tv) < 1)
+					{
+						debugmsg("CONTROLWRITE"," write timeout",errno);
+						return 0;
+					}
+					if (FD_ISSET(sock, &data_writefds))
+					{
+						count++; 
+						continue; 
+					}
+					else
+					{
+						debugmsg("CONTROLWRITE"," fd isser error",errno);
+						return 0;
+					} 
+				}
+				
 				
 			}
 			else
@@ -698,9 +721,32 @@ int control_read(int sock,SSL *sslcon,string &str)
 					if(count == config.retry_count) { debugmsg("CONTROLREAD","retry count reached"); return 0; } // not more then x retries
 					int err = SSL_get_error(sslcon,rc);
 					
-					if (err == SSL_ERROR_WANT_READ) { usleep(2000);count++; continue; }
-					if (err == SSL_ERROR_WANT_WRITE) { usleep(2000);count++; continue; }
-					if (err == SSL_ERROR_WANT_X509_LOOKUP) { usleep(2000);count++; continue; }					
+					if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_X509_LOOKUP) 
+					{ 
+						debugmsg("CONTROLREAD","want read/write error");
+						fd_set data_writefds;
+						FD_ZERO(&data_writefds);
+						FD_SET(sock,&data_writefds);
+						struct timeval tv;
+						tv.tv_sec = config.read_write_timeout;
+						tv.tv_usec = 0;
+						if (select(sock+1, NULL, &data_writefds, NULL, &tv) < 1)
+						{
+							debugmsg("CONTROLREAD"," write timeout",errno);
+							return 0;
+						}
+						if (FD_ISSET(sock, &data_writefds))
+						{
+							count++; 
+							continue; 
+						}
+						else
+						{
+							debugmsg("CONTROLREAD"," fd isser error",errno);
+							return 0;
+						} 
+					}
+					
 					
 				}
 				else
@@ -1007,6 +1053,7 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 							}
 							else
 							{
+								debugmsg("DATAWRITE"," fd isser error",errno);
 								return 0;
 							}
 						}
@@ -1089,6 +1136,7 @@ int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 						}
 						else
 						{
+							debugmsg("DATAREAD"," fd isser error",errno);
 							return 0;
 						}
 					}

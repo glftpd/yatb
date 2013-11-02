@@ -91,6 +91,7 @@ class CConfig
 	int forwarder_dport;
 	string forwarder_ip;
 	int retry_count;
+	int no_idnt_cmd;
 };
 
 extern CConfig config;
