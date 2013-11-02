@@ -937,7 +937,7 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 			{
 				if (ssl != NULL)
 				{
-					if(count == 3) return 0; // not more then 3 retries
+					if(count == 3) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then 3 retries
 					int err = SSL_get_error(ssl,rc);
 					
 					if (err == SSL_ERROR_WANT_READ) { count++; continue; }
@@ -945,7 +945,7 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 					if (err == SSL_ERROR_WANT_X509_LOOKUP) { count++; continue; }					
 					
 				}
-				debugmsg("-SYSTEM-","[data_write] error!");  
+				debugmsg("-SYSTEM-","[data_write] error!",errno);  
 				return 0; 
 			}
 		}

@@ -507,7 +507,7 @@ void CDataThread::dataloop(void)
 	}
 */
 	
-	fd_set data_readfds;
+	fd_set data_readfds,data_writefds;
 	
 	
 	
@@ -551,9 +551,26 @@ void CDataThread::dataloop(void)
 			{					
 				break;
 			}
-
-			if(!Write(dataclient_sock,buffer,rc,clientssl))
-			{					
+			
+			FD_ZERO(&data_writefds);
+			FD_SET(dataclient_sock,&data_writefds);
+			struct timeval tv;
+			tv.tv_sec = config.read_write_timeout;
+			tv.tv_usec = 0;
+			if (select(dataclient_sock+1, NULL, &data_writefds, NULL, &tv) < 1)
+			{
+				debugmsg(username,"[datathread] write timeout",errno);
+				return;
+			}
+			if (FD_ISSET(dataclient_sock, &data_writefds))
+			{
+				if(!Write(dataclient_sock,buffer,rc,clientssl))
+				{					
+					break;
+				}
+			}
+			else
+			{
 				break;
 			}
 				
@@ -571,8 +588,25 @@ void CDataThread::dataloop(void)
 				break;
 			}
 			
-			if(!Write(datasite_sock,buffer,rc,sitessl))
-			{				
+			FD_ZERO(&data_writefds);
+			FD_SET(datasite_sock,&data_writefds);
+			struct timeval tv;
+			tv.tv_sec = config.read_write_timeout;
+			tv.tv_usec = 0;
+			if (select(datasite_sock+1, NULL, &data_writefds, NULL, &tv) < 1)
+			{
+				debugmsg(username,"[datathread] write timeout",errno);
+				return;
+			}
+			if (FD_ISSET(datasite_sock, &data_writefds))
+			{
+				if(!Write(datasite_sock,buffer,rc,sitessl))
+				{				
+					break;
+				}
+			}
+			else
+			{
 				break;
 			}
 
