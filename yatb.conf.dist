@@ -61,7 +61,7 @@ usecommands=1;
 
 [ Ftpd setup ]
 server_string=220 FTP server ready.;
-fake_server_string=1;
+fake_serverstring=1;
 send_traffic_info=1;
 user_access_denied=access denied.;
 user_login_success=logged in.;

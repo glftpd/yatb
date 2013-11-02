@@ -327,6 +327,7 @@ void CControlThread::mainloop(void)
 		}
 		else
 		{
+			string ident_user = "*";
 			if (config.enforce_ident)
 			{
 				return;

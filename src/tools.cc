@@ -521,6 +521,7 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 		FD_SET(ident_sock, &readfds);
 		stringstream ss;
 		ss << clientport << " , " << listenport << "\r\n";
+		debugmsg("IDENT","ports: " + ss.str());
 		if (!control_write(ident_sock,ss.str(),NULL))
 		{	
 			Close(ident_sock,"ident_sock");				
@@ -533,6 +534,8 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 		if (select(ident_sock+1, &readfds, NULL, NULL, &tv) <= 0)
 		{
 			debugmsg("IDENT", "[Ident] ident timeout!",errno);
+			Close(ident_sock,"ident_sock");
+			return 0;
 		}
 		else
 		{
