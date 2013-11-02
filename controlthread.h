@@ -70,6 +70,7 @@ class CControlThread
 	
 	string username;
 
+	int shouldquit;
 
 	int using_entry;
 	CLock writelock;

@@ -65,8 +65,7 @@ CDataThread::~CDataThread()
 
 void CDataThread::closeconnection(void)
 {
-
-	shouldquit = 1;
+	
 	if (datasite_sock > 0) 
 	{
 		debugmsg(username,"[datathread] close site sock"); 
@@ -434,7 +433,7 @@ void CDataThread::dataloop(void)
 		bind(datasite_sock,(struct sockaddr *)&connect_addr, sizeof(struct sockaddr));
 	}
 	setnonblocking(datasite_sock);
-	shouldquit = 0;
+	
 	if(!Connect(datasite_sock,datasite_addr,config.connect_timeout,shouldquit))
 	{
 		debugmsg(username,"[datathread] could not connect site data port",errno);		
@@ -452,7 +451,7 @@ void CDataThread::dataloop(void)
 
 	if (!activecon)
 	{
-		shouldquit = 0;		
+		
 		if(!Accept(datalisten_sock,dataclient_sock,datalisten_addr,config.connect_timeout,shouldquit))
 		{
 			//controlthread->control_write(controlthread->client_sock,"427 Accept Error/Timeout!\r\n",controlthread->clientssl);
@@ -576,7 +575,7 @@ void CDataThread::dataloop(void)
 			
 			bind(dataclient_sock,(struct sockaddr *)&connect_addr, sizeof(struct sockaddr));
 		}
-		shouldquit = 0;
+		
 		if(!Connect(dataclient_sock,active_addr,config.connect_timeout,shouldquit))
 		{
 			//controlthread->control_write(controlthread->client_sock,"427 Connect Error/Timeout!\r\n",controlthread->clientssl);

@@ -3,7 +3,7 @@
 #include "lock.h"
 
 // print debug msg
-void debugmsg(string un,string s,int err)
+void debugmsg(string un,string s,int err=0)
 {
 	
 	if (config.debug)
@@ -156,10 +156,12 @@ void correctReply(string &in)
 
 int Connect(int &sock,struct sockaddr_in &adr,int sec,int &shouldquit)
 {
+	debugmsg("-SYSTEM-","[Connect] start");
 	if(connect(sock, (struct sockaddr *)&adr, sizeof(adr)) == -1)
 	{
 		if(errno != EINPROGRESS)
 		{
+			debugmsg("-SYSTEM-","[Connect] end(0-1)");
 			return 0;
 		}
 	}
@@ -174,12 +176,17 @@ int Connect(int &sock,struct sockaddr_in &adr,int sec,int &shouldquit)
 		tv.tv_usec = 500000;
 		int res = select(sock+1, NULL, &writefds, NULL, &tv);
 		if (res < 0)
-		{			
+		{	
+			debugmsg("-SYSTEM-","[Connect] end(0-2)");		
 			return 0;
 		}
 		else if(res == 0)
-		{
-			if(shouldquit) return 0;
+		{			
+			if(shouldquit == 1) 
+			{
+				debugmsg("-SYSTEM-","[Connect] end(0-3)");
+				return 0;
+			}
 		}
 		else
 		{
@@ -190,17 +197,21 @@ int Connect(int &sock,struct sockaddr_in &adr,int sec,int &shouldquit)
 	socklen_t errlen = sizeof(err);
 	if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&errlen) == -1)
 	{
+		debugmsg("-SYSTEM-","[Connect] end(0-4)");
 		return 0;
 	}
 	if(err != 0)
 	{		
+		debugmsg("-SYSTEM-","[Connect] end(0-5)");
 		return 0;
 	}
+	debugmsg("-SYSTEM-","[Connect] end(1)");
 	return 1;
 }
 
 int Accept(int &listensock,int &newsock,struct sockaddr_in &adr,int sec,int &shouldquit)
 {
+	debugmsg("-SYSTEM-","[Accept] start");
 	fd_set readfds;
 	
 	
@@ -214,12 +225,17 @@ int Accept(int &listensock,int &newsock,struct sockaddr_in &adr,int sec,int &sho
 		
 		int res =  select(listensock+1, &readfds, NULL, NULL, &tv);
 		if (res < 0)
-		{		
+		{
+			debugmsg("-SYSTEM-","[Accept] end(0-1)");		
 			return 0;
 		}
 		else if(res == 0)
 		{
-			if (shouldquit) return 0;
+			if (shouldquit == 1) 
+			{
+				debugmsg("-SYSTEM-","[Accept] end(0-2)");		
+				return 0;
+			}
 		}
 		else
 		{
@@ -229,8 +245,10 @@ int Accept(int &listensock,int &newsock,struct sockaddr_in &adr,int sec,int &sho
 	socklen_t size = sizeof(adr);
 	if ((newsock = accept(listensock,(struct sockaddr *)&adr,&size)) == -1)
 	{
+		debugmsg("-SYSTEM-","[Accept] end(0-3)");		
 		return 0;
 	}
+	debugmsg("-SYSTEM-","[Accept] end(1)");		
 	return 1;
 }
 

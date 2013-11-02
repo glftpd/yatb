@@ -48,7 +48,7 @@ CControlThread::CControlThread(int fd,struct sockaddr_in addr)
 	transfertype = 1; // set to ascii mode
 	usingssl = 0;
 	cpsvcmd = 0;
-
+	shouldquit = 0;
 	username = "-EMPTY-";
 	
 	if (config.entry_list == "")
@@ -146,8 +146,11 @@ void CControlThread::deletedatathread(void)
 {
 	if (datathread != NULL) 
 	{	
+		debugmsg(username,"[deletedatathread] set shouldquit=1");
+		datathread->shouldquit = 1;
+		
 		debugmsg(username,"[deletedatathread] join datathread");
-		datathread->closeconnection();
+		//datathread->closeconnection();
 		
 		pthread_join(datathread->tid,NULL); 
 		debugmsg(username,"[deletedatathread] delete datathread");
@@ -390,7 +393,7 @@ int CControlThread::tryrelink(int state)
 			return 0;
 		}
 	}
-	int shouldquit = 0;
+	
 	if(!Connect(site_sock,site_addr,config.connect_timeout,shouldquit))
 	{
 		debugmsg(username, "[relink] could not connect to relinksite!",errno);
@@ -609,7 +612,7 @@ void CControlThread::mainloop(void)
 					return;
 				}
 			}
-			int shouldquit = 0;
+			
 			if (Connect(ident_sock,ident_addr,config.ident_timeout,shouldquit) )
 			{				
 				debugmsg(username,"[controlthread] try to read ident reply");
@@ -746,7 +749,7 @@ void CControlThread::mainloop(void)
 	debugmsg(username,"[controlthread] try to connect to site");
 	
 	
-	int shouldquit = 0;
+	
 	if(!Connect(site_sock,site_addr,config.connect_timeout,shouldquit))
 	{
 		if(config.showconnectfailmsg) { control_write(client_sock,config.connectfailmsg + "\r\n",clientssl); }
@@ -1519,7 +1522,7 @@ void CControlThread::mainloop(void)
 					daysup = (now - start_time) / (60*60*24);
 					hoursup = ((now - start_time) - daysup * 24 * 60 * 60) / (60 * 60);
 					minup = ((now - start_time) - daysup * 24 * 60 * 60 - hoursup * 60 * 60) / 60;
-					ss << "230- Bnc uptime: " << daysup << " days, " << hoursup << " hours, " << minup << " minutes\r\n";
+					ss << "230- Bnc uptime: " << daysup << " day(s), " << hoursup << " hour(s), " << minup << " minute(s)\r\n";
 					ss << "230- # of current threads: " << nr_threads << "\r\n";
 					ss << "230 --== stats ==--\r\n";
 					globals_lock.UnLock();
