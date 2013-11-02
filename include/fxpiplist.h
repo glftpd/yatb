@@ -23,13 +23,15 @@ class CFxpiplist
 	
 	void Remove(string);
 	
-	void Insert(string);
+	int Insert(string);
 	
 	int IsInList(string);
 	
 	int ReadList(string,string);
 	
 	int WriteList(string,string);
+	
+	string GetComment(string);
 
 	string GetList(void);
 	

@@ -81,12 +81,14 @@ class CControlThread
 	string clientip;
 	int clientport;
 	string site_ip;
+	string dirlist_ip; // ip used for (first) dirlisting
 	int site_port;
+	int dirlisting; // transfer is a dirlisting
 };
 
 extern list<CControlThread*> conlist;
 
-extern int listen_sock;
+extern int listen_sock,use_blowconf;
 
 extern long int nr_logins;
 

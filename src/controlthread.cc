@@ -74,6 +74,8 @@ CControlThread::CControlThread(int fd,string cip,int cport,string sip,int sport)
 	clientport = cport;
 	directionset = 0;
 	direction = "";
+	dirlist_ip = "";
+	dirlisting = 0;
 }
 
 // destructor
@@ -1363,7 +1365,7 @@ void CControlThread::mainloop(void)
 				if (adminlist.IsInList(username) && !relinked)
 				{
 					CConfig tmpconf;
-					if (!tmpconf.readconf(conffile,bk))
+					if (!tmpconf.readconf(conffile,bk,use_blowconf))
 					{
 						if (!Write(client_sock,"230 failed to reload config.\r\n",clientssl))
 						{							
@@ -1866,11 +1868,27 @@ void CControlThread::mainloop(void)
 					if (pos != string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
-						fxpiplist.Insert(s);
-						
-						if (!Write(client_sock,"230 ip added.\r\n",clientssl))
-						{							
-							return;
+						int res = fxpiplist.Insert(s);
+						if(res == 1)
+						{
+							if (!Write(client_sock,"230 ip added.\r\n",clientssl))
+							{							
+								return;
+							}
+						}
+						else if(res == 2)
+						{
+							if (!Write(client_sock,"230 ip already added! [" + fxpiplist.GetComment(s) + "]\r\n",clientssl))
+							{							
+								return;
+							}
+						}
+						else
+						{
+							if (!Write(client_sock,"230 check your syntax!\r\n",clientssl))
+							{							
+								return;
+							}
 						}
 
 					}
@@ -1973,6 +1991,7 @@ void CControlThread::mainloop(void)
 			else if (upper(s,5).find("LIST",0) != string::npos)
 			{
 				direction = "download";
+				dirlisting = 1;
 				SetDirection(1);
 				if (!Write(site_sock,s,sitessl))
 				{											
@@ -1982,6 +2001,7 @@ void CControlThread::mainloop(void)
 			else if (upper(s,5).find("NLST",0) != string::npos)
 			{
 				direction = "download";
+				dirlisting = 1;
 				SetDirection(1);
 				if (!Write(site_sock,s,sitessl))
 				{											

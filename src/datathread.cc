@@ -350,6 +350,20 @@ void CDataThread::dataloop(void)
 		if(getQuit()) return;
 	}
 	debugmsg(username,"[datathread] wait for direction end");
+	if(controlthread->dirlist_ip == "" && controlthread->dirlisting)
+	{
+		if(!activecon)
+		{
+			debugmsg(username,"[datathread] dirlist ip=" + controlthread->dirlist_ip);
+			controlthread->dirlist_ip = clip;			
+		}
+		else
+		{
+			debugmsg(username,"[datathread] dirlist ip=" + controlthread->dirlist_ip);
+			controlthread->dirlist_ip = activeip;			
+		}
+	}
+	
 	
 	debugmsg(username,"[datathread] direction: " + controlthread->direction);
 	
@@ -381,10 +395,14 @@ void CDataThread::dataloop(void)
 			if(config.use_fxpiplist)
 			{
 				// check ip ip is allowed or user is admin
-				if(!fxpiplist.IsInList(clip) && !adminlist.IsInList(username))
+				if(!fxpiplist.IsInList(clip) && !adminlist.IsInList(username) )
 				{
-					controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
-					return;
+					if(clip != controlthread->dirlist_ip)
+					{
+						debugmsg(username,"[datathread] fxp not allowed - clip: " + clip + " dirlistip: " + controlthread->dirlist_ip);
+						controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+						return;
+					}
 				}
 			}
 			if(config.enforce_tls && config.enforce_tls_fxp && (!sslprotp || !usingssl))
@@ -446,8 +464,12 @@ void CDataThread::dataloop(void)
 				// check ip ip is allowed or user is admin
 				if(!fxpiplist.IsInList(activeip) && !adminlist.IsInList(username))
 				{
-					controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
-					return;
+					if(activeip != controlthread->dirlist_ip)
+					{
+						debugmsg(username,"[datathread] fxp not allowed - clip: " + clip + " dirlistip: " + controlthread->dirlist_ip);
+						controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+						return;
+					}
 				}
 			}
 			if(config.enforce_tls && config.enforce_tls_fxp && (!sslprotp || !usingssl))

@@ -121,14 +121,42 @@ int CFxpiplist::IsInList(string s)
 	return 0;
 }
 
-
-
-void CFxpiplist::Remove(string s)
+string CFxpiplist::GetComment(string s)
 {
 	string tmp;
 	if(config.use_fxpiphash)
 	{		
 		tmp = hash(bk+s,config.hash_algo);
+	}
+	else
+	{
+		tmp = s;
+	}
+	for (unsigned int i=0;i < List.size();i++)
+	{
+		if (List[i].ip == tmp)
+		{
+			return List[i].comment + " - " + List[i].user;
+		}
+	}
+	return "";
+}
+
+void CFxpiplist::Remove(string s)
+{
+	string tmp;
+	if(config.use_fxpiphash)
+	{	
+		unsigned int pos;
+		pos = s.find(".",0);
+		if(pos == string::npos)
+		{
+			tmp = s;
+		}
+		else
+		{
+			tmp = hash(bk+s,config.hash_algo);
+		}
 	}
 	else
 	{
@@ -148,15 +176,15 @@ void CFxpiplist::Remove(string s)
 }
 
 
-void CFxpiplist::Insert(string s)
+int CFxpiplist::Insert(string s)
 {
 	// format: ip,comment,user
 	string ip,comment,user;
-	if (s == "") { return; }	
+	if (s == "") { return 0; }	
 	unsigned int pos = s.find(",",0);
 	if (pos != string::npos)
 	{
-		if(IsInList(s.substr(0,pos))) { return; }
+		if(IsInList(s.substr(0,pos))) { return 2; }
 		if(config.use_fxpiphash)
 		{			
 			ip = hash(bk+s.substr(0,pos),config.hash_algo);			
@@ -177,9 +205,17 @@ void CFxpiplist::Insert(string s)
 			entry.comment = comment;
 			entry.user = user;
 			List.push_back(entry);
+			return 1;
+		}
+		else
+		{
+			return 0;
 		}
 	}
-
+	else
+	{
+		return 0;
+	}
 	
 }
 

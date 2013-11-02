@@ -10,7 +10,10 @@ class CConfig
 	private:
 	
 	string getkey(string, string);
-	
+	void getentry(string &,string,int&,string);
+	void getentry(int &,string,int&,string);
+	void getentry(double &,string,int&,string);
+
 	public:
 	
 	CConfig();
@@ -18,7 +21,7 @@ class CConfig
 	~CConfig();
 	
 	
-	int readconf(string, string);
+	int readconf(string, string, int);
 	
 	int debug;
 	int listen_port;
@@ -117,7 +120,6 @@ class CConfig
 };
 
 extern CConfig config;
-extern int use_blowconf;
 
 #endif
 

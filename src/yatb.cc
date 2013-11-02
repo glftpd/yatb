@@ -73,7 +73,7 @@ void reload(int)
 {
 	debugmsg("SYSTEM","HUP signal - try to reload config");
 	CConfig tmpconf;
-	if (!tmpconf.readconf(conffile,bk))
+	if (!tmpconf.readconf(conffile,bk,use_blowconf))
 	{
 		debugmsg("SYSTEM","failed to reload config");
 		
@@ -188,7 +188,7 @@ int main(int argc,char *argv[])
 		bk = k;
 		memset(k, 0,bk.length());
 				
-		if (!config.readconf(conffile,bk))
+		if (!config.readconf(conffile,bk,1))
 		{		
 			return -1;
 		}
@@ -196,7 +196,7 @@ int main(int argc,char *argv[])
 	else
 	{
 		conffile = argv[2];
-		if (!config.readconf(conffile,bk))
+		if (!config.readconf(conffile,bk,0))
 		{		
 			return -1;
 		}

@@ -120,7 +120,52 @@ string CConfig::getkey(string name,string data)
 	return value;
 }
 
-int CConfig::readconf(string filename,string key)
+// read conf entry of type string
+void CConfig::getentry(string &i,string s,int &ok,string daten)
+{
+	string val;
+	if ((val=getkey(s,daten)) != "ERROR")
+   	{
+   		i = val.c_str();
+   	}
+   	else
+   	{
+   		cout << s << " missing\n";
+   		ok = 0;
+   	}
+}
+
+// read conf entry of type int
+void CConfig::getentry(int &i,string s,int &ok,string daten)
+{
+	string val;
+	if ((val=getkey(s,daten)) != "ERROR")
+   	{
+   		i = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << s << " missing\n";
+   		ok = 0;
+   	}
+}
+
+// read conf entry of type double
+void CConfig::getentry(double &i,string s,int &ok, string daten)
+{
+	string val;
+	if ((val=getkey(s,daten)) != "ERROR")
+   	{
+   		i = atof(val.c_str());
+   	}
+   	else
+   	{
+   		cout << s << " missing\n";
+   		ok = 0;
+   	}
+}
+
+int CConfig::readconf(string filename,string key,int crypted)
 {
 	int s;
 	if (!filesize(filename,s))
@@ -137,17 +182,16 @@ int CConfig::readconf(string filename,string key)
 		memset(bufferout,'\0',s+1);
 		readfile(filename,&bufferin,s);
 		
-		string daten;
+		string daten; // store uncrypted conf file
 		
-		if (use_blowconf == 1)
+		if (crypted)
 		{
 			decrypt(key,bufferin,bufferout,s);
 			daten = (char*)bufferout;
 			memset(bufferin,'\0',s+1);
 			memset(bufferout,'\0',s+1);
 			delete [] bufferin;
-	 		delete [] bufferout;
-			
+	 		delete [] bufferout;			
 		}
 		else
 		{			
@@ -158,87 +202,22 @@ int CConfig::readconf(string filename,string key)
 	 		delete [] bufferout;
 		}    
 		
- 	int ok = 1;	
- 		
-   	string val;
+ 		int ok = 1;	// store if all vars could be read
+	 		
+   		string val;
 
-		if ((val=getkey("listen_port",daten)) != "ERROR")
-   	{
-   		listen_port = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "wrong key or listen_port missing\n";
-   		
-   		return 0;
-   	}
-
-   	if ((val=getkey("debug",daten)) != "ERROR")
-   	{
-   		debug = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "debug missing\n";
-   		
-   		ok = 0;
-   	}
-   	
 		
-		if ((val=getkey("use_fxpfromsite_list",daten)) != "ERROR")
-    {
-   		use_fxpfromsite_list = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "use_fxpfromsite_list missing\n";
-   		
-   		ok = 0;
-   	}
+		getentry(listen_port,"listen_port",ok,daten);
+		getentry(debug,"debug",ok,daten);
+		getentry(use_fxpfromsite_list,"use_fxpfromsite_list",ok,daten);
+   		getentry(site_port,"site_port",ok,daten);
+		getentry(site_ip,"site_ip",ok,daten);
+		getentry(entry_list,"entry_list",ok,daten);
+   		getentry(connect_ip,"connect_ip",ok,daten);
 		
-   	if ((val=getkey("site_port",daten)) != "ERROR")
-   	{
-   		site_port = val.c_str();
-   	}
-   	else
-   	{
-   		cout << "site_port missing\n";
-   		
-   		ok = 0;
-   	}
-
-   	if ((val=getkey("site_ip",daten)) != "ERROR")
-   	{
-   		site_ip = val;
-   	}
-   	else
-   	{
-   		cout << "site_ip missing\n";
-   		
-   		ok = 0;
-   	}
 		
-		if ((val=getkey("entry_list",daten)) != "ERROR")
-   	{
-   		entry_list = val;
-   	}
-   	else
-   	{
-   		cout << "entry_list missing\n";
-   		
-   		ok = 0;
-   	}
 		
-		if ((val=getkey("connect_ip",daten)) != "ERROR")
-   	{
-   		connect_ip = val;
-   	}
-   	else
-   	{
-   		cout << "connect_ip missing\n";
-   		
-   		ok = 0;
-   	}
+		
 		
    	if ((val=getkey("cert_path",daten)) != "ERROR")
    	{
