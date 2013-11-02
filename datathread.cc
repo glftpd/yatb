@@ -183,6 +183,9 @@ void CDataThread::dataloop(void)
 		return;
 	}
 	
+	// to store client ip from passive connection
+	string clip;
+	int clport;
 	
 	// passive connection - try to listen
 	if(!activecon)
@@ -212,8 +215,7 @@ void CDataThread::dataloop(void)
 			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
 			return ;
 		}
-		string clip;
-		int clport;
+		
 		if (!controlthread->Write(controlthread->client_sock,passivecmd,controlthread->clientssl))
 		{								
 			return;
@@ -249,6 +251,10 @@ void CDataThread::dataloop(void)
 		debugmsg(username,"[datathread] active connection successfull");
 	}
 	
+	if(usingssl) debugmsg(username, "[datathread] using ssl");
+	if(sslprotp) debugmsg(username, "[datathread] protection set to private");
+	if(!config.ssl_forward) debugmsg(username, "[datathread] not using ssl forward");
+	
 	// ssl stuff
 	if(!config.ssl_forward && usingssl && sslprotp)
 	{
@@ -271,250 +277,84 @@ void CDataThread::dataloop(void)
 	printsockopt(datasite_sock,"datasite_sock");
 	printsockopt(dataclient_sock,"dataclient_sock");
 	
-/*
-	stringstream ss;
-	ss << "active port: " << activeport << " passiveport: " << passiveport;
-	debugmsg(username,"[datathread] " + ss.str());
-	if (sslprotp) { debugmsg(username,"[datathread] sslprotp = 1"); }
-	else { debugmsg(username,"[datathread] sslprotp = 0"); }
-
-	datalisten_sock = -1;
-	dataclient_sock = -1;
-	datasite_sock = -1;
-	
-	struct sockaddr_in datalisten_addr,datasite_addr;
-
-	
-	if(config.listen_ip == "")
+	// check ssl/fxp settings
+	if(!activecon)
 	{
-		datalisten_addr.sin_family = AF_INET;
-		datalisten_addr.sin_port = htons(passiveport);
-		datalisten_addr.sin_addr.s_addr = INADDR_ANY;
-		memset(&(datalisten_addr.sin_zero), '\0', 8);
-	}
-	else
-	{
-		datalisten_addr = GetIp(config.listen_ip,passiveport);
-		
-	}
-	
-
-	
-	if (!relinked)
-	{
-		datasite_addr = GetIp(config.site_ip,siteport);
-		
-	}
-	else
-	{
-		datasite_addr = GetIp(config.relink_ip,siteport);
-		
-	}
-	
-
-	// bind listen socket if passive connection
-	if (!activecon)
-	{
-		if((datalisten_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+		debugmsg(username,"[datathread] clientip: " + clientip + " source ip: " + clip);
+		if(clip == clientip)
 		{
-			debugmsg(username,"[datathread] Unable to create data socket!",errno);
-						
-			return;
-		}
-		debugmsg(username,"[datathread] bind to port");
-		if (bind(datalisten_sock, (struct sockaddr *)&datalisten_addr, sizeof(struct sockaddr)) == -1)
-		{
-			debugmsg(username,"[datathread] Unable to bind to data port!",errno);
-			//controlthread->control_write(controlthread->client_sock,"427 Could not bind to dataport!\r\n",controlthread->clientssl);
-				
-			return;
-		}
-		int yes = 1;
-		if (setsockopt(datalisten_sock,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) == -1)
-		{
-			debugmsg(username,"[datathread] setsockopt error!",errno);
-			
-			return;
-		}
-		debugmsg(username,"[datathread] listen");
-		if (listen(datalisten_sock, config.pending) == -1)
-		{
-			debugmsg(username,"[datathread] Unable to listen!",errno);
-				
-			return;
-		}
-		setnonblocking(datalisten_sock);
-	}
-
-
-	if((datasite_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-	{
-		debugmsg(username,"[datathread] Unable to create socket!",errno);
-		
-		return;
-	}
-	debugmsg(username,"[datathread] try to connect to site");
-	if (config.connect_ip != "")
-	{
-		if(!Bind(datasite_sock,config.connect_ip,0))
-		{
-			debugmsg(username,"[datathread] unable to bind");
-			return;
-		}		
-	}
-	setnonblocking(datasite_sock);
-	
-	if(!Connect(datasite_sock,datasite_addr,config.connect_timeout,shouldquit))
-	{
-		debugmsg(username,"[datathread] could not connect site data port",errno);		
-		//controlthread->control_write(controlthread->client_sock,"427 Connect Error/Timeout!\r\n",controlthread->clientssl);
-		return;
-	}
-	
-	debugmsg(username,"[datathread] connected to site");
-		
-	
-	if (transfertype == 1) { debugmsg(username,"[datathread] ascii transfer"); }
-	if (transfertype == 2) { debugmsg(username,"[datathread] binary transfer"); }
-	
-	
-
-	if (!activecon)
-	{
-		
-		if(!Accept(datalisten_sock,dataclient_sock,datalisten_addr,config.connect_timeout,shouldquit))
-		{
-			//controlthread->control_write(controlthread->client_sock,"427 Accept Error/Timeout!\r\n",controlthread->clientssl);
-			debugmsg(username, "[datathread] accept error",errno);				
-			return;
-		}
-		
-		else
-		{
-			
-			if (datalisten_addr.sin_addr.s_addr != client_addr.sin_addr.s_addr)
+			// direct download
+			debugmsg(username, "[datathread] passive - direct dl");
+			if(config.enforce_tls && (!sslprotp || !usingssl))
 			{
-				if(config.enforce_tls_fxp && !sslprotp)
+				if(config.use_ssl_exclude && sslexcludelist.IsInList(username))
 				{
-					
-					if(config.use_ssl_exclude && sslexcludelist.IsInList(username) || relinked)
-					{
-					}
-					else
-					{
-						debugmsg(username,"[datathread] tls fxp required");
-						controlthread->control_write(controlthread->client_sock,"427 TLS FXP required!\r\n",controlthread->clientssl);
-											
-						return;
-					}
-				}
-				if (config.use_fxpfromsite_list && !adminlist.IsInList(username) && !fxpfromsitelist.IsInList(username))
-				{
-					debugmsg(username,"[datathread] fxp from site not allowed");
-					
-					controlthread->control_write(controlthread->client_sock,"427 FXP from site not allowed!\r\n",controlthread->clientssl);
-						
-					return;
-				}
-			}
-			else
-			{
-				if (config.enforce_tls && !sslprotp)
-				{
-					
-					if(config.use_ssl_exclude && sslexcludelist.IsInList(username) || relinked)
-					{
-					}
-					else
-					{
-						debugmsg(username,"[datathread] tls required");
-						controlthread->control_write(controlthread->client_sock,"427 TLS required!\r\n",controlthread->clientssl);
-											
-						return;
-					}
-				}
-			}
-		}
-
-		
-		
-	}
-	else
-	{
-		debugmsg(username,"[datathread] active conn!");
-		struct sockaddr_in active_addr;
-		dataclient_sock = socket(AF_INET,SOCK_STREAM,0);
-		if (dataclient_sock < 1) 
-		{ 
-			debugmsg(username,"[datathread] dataclientsock < 1",errno);
-			
-			
-			return; 
-		}
-		active_addr = GetIp(activeip,activeport);
-		
-		setnonblocking(dataclient_sock);
-		if (active_addr.sin_addr.s_addr != client_addr.sin_addr.s_addr)
-		{
-			if (config.enforce_tls_fxp && !sslprotp)
-			{
-				
-				if(config.use_ssl_exclude && sslexcludelist.IsInList(username) || relinked)
-				{
+					// allowed
 				}
 				else
 				{
-					debugmsg(username,"[datathread] tls fxp required");
-					controlthread->control_write(controlthread->client_sock,"427 TLS FXP required!\r\n",controlthread->clientssl);
-								
+					controlthread->Write(controlthread->client_sock,"427 Use SSL!\r\n",controlthread->clientssl);
 					return;
 				}
-			}
-			if (config.use_fxptosite_list && !adminlist.IsInList(username) && !fxptositelist.IsInList(username))
-			{
-				debugmsg(username,"[datathread] fxp to site not allowed");
-				
-				controlthread->control_write(controlthread->client_sock,"427 FXP to site not allowed!\r\n",controlthread->clientssl);
-				
-				
-				return;
 			}
 		}
 		else
 		{
-			if (config.enforce_tls && !sslprotp)
+			// fxp
+			debugmsg(username, "[datathread] passive - fxp");
+			if(config.enforce_tls_fxp && (!sslprotp || !usingssl))
 			{
-				if(config.use_ssl_exclude && sslexcludelist.IsInList(username) || relinked)
+				if(config.use_ssl_exclude && sslexcludelist.IsInList(username))
 				{
+					// allowed
 				}
 				else
 				{
-					debugmsg(username,"[datathread] tls required");
-				
-					controlthread->control_write(controlthread->client_sock,"427 TLS required!\r\n",controlthread->clientssl);
-								
+					controlthread->Write(controlthread->client_sock,"427 Use SSL!\r\n",controlthread->clientssl);
 					return;
 				}
 			}
 		}
-		if (config.listen_ip != "")
-		{
-			debugmsg(username,"[datathread] set connection ip");
-			struct sockaddr_in connect_addr;
-			connect_addr = GetIp(config.listen_ip,0);
-			
-			bind(dataclient_sock,(struct sockaddr *)&connect_addr, sizeof(struct sockaddr));
-		}
-		
-		if(!Connect(dataclient_sock,active_addr,config.connect_timeout,shouldquit))
-		{
-			//controlthread->control_write(controlthread->client_sock,"427 Connect Error/Timeout!\r\n",controlthread->clientssl);
-			debugmsg(username,"[datathread] fxp connect failed",errno);			
-			return;
-		}
-	
 	}
-*/
+	else
+	{
+		debugmsg(username,"[datathread] clientip: " + clientip + " activeip: " + activeip);
+		if(activeip == clientip)
+		{
+			// direct download
+			debugmsg(username, "[datathread] active - direct dl");
+			if(config.enforce_tls && (!sslprotp || !usingssl))
+			{
+				if(config.use_ssl_exclude && sslexcludelist.IsInList(username))
+				{
+					// allowed
+				}
+				else
+				{
+					controlthread->Write(controlthread->client_sock,"427 Use SSL!\r\n",controlthread->clientssl);
+					return;
+				}
+			}
+		}
+		else
+		{
+			// fxp
+			debugmsg(username, "[datathread] active - fxp");
+			if(config.enforce_tls_fxp && (!sslprotp || !usingssl))
+			{
+				if(config.use_ssl_exclude && sslexcludelist.IsInList(username))
+				{
+					// allowed
+				}
+				else
+				{
+					controlthread->Write(controlthread->client_sock,"427 Use SSL!\r\n",controlthread->clientssl);
+					return;
+				}
+			}
+		}
+			
+	}
 	
 	fd_set data_readfds,data_writefds;
 	

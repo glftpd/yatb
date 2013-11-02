@@ -726,14 +726,15 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 {
 	debugmsg("-SYSTEM-", "[SslConnect] start");
 	*sslctx = SSL_CTX_new(TLSv1_client_method());
-	SSL_CTX_set_options(*sslctx,SSL_OP_ALL);
-	SSL_CTX_set_mode(*sslctx,SSL_MODE_AUTO_RETRY);
-	SSL_CTX_set_session_cache_mode(*sslctx,SSL_SESS_CACHE_OFF);
+	
 	if (*sslctx == NULL)
 	{
 		debugmsg("-SYSTEM-", "[SslConnect] sitesslctx failed!");
 		return 0;
 	}
+	SSL_CTX_set_options(*sslctx,SSL_OP_ALL);
+	SSL_CTX_set_mode(*sslctx,SSL_MODE_AUTO_RETRY);
+	SSL_CTX_set_session_cache_mode(*sslctx,SSL_SESS_CACHE_OFF);
 	
 	*ssl = SSL_new(*sslctx);
 	if (*ssl == NULL)
@@ -944,15 +945,20 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 			}
 			else
 			{
+				if(count == 3) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then 3 retries
 				if (ssl != NULL)
 				{
-					if(count == 3) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then 3 retries
+					
 					int err = SSL_get_error(ssl,rc);
 					
 					if (err == SSL_ERROR_WANT_READ) { count++; continue; }
 					if (err == SSL_ERROR_WANT_WRITE) { count++; continue; }
 					if (err == SSL_ERROR_WANT_X509_LOOKUP) { count++; continue; }					
 					
+				}
+				else
+				{
+					if (errno == EAGAIN) { count++; continue; }
 				}
 				debugmsg("-SYSTEM-","[data_write] error!",errno);  
 				return 0; 
@@ -968,6 +974,7 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 
 int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 {
+	int count = 0;
 	while(1)
 	{
 			int rc;		
@@ -993,14 +1000,19 @@ int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 			}
 			else
 			{	
+				if(count == 3) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then 3 retries
 				if (ssl != NULL)
 				{
 					int err = SSL_get_error(ssl,rc);
 					
-					if (err == SSL_ERROR_WANT_READ) { continue; }
-					if (err == SSL_ERROR_WANT_WRITE) { continue; }
-					if (err == SSL_ERROR_WANT_X509_LOOKUP) { continue; }					
+					if (err == SSL_ERROR_WANT_READ) { count++; continue; }
+					if (err == SSL_ERROR_WANT_WRITE) { count++; continue; }
+					if (err == SSL_ERROR_WANT_X509_LOOKUP) { count++; continue; }					
 					
+				}
+				else
+				{
+					if (errno == EAGAIN) { count++; continue; }
 				}
 				debugmsg("-SYSTEM-","[data_read] error!"); 
 				nrbytes=0; 
