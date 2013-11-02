@@ -32,7 +32,7 @@
 using namespace std;
 
 #define version "Yet another traffic bouncer 1.0.6 (c) Hawk/PPX"
-#define builddate "27.02.2005"
+#define builddate "28.02.2005"
 
 
 

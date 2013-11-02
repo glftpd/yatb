@@ -1574,14 +1574,15 @@ void CControlThread::mainloop(void)
 					}
 					else
 					{
-						config.enforce_tls = tmpconf.enforce_tls;
+						config = tmpconf;
+						/*config.enforce_tls = tmpconf.enforce_tls;
 						config.enforce_tls_fxp = tmpconf.enforce_tls_fxp;
 						config.use_fxpfromsite_list = tmpconf.use_fxpfromsite_list;
 						config.use_fxptosite_list = tmpconf.use_fxptosite_list;
 						config.use_ssl_exclude = tmpconf.use_ssl_exclude;
 						config.use_ident = tmpconf.use_ident;
 						config.enforce_ident = tmpconf.enforce_ident;
-						config.trytorelink = tmpconf.trytorelink;
+						config.trytorelink = tmpconf.trytorelink;*/
 						
 						if (!control_write(client_sock,"230 config reloaded.\r\n",clientssl))
 						{							
