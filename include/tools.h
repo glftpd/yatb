@@ -24,6 +24,8 @@ int Connect(int &,string,int,int,int &);
 int Accept(int ,int &,string &,int &,int, int &);
 int Bind(int &,string,int);
 int SocketOption(int &,int);
+int IsNumeric(char);
+int FtpCode(string ,int &);
 int IsEndline(string);
 int Ident(string,int,string,string &);
 int control_read(int ,SSL *,string &);

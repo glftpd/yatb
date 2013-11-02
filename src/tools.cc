@@ -447,6 +447,75 @@ string traffic2str(double in)
 	return ss.str();
 }
 
+int IsNumeric(char s)
+{
+	if(s == '1') return 1;
+	if(s == '2') return 1;
+	if(s == '3') return 1;
+	if(s == '4') return 1;
+	if(s == '5') return 1;
+	if(s == '6') return 1;
+	if(s == '7') return 1;
+	if(s == '8') return 1;
+	if(s == '9') return 1;
+	if(s == '0') return 1;
+	return 0;	
+}
+
+int FtpCode(string tmp,int &res)
+{
+	// check if it is last line
+	unsigned int pos1,pos2;
+	pos1 = tmp.rfind('\r',tmp.length());
+	
+	if (pos1 == string::npos)
+	{
+		// we never should get here
+		return 0;
+	}
+	
+						
+	// check if message has only 1 line
+	pos2 = tmp.rfind('\r',pos1-1);
+	if (pos2 != string::npos)
+	{
+		//multiple lines
+		
+		if(tmp[pos2+5] != '-' && IsNumeric(tmp[pos2+4]) && IsNumeric(tmp[pos2+3]) && IsNumeric(tmp[pos2+2]))
+		{
+			string t;
+			t +=	tmp[pos2+2];
+			t +=	tmp[pos2+3];
+			t +=	tmp[pos2+4];
+			res = atoi(t.c_str());
+			
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		// only one line
+		if(tmp[3] != '-' && IsNumeric(tmp[2]) && IsNumeric(tmp[1]) && IsNumeric(tmp[0]))
+		{
+			string t;
+			t +=	tmp[0];
+			t +=	tmp[1];
+			t +=	tmp[2];
+			res = atoi(t.c_str());
+			
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+}
+
 int IsEndline(string tmp)
 {
 	// check if it is last line
@@ -466,7 +535,7 @@ int IsEndline(string tmp)
 	{
 		//multiple lines
 		
-		if(tmp[pos2+5] != '-' && tmp[pos2+4] != ' ')
+		if(tmp[pos2+5] != '-' && IsNumeric(tmp[pos2+4]) && IsNumeric(tmp[pos2+3]) && IsNumeric(tmp[pos2+2]))
 		{			
 			return 1;
 		}
@@ -478,7 +547,7 @@ int IsEndline(string tmp)
 	else
 	{
 		// only one line
-		if(tmp[3] != '-')
+		if(tmp[3] != '-' && IsNumeric(tmp[2]) && IsNumeric(tmp[1]) && IsNumeric(tmp[0]))
 		{
 			return 1;
 		}
@@ -1510,6 +1579,12 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 		message = "read error";
 		return 0;
 	}
+	int code = 0;
+	if(!FtpCode(reply,code))
+	{
+		message = "ftpcode error";
+		return 0;
+	}
 	// standard gl message
 	pos = reply.find("331 Password required for",0);
 	if(pos == string::npos)
@@ -1521,36 +1596,50 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 			pos = reply.find("specify the password",0);
 			if(pos == string::npos)
 			{ 	
-				message = "login failed";
-				return 0;      
+				if(code != 331 && code != 230)
+				{
+					message = "login failed";
+					return 0;
+				}
 			}
 		}
 	}
-	if(!control_write(sock,"pass " + pass + "\r\n",*ssl))
+	if(code != 230)
 	{
-		debugmsg("LOGIN","write error");
-		message = "write error";
-		return 0;
-	}
-	reply = "";
-	if(!GetLine(sock,ssl,reply))
-	{
-		message = "read error";
-		return 0;
-	}
-	//standard gl message	
-	pos = reply.find("logged in.",0);
-	if(pos == string::npos)
-	{		
-		// standard anonymous ftp message
-		pos = reply.find("access granted",0);
-		if(pos == string::npos)
+		if(!control_write(sock,"pass " + pass + "\r\n",*ssl))
 		{
-			pos = reply.find("Login successful",0);
+			debugmsg("LOGIN","write error");
+			message = "write error";
+			return 0;
+		}
+		reply = "";
+		if(!GetLine(sock,ssl,reply))
+		{
+			message = "read error";
+			return 0;
+		}
+		if(!FtpCode(reply,code))
+		{
+			message = "ftpcode error";
+			return 0;
+		}
+		//standard gl message	
+		pos = reply.find("logged in.",0);
+		if(pos == string::npos)
+		{		
+			// standard anonymous ftp message
+			pos = reply.find("access granted",0);
 			if(pos == string::npos)
 			{
-				message = "login failed";  	
-				return 0;
+				pos = reply.find("Login successful",0);
+				if(pos == string::npos)
+				{
+					if(code != 230)
+					{
+						message = "login failed";  	
+						return 0;
+					}
+				}
 			}
 		}
 	}
@@ -1560,7 +1649,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
    }
    else
    {
-   		message = "socket not successfull";
+   		message = "Login successfull";
    }
 	return 1;
 }
