@@ -274,6 +274,8 @@ void CDataThread::dataloop(void)
 		}
 	}
 	
+	setblocking(datasite_sock);
+	setblocking(dataclient_sock);
 	printsockopt(datasite_sock,"datasite_sock");
 	printsockopt(dataclient_sock,"dataclient_sock");
 	

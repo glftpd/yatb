@@ -951,14 +951,14 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 					
 					int err = SSL_get_error(ssl,rc);
 					
-					if (err == SSL_ERROR_WANT_READ) { count++; continue; }
-					if (err == SSL_ERROR_WANT_WRITE) { count++; continue; }
-					if (err == SSL_ERROR_WANT_X509_LOOKUP) { count++; continue; }					
+					if (err == SSL_ERROR_WANT_READ) { usleep(2000);count++; continue; }
+					if (err == SSL_ERROR_WANT_WRITE) { usleep(2000);count++; continue; }
+					if (err == SSL_ERROR_WANT_X509_LOOKUP) { usleep(2000);count++; continue; }					
 					
 				}
 				else
 				{
-					if (errno == EAGAIN) { count++; continue; }
+					if (errno == EAGAIN) { usleep(2000);count++; continue; }
 				}
 				debugmsg("-SYSTEM-","[data_write] error!",errno);  
 				return 0; 
@@ -1005,14 +1005,14 @@ int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 				{
 					int err = SSL_get_error(ssl,rc);
 					
-					if (err == SSL_ERROR_WANT_READ) { count++; continue; }
-					if (err == SSL_ERROR_WANT_WRITE) { count++; continue; }
-					if (err == SSL_ERROR_WANT_X509_LOOKUP) { count++; continue; }					
+					if (err == SSL_ERROR_WANT_READ) { usleep(2000);count++; continue; }
+					if (err == SSL_ERROR_WANT_WRITE) { usleep(2000);count++; continue; }
+					if (err == SSL_ERROR_WANT_X509_LOOKUP) { usleep(2000);count++; continue; }					
 					
 				}
 				else
 				{
-					if (errno == EAGAIN) { count++; continue; }
+					if (errno == EAGAIN) { usleep(2000);count++; continue; }
 				}
 				debugmsg("-SYSTEM-","[data_read] error!"); 
 				nrbytes=0; 
