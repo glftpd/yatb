@@ -174,10 +174,11 @@ void CDataThread::dataloop(void)
 		return;
 	}
 	
-	debugmsg(username,"[datathread] passive connection - listen");
+	
 	// passive connection - try to listen
 	if(!activecon)
 	{
+		debugmsg(username,"[datathread] passive connection - listen");
 		if ((datalisten_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
 		{
 			debugmsg(username, "[datathread] unable to create listen sock!",errno);		
@@ -228,11 +229,13 @@ void CDataThread::dataloop(void)
 				return;
 			}
 		}
+		debugmsg(username,"[datathread] active connect to: " + activeip);
 		if(!Connect(dataclient_sock,activeip,activeport,config.connect_timeout,shouldquit))
 		{			
 			debugmsg(username, "[datathread] could not connect to client!",errno);
 			return;
 		}
+		
 		debugmsg(username,"[datathread] active connection successfull");
 	}
 	

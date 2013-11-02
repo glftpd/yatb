@@ -204,8 +204,8 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 		debugmsg("-SYSTEM-","[Connect] end(0-0)");
 		return 0;
 	}
-	
-	if(connect(sock, (struct sockaddr *)&adr, sizeof(adr)) != 0)
+	int rc;
+	if((rc = connect(sock, (struct sockaddr *)&adr, sizeof(adr))) < 0)
 	{
 		if(errno != EINPROGRESS)
 		{
@@ -213,53 +213,59 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 			return 0;
 		}
 	}
-	fd_set writefds;
-	for(int i=0; i < sec * 2;i++)
+	if (rc != 0) // ==0 -> connect completed immediately
 	{
-		FD_ZERO(&writefds);
-		FD_SET(sock, &writefds);
-		
-		struct timeval tv;
-		tv.tv_sec = 0;
-		tv.tv_usec = 500000;
-		int res = select(sock+1, NULL, &writefds, NULL, &tv);
-		if (res < 0)
-		{	
-			debugmsg("-SYSTEM-","[Connect] end(0-2)");		
-			return 0;
-		}
-		else if(res == 0)
-		{			
-			if(shouldquit == 1) 
-			{
-				debugmsg("-SYSTEM-","[Connect] end(0-3)");
+		fd_set writefds,readfds;
+		for(int i=0; i < sec * 2;i++)
+		{
+			FD_ZERO(&writefds);
+			FD_ZERO(&readfds);
+			FD_SET(sock, &writefds);
+			FD_SET(sock,&readfds);
+			
+			struct timeval tv;
+			tv.tv_sec = 0;
+			tv.tv_usec = 500000;
+			int res = select(sock+1, &readfds, &writefds, NULL, &tv);
+			if (res < 0)
+			{	
+				debugmsg("-SYSTEM-","[Connect] end(0-2)");		
 				return 0;
 			}
+			else if(res == 0)
+			{			
+				if(shouldquit == 1) 
+				{
+					debugmsg("-SYSTEM-","[Connect] end(0-3)");
+					return 0;
+				}
+			}
+			if(FD_ISSET(sock,&readfds) || FD_ISSET(sock,&writefds))
+			{
+				int err;
+				socklen_t errlen = sizeof(err);
+				if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&errlen) < 0)
+				{
+					debugmsg("-SYSTEM-","[Connect] end(0-4)");
+					return 0;
+				}
+				if(err)
+				{
+					debugmsg("-SYSTEM-","[Connect] end(0-5)");
+					return 0;
+				}
+				if(!SocketOption(sock,SO_KEEPALIVE))
+				{
+					debugmsg("-SYSTEM-", "[Connect] client setsockopt error!",errno);
+					return 0;
+				}
+				debugmsg("-SYSTEM-","[Connect] end(1)");
+				return 1;
+			}
 		}
-		else
-		{
-			break;
-		}
 	}
-	int err;
-	socklen_t errlen = sizeof(err);
-	if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&errlen) != 0)
-	{
-		debugmsg("-SYSTEM-","[Connect] end(0-4)");
-		return 0;
-	}
-	if(err != 0)
-	{		
-		debugmsg("-SYSTEM-","[Connect] end(0-5)");
-		return 0;
-	}
-	if(!SocketOption(sock,SO_KEEPALIVE))
-	{
-		debugmsg("-SYSTEM-", "[Connect] client setsockopt error!",errno);
-		return 0;
-	}
-	debugmsg("-SYSTEM-","[Connect] end(1)");
-	return 1;
+	
+	return 0;
 }
 
 int Accept(int &listensock,int &newsock,string &clientip,int &clientport,int sec,int &shouldquit)
