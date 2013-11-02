@@ -128,9 +128,9 @@ int decrypt_cert(string tmpcert)
 	}
 	
 	unsigned char *in,*out;
-	in = new unsigned char [size];
+	
 	out = new unsigned char [size];
-	in = readfile(config.cert_path,size);
+	readfile(config.cert_path,&in,size);
 	if(!decrypt(cert_bk,in,out,size))
 	{
 		debugmsg("-SYSTEM-", "cert decrypt error");

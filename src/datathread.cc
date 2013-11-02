@@ -43,7 +43,7 @@ void CDataThread::setQuit(int q)
 	quitlock.UnLock();
 }
 
-CDataThread::CDataThread(int cpsv, int tt, int pp, int rl, int ussl, int actvcon, string usrname, string cip, string pip, string aip,int pport, int aport, int nport, CControlThread *ct,string pcmd)
+CDataThread::CDataThread(int sscn,int cpsv, int tt, int pp, int rl, int ussl, int actvcon, string usrname, string cip, string pip, string aip,int pport, int aport, int nport, CControlThread *ct,string pcmd)
 {
 	debugmsg(username,"[datathread] constructor start");
 	username = usrname;
@@ -69,7 +69,7 @@ CDataThread::CDataThread(int cpsv, int tt, int pp, int rl, int ussl, int actvcon
 	sitesslctx = NULL;
 	tmpctx = NULL;
 	buffer = new char[config.buffersize];
-	
+	sscncmd = sscn;
 	controlthread = ct;
 	debugmsg(username,"[datathread] constructor end");
 }
@@ -304,22 +304,9 @@ void CDataThread::dataloop(void)
 		}
 	}
 	
-	if(!cpsvcmd)
+	if(cpsvcmd || sscncmd)
 	{
-		debugmsg(username,"[datathread] no cpsv command");
-		if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink))
-		{
-			debugmsg(username,"[datathread] client ssl accept");
-			if(!SslAccept(dataclient_sock,&clientssl,&clientsslctx))
-			{
-				debugmsg(username, "[datathread] ssl accept failed",errno);
-				return;
-			}
-		}
-	}
-	else
-	{
-		debugmsg(username,"[datathread] cpsv command");
+		debugmsg(username,"[datathread] ssl client method");
 		if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink))
 		{
 			debugmsg(username,"[datathread] client ssl connect");
@@ -330,6 +317,20 @@ void CDataThread::dataloop(void)
 			}
 		}
 	}
+	else 
+	{
+		debugmsg(username,"[datathread] ssl server method");
+		if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink))
+		{
+			debugmsg(username,"[datathread] client ssl accept");
+			if(!SslAccept(dataclient_sock,&clientssl,&clientsslctx))
+			{
+				debugmsg(username, "[datathread] ssl accept failed",errno);
+				return;
+			}
+		}
+	}
+	
 	if(transfertype == 1)
 	{
 		debugmsg(username, "[datathread] ascii transfer");
@@ -555,6 +556,7 @@ void CDataThread::dataloop(void)
 	debugmsg(username,"[datathread] call close connection");
 	closeconnection();
 	debugmsg(username,"[datathread] end");
+	
 	return;
 
 }

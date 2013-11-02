@@ -56,7 +56,7 @@ class CControlThread
 	int gotwelcomemsg;
 	int gotpasvcmd;
 	int gotportcmd;
-	
+	int sscn;
 	int cpsvcmd; // ssl fxp
 	int sslprotp; // using secure dirlisting
 	int activecon;

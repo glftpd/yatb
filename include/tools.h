@@ -47,7 +47,7 @@ string traffic2str(double);
 int printsockopt(int, string );
 
 int filesize(string ,int &);
-unsigned char *readfile(string ,int );
+int readfile(string ,unsigned char **,int );
 int writefile(string ,unsigned char *,int );
 int decrypt(string ,unsigned char *,unsigned char *,int );
 int encrypt(string ,unsigned char *,unsigned char *,int );

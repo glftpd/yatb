@@ -53,6 +53,7 @@ CControlThread::CControlThread(int fd,string cip,int cport,string sip,int sport)
 	gotpasvcmd = 0;
 	sslprotp = 0;
 	activecon = 0;
+	sscn = 0;
 	transfertype = 1; // set to ascii mode
 	usingssl = 0;
 	cpsvcmd = 0;
@@ -689,7 +690,7 @@ void CControlThread::mainloop(void)
 							newpassiveport = passiveport + config.add_to_passive_port;
 						}
 						string passivecmd = CreatePsvCommand(newpassiveport);
-						datathread = new CDataThread(cpsvcmd, transfertype, sslprotp, relinked, usingssl, activecon, username, clientip, passiveip,   "", passiveport, 0, newpassiveport, this,passivecmd);
+						datathread = new CDataThread(sscn, cpsvcmd, transfertype, sslprotp, relinked, usingssl, activecon, username, clientip, passiveip,   "", passiveport, 0, newpassiveport, this,passivecmd);
 						if(pthread_create(&datathread->tid,NULL,makedatathread,datathread) != 0)
 						{
 							debugmsg(username,"[controlthread] error creating thread!",errno);
@@ -731,7 +732,7 @@ void CControlThread::mainloop(void)
 					{
 						if(ParsePsvCommand(s,passiveip,passiveport))
 						{
-							datathread = new CDataThread(cpsvcmd, transfertype, sslprotp, relinked, usingssl, activecon, username, clientip, passiveip,  activeip, passiveport, activeport, 0, this,"");
+							datathread = new CDataThread(sscn, cpsvcmd, transfertype, sslprotp, relinked, usingssl, activecon, username, clientip, passiveip,  activeip, passiveport, activeport, 0, this,"");
 							if(pthread_create(&datathread->tid,NULL,makedatathread,datathread) != 0)
 							{
 								debugmsg(username,"[controlthread] error creating thread!",errno);
@@ -1214,8 +1215,8 @@ void CControlThread::mainloop(void)
 			else if (upper(s,8).find("SSCN ON",0) != string::npos)
 			{
 				debugmsg(username,"[controlthread] sscn on command");
-				cpsvcmd = 1;
-				if(config.ssl_forward == 0 && config.traffic_bnc)
+				sscn = 1;
+				if(!config.ssl_forward && config.traffic_bnc)
 				{
 					if (!Write(client_sock,"200 SSCN:CLIENT METHOD\r\n",clientssl))
 					{						
@@ -1228,6 +1229,68 @@ void CControlThread::mainloop(void)
 					{											
 						return;
 					}
+				}
+			}
+			else if (upper(s,9).find("SSCN OFF",0) != string::npos)
+			{
+				debugmsg(username,"[controlthread] sscn off command");
+				sscn = 0;
+				if(!config.ssl_forward && config.traffic_bnc)
+				{
+					if (!Write(client_sock,"200 SSCN:SERVER METHOD\r\n",clientssl))
+					{						
+						return;
+					}
+				}
+				else
+				{
+					if (!Write(site_sock,s,sitessl))
+					{											
+						return;
+					}
+				}
+			}
+			else if (upper(s,5).find("SSCN",0) != string::npos)
+			{
+				debugmsg(username,"[controlthread] sscn status command");
+				
+				if(!config.ssl_forward && config.traffic_bnc)
+				{
+					if(sscn == 1)
+					{
+						if (!Write(client_sock,"200 SSCN:CLIENT METHOD\r\n",clientssl))
+						{						
+							return;
+						}
+					}
+					else
+					{
+						if (!Write(client_sock,"200 SSCN:SERVER METHOD\r\n",clientssl))
+						{						
+							return;
+						}
+					}
+				}
+				else
+				{
+					if (!Write(site_sock,s,sitessl))
+					{											
+						return;
+					}
+				}
+			}
+			else if (upper(s,5).find("EPSV",0) != string::npos && config.traffic_bnc)
+			{
+				if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
+				{						
+					return;
+				}
+			}
+			else if (upper(s,5).find("EPRT",0) != string::npos && config.traffic_bnc)
+			{
+				if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
+				{						
+					return;
 				}
 			}
 			else if (config.usecommands && upper(s,config.killcmd.length() + config.cmd_prefix.length()).find(upper(config.cmd_prefix+config.killcmd,0),0) != string::npos)

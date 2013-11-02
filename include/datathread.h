@@ -11,7 +11,7 @@ class CDataThread
 {
 	public:
 	
-	CDataThread(int, int, int, int, int, int, string, string, string, string, int, int, int,CControlThread *,string);
+	CDataThread(int,int, int, int, int, int, int, string, string, string, string, int, int, int,CControlThread *,string);
 	~CDataThread();
 	
 	pthread_t tid; // thread id
@@ -42,7 +42,7 @@ class CDataThread
 	
 	string activeip,username,clientip,passiveip,passivecmd;
 	int activeport,passiveport,newport;
-	int transfertype,sslprotp,cpsvcmd;
+	int transfertype,sslprotp,cpsvcmd,sscncmd;
 	int relinked, usingssl, activecon;
 	char *buffer;
 	CControlThread *controlthread;

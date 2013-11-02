@@ -189,7 +189,7 @@ int main(int argc,char *argv[])
 			char *k;
 			k = getpass("Enter config blowfish key: ");
 			bk = k;
-			memset(k, 0,strlen(k));
+			memset(k, 0,bk.length());
 		   
 		#endif
 		
@@ -217,7 +217,7 @@ int main(int argc,char *argv[])
 		char *ck;
 		ck = getpass("Enter cert blowfish key: ");
 		cert_bk = ck;
-		memset(ck, 0,strlen(ck));
+		memset(ck, 0,cert_bk.length());
 	  #endif
 	  #ifdef cert_key
 		cert_bk = cert_key;

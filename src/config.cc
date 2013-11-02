@@ -122,29 +122,29 @@ int CConfig::readconf(string filename,string key)
 	else
 	{	
 		unsigned char *bufferin,*bufferout;
-		bufferin = new unsigned char [s];
-		bufferout = new unsigned char [s];
-		memset(bufferin,0,s);
-		memset(bufferout,0,s);
-		bufferin = readfile(filename,s);
+		
+		bufferout = new unsigned char [s+1];
+		
+		memset(bufferout,'\0',s+1);
+		readfile(filename,&bufferin,s);
 		
 		string daten;
 		
 		if (use_blowconf == 1)
 		{
 			decrypt(key,bufferin,bufferout,s);
-			daten = ((const char*)bufferout);
-			memset(bufferin,0,s);
-			memset(bufferout,0,s);
+			daten = (char*)bufferout;
+			memset(bufferin,'\0',s+1);
+			memset(bufferout,'\0',s+1);
 			delete [] bufferin;
 	 		delete [] bufferout;
 			
 		}
 		else
 		{			
-			daten = ((const char*)bufferin);
-	    	memset(bufferin,0,s);
-			memset(bufferout,0,s);
+			daten = (char *)bufferin;
+	    	memset(bufferin,'\0',s+1);
+			memset(bufferout,'\0',s+1);
 	    	delete [] bufferin;
 	 		delete [] bufferout;
 		}    

@@ -1,6 +1,6 @@
 #ifndef __GLOBAL_H
 #define __GLOBAL_H
-
+#define _MULTI_THREADED
 #include <iostream>
 #include <string>
 #include <algorithm>
@@ -33,8 +33,8 @@
 
 using namespace std;
 
-#define version "Yet another traffic bouncer 1.2.6 (c) Hawk/PPX"
-#define builddate "13.09.2005"
+#define version "Yet another traffic bouncer 1.2.7 (c) Hawk/PPX"
+#define builddate "05.10.2005"
 
 #if defined(__GNUC__) && __GNUC__ < 3
 #define ios_base ios

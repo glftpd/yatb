@@ -1365,14 +1365,14 @@ int filesize(string filename,int &s)
 	return 1;
 }
 
-unsigned char *readfile(string filename,int s)
+int readfile(string filename,unsigned char **data,int s)
 {
 	ifstream ifile(filename.c_str(),ios::binary | ios::in);
-	unsigned char *tmp;
-	tmp = new unsigned char [s];
-	ifile.read((char*)tmp,s);
+	*data = new unsigned char [s+1];
+	ifile.read((char *)*data,s);
 	ifile.close();
-	return tmp;
+	data[0][s] = '\0';
+	return 1;
 }
 
 int writefile(string filename,unsigned char *data,int s)

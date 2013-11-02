@@ -55,9 +55,9 @@ int main(int argc,char *argv[])
 			}
 
 			unsigned char *in,*out;
-			in = new unsigned char [size];
+			
 			out = new unsigned char [size];
-			in = readfile(p2,size);
+			readfile(p2,&in,size);
 			if(!decrypt(k1,in,out,size))
 			{
 				cout << "Decrypt error!\n";
@@ -100,9 +100,9 @@ int main(int argc,char *argv[])
 			}
 
 			unsigned char *in,*out;
-			in = new unsigned char [size];
+			
 			out = new unsigned char [size];
-			in = readfile(p2,size);
+			readfile(p2,&in,size);
 			if (!encrypt(k2,in,out,size))
 			{
 				cout << "Encrypt error!\n";
