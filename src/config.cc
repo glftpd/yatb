@@ -33,9 +33,9 @@ CConfig::CConfig()
 
 	pending = 0;
 	admin_list = "";
-	connect_timeout = 5;
-	ident_timeout = 5;
-	read_write_timeout = 5;
+	connect_timeout = 7;
+	ident_timeout = 7;
+	read_write_timeout = 30;
 
 	cert_path = "";
 	fxp_fromsite_list = "";

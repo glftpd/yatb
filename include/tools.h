@@ -51,7 +51,7 @@ unsigned char *readfile(string ,int );
 int writefile(string ,unsigned char *,int );
 int decrypt(string ,unsigned char *,unsigned char *,int );
 int encrypt(string ,unsigned char *,unsigned char *,int );
-
+int GetLine(int,SSL **,string &);
 int Login(int &,string ,int ,string ,string ,int ,SSL **,SSL_CTX **,string &);
 
 int trafficcheck(void);

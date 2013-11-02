@@ -518,7 +518,7 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 {
 	int ident_sock = -1;
 	int shouldquit = 0;
-	fd_set readfds;
+	
 	string ident_reply;
 	reply = "*";
 	if((ident_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
@@ -539,44 +539,26 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 	if (Connect(ident_sock,ip,113,timeout,shouldquit) )
 	{				
 		debugmsg("IDENT","[Ident] try to read ident reply");
-		if(!setblocking(ident_sock))
-		{
-			Close(ident_sock,"ident_sock");			
-			return 0;
-		}
-		FD_ZERO(&readfds);
-		FD_SET(ident_sock, &readfds);
+		
+		
 		stringstream ss;
 		ss << clientport << " , " << listenport << "\r\n";
-		debugmsg("IDENT","ports: " + ss.str());
+		debugmsg("IDENT","ident msg: '" + ss.str() + "'");
 		if (!control_write(ident_sock,ss.str(),NULL))
 		{	
+			debugmsg("IDENT","ident write failed");
 			Close(ident_sock,"ident_sock");				
 			return 0;		
 		}
-		struct timeval tv;
-		tv.tv_sec = timeout;
-		tv.tv_usec = 0;
-		
-		if (select(ident_sock+1, &readfds, NULL, NULL, &tv) <= 0)
-		{
-			debugmsg("IDENT", "[Ident] ident timeout!",errno);
-			Close(ident_sock,"ident_sock");
-			return 0;
+				
+		if(!control_read(ident_sock,NULL,ident_reply))
+		{	
+			debugmsg("IDENT","ident read failed");
+			Close(ident_sock,"ident_sock");								
+			return 0;					
 		}
-		else
-		{
-			if (FD_ISSET(ident_sock, &readfds))
-			{	
-				if(!control_read(ident_sock,NULL,ident_reply))
-				{	
-					Close(ident_sock,"ident_sock");								
-					return 0;					
-				}
-				debugmsg("IDENT","[Ident] ident: " + ident_reply);
-			}
+		debugmsg("IDENT","[Ident] ident: " + ident_reply);
 			
-		}
 		Close(ident_sock,"ident_sock");
 	}
 	else
@@ -726,8 +708,8 @@ int control_read(int sock,SSL *sslcon,string &str)
 	{	
 		debugmsg("CONTROLREAD","loop start");	
 		for (int i=0;i<config.buffersize;i++) { buffer[i] = 0; }
-		tv.tv_sec = 0;
-		tv.tv_usec = 500000;
+		tv.tv_sec = config.read_write_timeout;
+		tv.tv_usec = 0;
 		FD_ZERO(&readfds);
 		FD_SET(sock,&readfds);
 		if (select(sock+1,&readfds,NULL,NULL,&tv) == -1)
@@ -805,7 +787,7 @@ int control_read(int sock,SSL *sslcon,string &str)
 			}
 			else
 			{	
-				debugmsg("LOGIN","else path");			
+				debugmsg("CONTROLREAD","else path");			
 				char *tmpstr;
 				tmpstr = new char[rc+1];
 				memcpy(tmpstr,buffer,rc);
@@ -831,7 +813,7 @@ int control_read(int sock,SSL *sslcon,string &str)
 		}
 		else
 		{
-			debugmsg("LOGIN","socket not ready");
+			debugmsg("CONTROLREAD","socket not ready - timeout");
 			return 0;
 		}
 	}
@@ -1450,6 +1432,25 @@ int encrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
         return 1;
 }
 
+int GetLine(int sock,SSL **ssl,string &reply)
+{
+	string rep="";
+	while(!IsEndline(rep))
+	{
+		string tmp;
+		
+		if(!control_read(sock,*ssl,tmp))
+		{
+		   debugmsg("GETLINE","read error");
+		   return 0;
+		}
+		rep += tmp;
+				
+	}	
+	reply = rep;
+	return 1;
+}
+
 int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **ssl,SSL_CTX **sslctx,string &message)
 {
 	unsigned int pos;
@@ -1463,19 +1464,12 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 	}
 	debugmsg("LOGIN","connected");
 	string reply = "";
-	while(!IsEndline(reply))
+	if(!GetLine(sock,ssl,reply))
 	{
-		string tmp;
-		
-		if(!control_read(sock,*ssl,tmp))
-		{
-		   debugmsg("LOGIN","read error");
-		   message = "read error";
-			return 0;
-		}
-		reply += tmp;
-				
-	}	
+		message = "read error";
+		return 0;
+	}
+	
 	if(usessl)
 	{
 		if(!control_write(sock,"AUTH TLS\r\n",*ssl))
@@ -1486,17 +1480,10 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 		}
 		reply = "";
 		
-		while(!IsEndline(reply))
+		if(!GetLine(sock,ssl,reply))
 		{
-			string tmp;
-			if(!control_read(sock,*ssl,tmp))
-			{
-				debugmsg("LOGIN","read error");
-				message = "read error";
-				return 0;
-			}
-			reply += tmp;
-			
+			message = "read error";
+			return 0;
 		}
 		
 		pos = reply.find("AUTH TLS successful",0);
@@ -1518,16 +1505,10 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 		return 0;
 	}
 	reply = "";
-	while(!IsEndline(reply))
+	if(!GetLine(sock,ssl,reply))
 	{
-		string tmp;
-		if(!control_read(sock,*ssl,tmp))
-		{
-		   debugmsg("LOGIN","read error");
-		   message = "read error";
-			return 0;
-		}
-		reply += tmp;
+		message = "read error";
+		return 0;
 	}
 	// standard gl message
 	pos = reply.find("331 Password required for",0);
@@ -1552,16 +1533,10 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 		return 0;
 	}
 	reply = "";
-	while(!IsEndline(reply))
+	if(!GetLine(sock,ssl,reply))
 	{
-		string tmp;
-		if(!control_read(sock,*ssl,tmp))
-		{
-			debugmsg("LOGIN","read error");
-			message = "read error";
-			return 0;
-		}
-		reply += tmp;
+		message = "read error";
+		return 0;
 	}
 	//standard gl message	
 	pos = reply.find("logged in.",0);
