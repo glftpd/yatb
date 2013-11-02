@@ -8,7 +8,8 @@
 #include "tls.h"
 #include "forward.h"
 #include "iplist.h"
-#include "fxpiplist.h"
+#include "whitelist.h"
+#include "fpwhitelist.h"
 
 #ifndef SOLARIS
 #define SOLARIS (defined(sun) && (defined(__svr4__) || defined(__SVR4)))
@@ -55,7 +56,8 @@ int listen_sock;
 struct sockaddr_in listen_addr;
 long int nr_logins=0;
 CStringlist adminlist,fxpfromsitelist,fxptositelist,sslexcludelist,entrylist;
-CFxpiplist fxpiplist;
+CWhitelist whitelist;
+CFpWhitelist fpwhitelist;
 time_t start_time;
 
 int use_blowconf = 1;
@@ -64,7 +66,7 @@ SSL_CTX *clientsslctx;
 CLock list_lock,config_lock,globals_lock,sock_lock;
 // blowkey used as salt for hashing
 string bk = "";
-string cert_bk="",ip_bk="";
+string cert_bk="",ip_bk="",fpwl_bk="";
 string conffile,yatbfilename;
 string lastday="",lastmonth="";
 int lastweek = 0;
@@ -217,16 +219,37 @@ int main(int argc,char *argv[])
 		ip_bk = ck;
 		memset(ck, 0,ip_bk.length());	  
 	}
+	
+	if(config.crypted_fpwhitelist)
+	{	  
+		char *ck;
+		ck = getpass("Enter fingerprint whitelist blowfish key: ");
+		fpwl_bk = ck;
+		memset(ck, 0,fpwl_bk.length());	  
+	}
 
 	adminlist.Insert(config.admin_list);
 	fxpfromsitelist.Insert(config.fxp_fromsite_list);
 	fxptositelist.Insert(config.fxp_tosite_list);
 	sslexcludelist.Insert(config.sslexclude_list);
 	entrylist.Insert(config.entry_list);
-	if(!fxpiplist.ReadList(config.iplist_file,ip_bk))
+	
+	if(config.iplist_file != "")
 	{
-		debugmsg("-SYSTEM-","WARNING: can't read ip list");
+		if(!whitelist.ReadList(config.iplist_file,ip_bk))
+		{
+			debugmsg("-SYSTEM-","WARNING: can't read ip whitelist");
+		}
 	}
+
+	if(config.fpwhitelist_file != "")
+	{
+		if(!fpwhitelist.ReadList(config.fpwhitelist_file,fpwl_bk))
+		{
+			debugmsg("-SYSTEM-","WARNING: can't read fp whitelist");
+		}
+	}
+
 	if(!iplist.readlist(config.site_ip,config.site_port))
 	{
 		debugmsg("-SYSTEM-","error in ip/port list");

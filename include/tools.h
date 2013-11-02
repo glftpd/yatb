@@ -58,6 +58,8 @@ int Login(int &,string ,int ,string ,string ,int ,SSL **,SSL_CTX **,string &);
 
 int trafficcheck(void);
 string hash(string ,string );
+int filehash(string ,string ,string &);
+string fingerprint(SSL *);
 
 #if defined(__linux__) && defined(__i386__)
 pid_t gettid(void);

@@ -1,5 +1,5 @@
-#ifndef __FXPIPLIST_H
-#define __FXPIPLIST_H
+#ifndef __WHITELIST_H
+#define __WHITELIST_H
 
 #include "global.h"
 #include "config.h"
@@ -13,13 +13,13 @@ class FxpEntry
 	string user;
 };
 
-class CFxpiplist
+class CWhitelist
 {
 	public:
 	
-	CFxpiplist();
+	CWhitelist();
 	
-	~CFxpiplist();
+	~CWhitelist();
 	
 	void Remove(string);
 	
@@ -44,7 +44,7 @@ class CFxpiplist
 			
 };
 
-extern CFxpiplist fxpiplist;
+extern CWhitelist whitelist;
 extern string bk; // blowkey for hashing
 #endif
 

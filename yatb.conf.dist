@@ -14,6 +14,7 @@ connect_ip=;
 listen_interface=eth0;
 listen_ip=;
 traffic_bnc=1;
+nat_pasv_ip=;
 
 [ Limit ]
 day_limit=0;
@@ -56,6 +57,9 @@ use_fxpiphash=0;
 hash_algo=sha256;
 iplist_file=;
 crypted_iplist=0;
+show_fp_on_control=1;
+fpwhitelist_file=;
+crypted_fpwhitelist=0;
 
 [ Admin ]
 usecommands=0;
@@ -71,7 +75,7 @@ reloadcmd=reload;
 entrycmd=entry;
 killcmd=kill;
 fxpipcmd=fxpip;
-
+fpwlcmd=fpwl;
 
 [ Ftpd setup ]
 server_string=220 FTP server ready.;

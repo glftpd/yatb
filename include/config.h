@@ -19,104 +19,126 @@ class CConfig
 	CConfig();
 	
 	~CConfig();
-	
-	
+		
 	int readconf(string, string, int);
 	
+	// config vars start here
+
+	// section [DEBUG]
 	int debug;
+	int log_to_screen;
+	string debug_logfile;
+	string command_logfile;
+	int syslog;
+
+	// section [CONNECTION]
 	int listen_port;
 	string site_ip;
 	string connect_ip;
 	string site_port;
 	string listen_interface;
 	string listen_ip;
-	string server_string;
-	
-	int fake_serverstring;
-	int trytorelink;
+	string entry_list;
 	int traffic_bnc;
-	
-	int use_ident;
-	int enforce_ident;
+	string nat_pasv_ip;
+
+	// section [LIMIT]
+	double day_limit;
+    double week_limit;
+    double month_limit;
+
+	// section [SSL]
+	string cert_path;
+	string opt_dh_file;
+    int translate_nosslfxp;
+	int ssl_forward;
+	int use_ssl_exclude;
+	string sslexclude_list;
 	int enforce_tls;
 	int enforce_tls_fxp;
-	
-	int send_traffic_info;
+	int crypted_cert;
+
+	// section [IDENT]
+	int use_ident;
+	int enforce_ident;
+	int no_idnt_cmd;
+
+	// section [RELINK]
 	string relink_ip;
 	int relink_port;
 	string relink_user;
 	string relink_pass;
-	string user_access_denied;
-	string user_login_success;
-	string max_numlogins;
-	int add_to_passive_port;
+	int trytorelink;
+	int ssl_relink;
 	int relink_notls;
-	int port_range_start;
-	int port_range_end;
-	int use_port_range;
-	
-	int buffersize;
+	int traffic_bnc_relink;
 
-	int pending;
-	string admin_list;
-	int connect_timeout;
-	int ident_timeout;
-	int read_write_timeout;
 
-	string cert_path;
+	// section [FXP]
 	string fxp_fromsite_list;
 	int use_fxpfromsite_list;
 	string fxp_tosite_list;
 	int use_fxptosite_list;
-	int uid;
-	string debug_logfile;
-	string command_logfile;
-	int log_to_screen;
+	int use_fxpiplist;
+	int use_fxpiphash;
+	string hash_algo;
+	string iplist_file;
+	int crypted_iplist;
+	int show_fp_on_control;
+	string fpwhitelist_file;
+	int crypted_fpwhitelist;
 
-	int ssl_forward;
-	int use_ssl_exclude;
-	string sslexclude_list;
-
-	string entry_list;
+	// section [ADMIN]
+	int usecommands;
+	string admin_list;
+	string cmd_prefix;
 	string infocmd;
 	string helpcmd;
 	string admincmd;
 	string tositecmd;
 	string fromsitecmd;
 	string sslexcludecmd;
-	string site_closed;
-	string site_full;
 	string reloadcmd;
 	string entrycmd;
 	string killcmd;
-	int usecommands;
+	string fxpipcmd;
+	string fpwlcmd;
+
+	// section [FTPDSETUP]
+	string server_string;	
+	int fake_serverstring;	
+	int send_traffic_info;
+	string user_access_denied;
+	string user_login_success;
+	string site_closed;
+	string site_full;	
+	string max_numlogins;
 	int show_connect_failmsg;
-	string pidfile;
 	string connectfailmsg;
-	int syslog;
+
+	// section [FORWARDER]
 	int use_forwarder;
 	int forwarder_sport;
 	int forwarder_dport;
 	string forwarder_ip;
-	int retry_count;
-	int no_idnt_cmd;
-	int ssl_ascii_cache;
-	string cmd_prefix;
-	int crypted_cert;
-    int ssl_relink;
-    double day_limit;
-    double week_limit;
-    double month_limit;
-    string opt_dh_file;
-    int translate_nosslfxp;
-    int disable_noop;
-	int traffic_bnc_relink;
-	string fxpipcmd;
-	int use_fxpiplist;
-	int use_fxpiphash;
-	string hash_algo;
-	string iplist_file;
-	int crypted_iplist;
+
+
+	// section [ADVANCED]
+	int add_to_passive_port;	
+	int port_range_start;
+	int port_range_end;
+	int use_port_range;	
+	int buffersize;
+	int pending;	
+	int connect_timeout;
+	int ident_timeout;
+	int read_write_timeout;
+	int uid;	
+	string pidfile;
+	int retry_count;	
+	int ssl_ascii_cache;    
+    int disable_noop;	
+
 };
 
 extern CConfig config;

@@ -809,6 +809,10 @@ int kill_file(string filename)
     return 1;
 }
 
+static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+{	
+	return 1;
+}
 
 int ssl_setup()
 {
@@ -833,7 +837,8 @@ int ssl_setup()
 	SSL_CTX_set_default_verify_paths(clientsslctx);
 	SSL_CTX_set_options(clientsslctx,SSL_OP_ALL);
 	SSL_CTX_set_mode(clientsslctx,SSL_MODE_AUTO_RETRY);
-	
+	SSL_CTX_set_verify(clientsslctx,SSL_VERIFY_PEER,verify_callback);
+
 	string certfile = "certtmp";
 	
 	if(!config.crypted_cert)

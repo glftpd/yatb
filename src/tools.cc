@@ -571,7 +571,7 @@ struct sockaddr_in GetIp(string ip,int port)
 		if((he = gethostbyname(ip.c_str())) == NULL)
 		{
 			//cout << "Error resolving ip\n";
-			
+			inet_aton("0.0.0.0", &addr.sin_addr); 
 		}
 		else
 		{
@@ -888,6 +888,7 @@ int control_read(int sock,SSL *sslcon,string &str)
 	}
 }
 
+
 int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 {
 	if(!setnonblocking(sock))
@@ -902,6 +903,7 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 		debugmsg("SSLCONNECT", "[SslConnect] sitesslctx failed!");
 		return 0;
 	}
+	SSL_CTX_set_default_verify_paths(*sslctx);
 	SSL_CTX_set_options(*sslctx,SSL_OP_ALL);
 	SSL_CTX_set_mode(*sslctx,SSL_MODE_AUTO_RETRY);
 	SSL_CTX_set_session_cache_mode(*sslctx,SSL_SESS_CACHE_OFF);
@@ -1708,6 +1710,7 @@ string hash(string text,string algo)
 	md = EVP_get_digestbyname(algo.c_str());
 	if(md == NULL)
 	{
+		// return original text if getting algo fails
 		debugmsg("-HASH-","Error getting hash algo");
 		return text;
 	}
@@ -1721,6 +1724,70 @@ string hash(string text,string algo)
 		res << hex << (int)md_value[k];		
 	}
 	return res.str();
+}
+
+int filehash(string filename,string algo,string &result)
+{
+	int size;
+	if(!filesize(filename,size)) return 0;
+	unsigned char *data;
+	readfile(filename,&data,size);
+	stringstream res;
+	EVP_MD_CTX mdctx;
+    const EVP_MD *md;    
+    unsigned char md_value[EVP_MAX_MD_SIZE];
+    unsigned int md_len, k;
+	md = EVP_get_digestbyname(algo.c_str());
+	if(md == NULL)
+	{
+		delete [] data;		
+		return 0;
+	}
+	EVP_MD_CTX_init(&mdctx);
+    EVP_DigestInit_ex(&mdctx, md, NULL);
+    EVP_DigestUpdate(&mdctx, data, size);    
+    EVP_DigestFinal_ex(&mdctx, md_value, &md_len);
+    EVP_MD_CTX_cleanup(&mdctx);
+	for(k = 0; k < md_len; k++)
+	{
+		res << hex << (int)md_value[k];		
+	}
+	delete [] data;	
+	result = res.str();
+	return 1;
+}
+
+string fingerprint(SSL *ssl)
+{
+	X509 *cert;
+	cert = SSL_get_peer_certificate(ssl);
+	if(cert == NULL)
+	{
+		debugmsg("-SYSTEM-", "[datathread] failed to get cert",errno);
+		return "NO-FINGERPRINT";
+	}
+	else
+	{
+		unsigned char keyid[EVP_MAX_MD_SIZE];
+		unsigned int keyidlen;
+		if(!X509_digest(cert,EVP_md5(),keyid, &keyidlen))
+		{
+			debugmsg("-SYSTEM-", "[datathread] failed to get digest",errno);
+			X509_free(cert);
+			return "NO-FINGERPRINT";
+		}
+		else
+		{
+			X509_free(cert);
+			stringstream res;
+			for(unsigned int k = 0; k < keyidlen; k++)
+			{
+				res << hex << setfill('0') << setw(2) << (int)keyid[k];
+				if(k != (keyidlen -1)) res << ":";
+			}
+			return upper(res.str(),0);			
+		}
+	}
 }
 
 #if defined(__linux__) && defined(__i386__)

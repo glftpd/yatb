@@ -1,22 +1,22 @@
-#include "fxpiplist.h"
+#include "fpwhitelist.h"
 
 
-CFxpiplist::CFxpiplist()
+CFpWhitelist::CFpWhitelist()
 {
 	
 }
 
-CFxpiplist::~CFxpiplist()
+CFpWhitelist::~CFpWhitelist()
 {
 	
 }
 
-int CFxpiplist::WriteList(string filename, string key)
+int CFpWhitelist::WriteList(string filename, string key)
 {
 	string daten;
 	for (unsigned int i=0;i < List.size();i++)
 	{
-		daten += List[i].ip + "," + List[i].comment + "," + List[i].user + "\r\n";
+		daten += List[i].fp + "," + List[i].comment + "," + List[i].user + "\r\n";
 	}
 	unsigned char *bufferin,*bufferout;
 	int s = daten.length();
@@ -55,12 +55,12 @@ int CFxpiplist::WriteList(string filename, string key)
 	
 }
 
-int CFxpiplist::ReadList(string filename, string key)
+int CFpWhitelist::ReadList(string filename, string key)
 {
 	int s;
 	if (!filesize(filename,s))
 	{
-		debugmsg("-READLIST-","Error reading ip list");
+		debugmsg("-READLIST-","Error reading fpwhitelist list");
 		return 0;
 	}
 	else
@@ -73,7 +73,7 @@ int CFxpiplist::ReadList(string filename, string key)
 		readfile(filename,&bufferin,s);
 
 		string tmp,daten;
-		if(config.crypted_iplist)
+		if(config.crypted_fpwhitelist)
 		{
 			decrypt(key,bufferin,bufferout,s);
 			daten = (char*)bufferout;
@@ -88,7 +88,7 @@ int CFxpiplist::ReadList(string filename, string key)
 			if(daten[i] != '\r' && daten[i] != '\n') tmp += daten[i];
 			if(daten[i] == '\n')
 			{
-				Insert_nokey(tmp);
+				Insert(tmp);
 				tmp = "";
 			}
 		}
@@ -100,20 +100,13 @@ int CFxpiplist::ReadList(string filename, string key)
 	}
 }
 
-int CFxpiplist::IsInList(string s)
+int CFpWhitelist::IsInList(string s)
 {
 	string tmp;
-	if(config.use_fxpiphash)
-	{		
-		tmp = hash(bk+s,config.hash_algo);
-	}
-	else
-	{
-		tmp = s;
-	}
+	tmp = s;
 	for (unsigned int i=0;i < List.size();i++)
 	{
-		if (List[i].ip == tmp)
+		if (List[i].fp == tmp)
 		{
 			return 1;
 		}
@@ -121,20 +114,15 @@ int CFxpiplist::IsInList(string s)
 	return 0;
 }
 
-string CFxpiplist::GetComment(string s)
+string CFpWhitelist::GetComment(string s)
 {
 	string tmp;
-	if(config.use_fxpiphash)
-	{		
-		tmp = hash(bk+s,config.hash_algo);
-	}
-	else
-	{
-		tmp = s;
-	}
+	
+	tmp = s;
+	
 	for (unsigned int i=0;i < List.size();i++)
 	{
-		if (List[i].ip == tmp)
+		if (List[i].fp == tmp)
 		{
 			return List[i].comment + " - " + List[i].user;
 		}
@@ -142,57 +130,36 @@ string CFxpiplist::GetComment(string s)
 	return "";
 }
 
-void CFxpiplist::Remove(string s)
+void CFpWhitelist::Remove(string s)
 {
 	string tmp;
-	if(config.use_fxpiphash)
-	{	
-		unsigned int pos;
-		pos = s.find(".",0);
-		if(pos == string::npos)
-		{
-			tmp = s;
-		}
-		else
-		{
-			tmp = hash(bk+s,config.hash_algo);
-		}
-	}
-	else
-	{
-		tmp = s;
-	}
-	vector<FxpEntry>::iterator it;
+	
+	tmp = s;
+	
+	vector<FpEntry>::iterator it;
 	for( it = List.begin(); it != List.end(); it++ )
-	{
-		
-		if (((FxpEntry)*it).ip == tmp)
+	{		
+		if (((FpEntry)*it).fp == tmp)
 		{
 			List.erase(it);
 			return;
 		}
 	}
-
 }
 
 
-int CFxpiplist::Insert(string s)
+int CFpWhitelist::Insert(string s)
 {
-	// format: ip,comment,user
-	string ip,comment,user;
+	// format: fp,comment,user
+	string fp,comment,user;
 	if (s == "") { return 0; }	
 	unsigned int pos = s.find(",",0);
 	if (pos != string::npos)
 	{
 		if(IsInList(s.substr(0,pos))) { return 2; }
-		if(config.use_fxpiphash)
-		{			
-			ip = hash(bk+s.substr(0,pos),config.hash_algo);			
-		}
-		else
-		{
-			ip = s.substr(0,pos);
-		}
+		
+		fp = s.substr(0,pos);
+		
 		s = s.substr(pos + 1, s.length() - pos - 1);
 		pos = s.find(",",0);
 		if (pos != string::npos)
@@ -200,8 +167,8 @@ int CFxpiplist::Insert(string s)
 			comment = s.substr(0,pos);
 			s = s.substr(pos + 1, s.length() - pos - 1);
 			user = s;
-			FxpEntry entry;
-			entry.ip = ip;
+			FpEntry entry;
+			entry.fp = upper(fp,0);
 			entry.comment = comment;
 			entry.user = user;
 			List.push_back(entry);
@@ -219,41 +186,14 @@ int CFxpiplist::Insert(string s)
 	
 }
 
-void CFxpiplist::Insert_nokey(string s)
-{
-	// format: ip,comment,user
-	string ip,comment,user;
-	if (s == "") { return; }
-	if(IsInList(s)) { return; }
-	unsigned int pos = s.find(",",0);
-	if (pos != string::npos)
-	{		
-		ip = s.substr(0,pos);		
-		s = s.substr(pos + 1, s.length() - pos - 1);
-		pos = s.find(",",0);
-		if (pos != string::npos)
-		{
-			comment = s.substr(0,pos);
-			s = s.substr(pos + 1, s.length() - pos - 1);
-			user = s;
-			FxpEntry entry;
-			entry.ip = ip;
-			entry.comment = comment;
-			entry.user = user;
-			List.push_back(entry);
-		}
-	}
 
-	
-}
-
-string CFxpiplist::GetList(void)
+string CFpWhitelist::GetList(void)
 {
-	string tmp = "200- FxpIp report start\r\n";
+	string tmp = "200- FpWhitelist report start\r\n";
 	for (unsigned int i=0; i < List.size(); i++)
 	{
-		tmp += "200- " + List[i].ip + " - " + List[i].comment + " - " + List[i].user + "\r\n";
+		tmp += "200- " + List[i].fp + " - " + List[i].comment + " - " + List[i].user + "\r\n";
 	}
-	tmp += "200 FxpIp report end\r\n";
+	tmp += "200 FpWhitelist report end\r\n";
 	return tmp;
 }

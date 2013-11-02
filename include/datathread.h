@@ -28,8 +28,8 @@ class CDataThread
 	friend void *makedatathread(void *pData);
 	
 	void dataloop(void);
-	
-	
+
+	string fp; // store fingerprint from datachannel
 	
 	int Write(int ,char *,int ,SSL *);
 	int Read(int  ,char *,int &,SSL *);

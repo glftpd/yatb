@@ -2,94 +2,124 @@
 #include "tools.h"
 
 CConfig::CConfig()
-{	
+{
+	// set some default values
+
+	// section [DEBUG]
 	debug = 0;
+	debug_logfile = "";
+	command_logfile = "";
+	log_to_screen = 0;
+	syslog = 0;
+
+	// section [CONNECTION]
 	listen_port = 0;
 	site_ip = "";
 	connect_ip = "";
 	site_port = "";
 	listen_interface = "eth0";
 	listen_ip = "";
-	server_string  = "";
-	fake_serverstring = 0;
-	trytorelink = 0;
-	traffic_bnc = 0;	
-	use_ident = 0;
-	enforce_ident = 0;
+	entry_list = "";
+	traffic_bnc = 0;
+	nat_pasv_ip = "";
+
+	// section [LIMIT]
+	day_limit = 0;
+    week_limit = 0;
+    month_limit = 0;
+
+	// section [SSL]
+	cert_path = "ftpd-dsa.pem";
+	opt_dh_file = "";
+	crypted_cert = 0;
 	enforce_tls = 0;
 	enforce_tls_fxp = 0;	
-	send_traffic_info = 0;
+	ssl_forward = 1;
+	use_ssl_exclude = 0;
+	sslexclude_list = "";
+	translate_nosslfxp = 0;
+
+	// section [IDENT]
+	use_ident = 1;
+	enforce_ident = 0;
+	no_idnt_cmd = 0;
+
+	// section [RELINK]
+	trytorelink = 0;
 	relink_ip = "";
 	relink_port = 0;
 	relink_user = "";
 	relink_pass = "";
-	user_access_denied = "";
-	user_login_success = "";
-	add_to_passive_port = 0;	
-	port_range_start = 0;
-	port_range_end = 0;
-	use_port_range = 0;	
-	buffersize = 4096;
+	ssl_relink = 0;
+	relink_notls = 0;
+	traffic_bnc_relink=0;
 
-	pending = 0;
-	admin_list = "";
-	connect_timeout = 7;
-	ident_timeout = 7;
-	read_write_timeout = 30;
-
-	cert_path = "";
+	// section [FXP]
 	fxp_fromsite_list = "";
 	use_fxpfromsite_list = 0;
 	use_fxptosite_list = 0;
 	fxp_tosite_list = "";
-	uid = 0;
-	debug_logfile = "";
-	command_logfile = "";
-	log_to_screen = 0;
-	ssl_forward = 0;
+	use_fxpiplist = 0;
+	use_fxpiphash = 0;
+	hash_algo = "sha256";
+	iplist_file = "";
+	crypted_iplist=0;
+	show_fp_on_control=0;
+	fpwhitelist_file = "";
+	crypted_fpwhitelist = 0;
 
-	use_ssl_exclude = 0;
-	sslexclude_list = "";
-
-	entry_list = "";
+	// section [ADMIN]
+	usecommands = 0;
+	admin_list = "";
+	cmd_prefix = "";
 	infocmd = "";
 	helpcmd = "";
 	admincmd = "";
 	tositecmd = "";
 	fromsitecmd = "";
 	sslexcludecmd = "";
-	site_closed = "";
-	site_full = "";
-	usecommands = 0;
+	reloadcmd = "";
+	killcmd = "";
+    entrycmd = "";
+	fxpipcmd = "";
+	fpwlcmd = "";
+
+	// section [FTPD SETUP]
+	server_string  = "";
+	fake_serverstring = 0;	
+	send_traffic_info = 0;	
+	user_access_denied = "access denied.";
+	user_login_success = "logged in.";
+	site_closed = "The server has been shut down, try again later.";
+	site_full = "The site is full, try again later.";
+	max_numlogins = "Sorry, your account is restricted to";
 	show_connect_failmsg = 0;
-	pidfile = "";
 	connectfailmsg = "";
-	syslog = 0;
+
+
+	// section [FORWARDER]
 	use_forwarder=0;
 	forwarder_sport=0;
 	forwarder_dport=0;
 	forwarder_ip="";
+
+
+	// section [ADVANCED]
+	add_to_passive_port = 0;	
+	port_range_start = 0;
+	port_range_end = 0;
+	use_port_range = 0;	
+	buffersize = 4096;
+	pending = 10;
+	connect_timeout = 7;
+	ident_timeout = 7;
+	read_write_timeout = 30;
+	uid = 1;
+	pidfile = "yatb.pid";
 	retry_count = 5;
-	no_idnt_cmd = 0;
 	ssl_ascii_cache = 0;
-	cmd_prefix = "";
-    ssl_relink = 0;
-    killcmd = "";
-    entrycmd = "";
-    day_limit = 0;
-    week_limit = 0;
-    month_limit = 0;
-    opt_dh_file = "";
-    translate_nosslfxp = 0;
     disable_noop = 0;
-    max_numlogins = "";
-	relink_notls = 0;
-	fxpipcmd = "";
-	use_fxpiplist = 0;
-	use_fxpiphash = 0;
-	hash_algo = "sha256";
-	iplist_file = "";
-	crypted_iplist=0;
+
 }
 
 CConfig::~CConfig()
@@ -130,7 +160,8 @@ void CConfig::getentry(string &i,string s,int &ok,string daten)
    	}
    	else
    	{
-   		cout << s << " missing\n";
+		cout << "using default value '" << i << "' for " << s << "\n";
+   		//cout << s << " missing\n";
    		ok = 0;
    	}
 }
@@ -145,7 +176,8 @@ void CConfig::getentry(int &i,string s,int &ok,string daten)
    	}
    	else
    	{
-   		cout << s << " missing\n";
+		cout << "using default value '" << i << "' for " << s << "\n";
+   		//cout << s << " missing\n";
    		ok = 0;
    	}
 }
@@ -160,7 +192,8 @@ void CConfig::getentry(double &i,string s,int &ok, string daten)
    	}
    	else
    	{
-   		cout << s << " missing\n";
+		cout << "using default value '" << i << "' for " << s << "\n";
+   		//cout << s << " missing\n";
    		ok = 0;
    	}
 }
@@ -203,928 +236,130 @@ int CConfig::readconf(string filename,string key,int crypted)
 		}    
 		
  		int ok = 1;	// store if all vars could be read
-	 		
-   		string val;
-
-		
-		getentry(listen_port,"listen_port",ok,daten);
+	 	
+		// section [DEBUG
 		getentry(debug,"debug",ok,daten);
-		getentry(use_fxpfromsite_list,"use_fxpfromsite_list",ok,daten);
-   		getentry(site_port,"site_port",ok,daten);
+		getentry(log_to_screen,"log_to_screen",ok,daten);
+		getentry(debug_logfile,"debug_logfile",ok,daten);
+		getentry(command_logfile,"command_logfile",ok,daten);
+		getentry(syslog,"syslog",ok,daten);
+
+		// section [CONNECTION]
+		getentry(listen_port,"listen_port",ok,daten);
 		getentry(site_ip,"site_ip",ok,daten);
+		getentry(site_port,"site_port",ok,daten);
 		getentry(entry_list,"entry_list",ok,daten);
-   		getentry(connect_ip,"connect_ip",ok,daten);
+		getentry(connect_ip,"connect_ip",ok,daten);
+		getentry(listen_interface,"listen_interface",ok,daten);
+		getentry(listen_ip,"listen_ip",ok,daten);
+		getentry(traffic_bnc,"traffic_bnc",ok,daten);
+		getentry(nat_pasv_ip,"nat_pasv_ip",ok,daten);
+
+		// section [LIMIT]
+		getentry(day_limit,"day_limit",ok,daten);
+		getentry(week_limit,"week_limit",ok,daten);
+		getentry(month_limit,"month_limit",ok,daten);
+
+		// section [SSL]
+		getentry(cert_path,"cert_path",ok,daten);
+		getentry(opt_dh_file,"opt_dh_file",ok,daten);
+		getentry(crypted_cert,"crypted_cert",ok,daten);
+		getentry(enforce_tls,"enforce_tls",ok,daten);
+		getentry(enforce_tls_fxp,"enforce_tls_fxp",ok,daten);
+		getentry(ssl_forward,"ssl_forward",ok,daten);
+		getentry(use_ssl_exclude,"use_ssl_exclude",ok,daten);
+		getentry(sslexclude_list,"sslexclude_list",ok,daten);
+		getentry(translate_nosslfxp,"translate_nosslfxp",ok,daten);
 		
+		// section [IDENT]
+		getentry(use_ident,"use_ident",ok,daten);
+		getentry(enforce_ident,"enforce_ident",ok,daten);
+		getentry(no_idnt_cmd,"no_idnt_cmd",ok,daten);
+
+		// section [RELINK]
+		getentry(trytorelink,"trytorelink",ok,daten);
+		getentry(relink_ip,"relink_ip",ok,daten);
+		getentry(relink_port,"relink_port",ok,daten);
+		getentry(relink_user,"relink_user",ok,daten);
+		getentry(relink_pass,"relink_pass",ok,daten);
+		getentry(ssl_relink,"ssl_relink",ok,daten);
+		getentry(relink_notls,"relink_notls",ok,daten);
+		getentry(traffic_bnc_relink,"traffic_bnc_relink",ok,daten);
+
+
+		// section [FXP]
+		getentry(use_fxpfromsite_list,"use_fxpfromsite_list",ok,daten);
+		getentry(fxp_fromsite_list,"fxp_fromsite_list",ok,daten);
+		getentry(use_fxptosite_list,"use_fxptosite_list",ok,daten);
+		getentry(fxp_tosite_list,"fxp_tosite_list",ok,daten);
+		getentry(use_fxpiplist,"use_fxpiplist",ok,daten);
+		getentry(use_fxpiphash,"use_fxpiphash",ok,daten);
+		getentry(hash_algo,"hash_algo",ok,daten);
+		getentry(iplist_file,"iplist_file",ok,daten);
+		getentry(crypted_iplist,"crypted_iplist",ok,daten);
+		getentry(show_fp_on_control,"show_fp_on_control",ok,daten);
+		getentry(fpwhitelist_file,"fpwhitelist_file",ok,daten);
+		getentry(crypted_fpwhitelist,"crypted_fpwhitelist",ok,daten);
 		
-		
-		
-		
-   	if ((val=getkey("cert_path",daten)) != "ERROR")
-   	{
-   		cert_path = val;
-   	}
-   	else
-   	{
-   		cout << "cert_path missing\n";
-   		
-   		ok = 0;
-   	}
-		
-		if ((val=getkey("fxp_fromsite_list",daten)) != "ERROR")
-    {
-   		fxp_fromsite_list = val;
-   	}
-   	else
-   	{
-   		cout << "fxp_fromsite_list missing\n";
-   		
-   		ok = 0;
-   	}
-		
- 		if ((val=getkey("listen_interface",daten)) != "ERROR")
-    {
-   		listen_interface = val;
-   	}
-   	else
-   	{
-   		cout << "listen_interface missing\n";
-   		
-   		ok = 0;
-   	}
-		
-		if ((val=getkey("listen_ip",daten)) != "ERROR")
-    {
-   		listen_ip = val;
-   	}
-   	else
-   	{
-   		cout << "listen_ip missing\n";
-   		
-   		ok = 0;
-   	}
-		
-		
- 		if ((val=getkey("server_string",daten)) != "ERROR")
-    {
-   		server_string = val;
-   	}
-   	else
-   	{
-   		cout << "server_string missing\n";
-   		
-   		ok = 0;
-   	}
+		// section [ADMIN]
+		getentry(usecommands,"usecommands",ok,daten);
+		getentry(admin_list,"admin_list",ok,daten);
+		getentry(cmd_prefix,"cmd_prefix",ok,daten);
+		getentry(infocmd,"infocmd",ok,daten);
+		getentry(helpcmd,"helpcmd",ok,daten);
+		getentry(admincmd,"admincmd",ok,daten);
+		getentry(tositecmd,"tositecmd",ok,daten);
+		getentry(fromsitecmd,"fromsitecmd",ok,daten);
+		getentry(sslexcludecmd,"sslexcludecmd",ok,daten);
+		getentry(reloadcmd,"reloadcmd",ok,daten);
+		getentry(entrycmd,"entrycmd",ok,daten);
+		getentry(killcmd,"killcmd",ok,daten);
+		getentry(fxpipcmd,"fxpipcmd",ok,daten);
+		getentry(fpwlcmd,"fpwlcmd",ok,daten);		
 
- 		if ((val=getkey("fake_serverstring",daten)) != "ERROR")
-    {
-   		fake_serverstring = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "fake_serverstring missing\n";
-   		
-   		ok = 0;
-   	}
+		// section [FTPD SETUP]
+		getentry(server_string,"server_string",ok,daten);
+		getentry(fake_serverstring,"fake_serverstring",ok,daten);
+		getentry(send_traffic_info,"send_traffic_info",ok,daten);
+		getentry(user_access_denied,"user_access_denied",ok,daten);
+		getentry(user_login_success,"user_login_success",ok,daten);
+		getentry(site_closed,"site_closed",ok,daten);
+		getentry(site_full,"site_full",ok,daten);
+		getentry(max_numlogins,"max_numlogins",ok,daten);
+		getentry(show_connect_failmsg,"show_connect_failmsg",ok,daten);
+		getentry(connectfailmsg,"connectfailmsg",ok,daten);
 
- 		if ((val=getkey("trytorelink",daten)) != "ERROR")
-    {
-   		trytorelink = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "trytorelink missing\n";
-   		
-   		ok = 0;
-   	}
+		// section [FORWARDER]
+		getentry(use_forwarder,"use_forwarder",ok,daten);
+		getentry(forwarder_sport,"forwarder_sport",ok,daten);
+		getentry(forwarder_dport,"forwarder_dport",ok,daten);
+		getentry(forwarder_ip,"forwarder_ip",ok,daten);
 
- 		if ((val=getkey("traffic_bnc",daten)) != "ERROR")
-    {
-   		traffic_bnc = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "traffic_bnc missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("enforce_tls_fxp",daten)) != "ERROR")
-    {
-   		enforce_tls_fxp = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "enforce_tls_fxp missing\n";
-   		
-   		ok = 0;
-   	}
+		// section [ADVANCED]
+		getentry(add_to_passive_port,"add_to_passive_port",ok,daten);
+		getentry(port_range_start,"port_range_start",ok,daten);
+		getentry(port_range_end,"port_range_end",ok,daten);
+		getentry(use_port_range,"use_port_range",ok,daten);
+		getentry(buffersize,"buffersize",ok,daten);
+		getentry(pending,"pending",ok,daten);
+		getentry(connect_timeout,"connect_timeout",ok,daten);
+		getentry(ident_timeout,"ident_timeout",ok,daten);
+		getentry(read_write_timeout,"read_write_timeout",ok,daten);
+		getentry(uid,"uid",ok,daten);
+		getentry(pidfile,"pidfile",ok,daten);
+		getentry(retry_count,"retry_count",ok,daten);
+		getentry(ssl_ascii_cache,"ssl_ascii_cache",ok,daten);
+		getentry(disable_noop,"disable_noop",ok,daten);
 
 
- 		if ((val=getkey("use_ident",daten)) != "ERROR")
-    {
-   		use_ident = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "use_ident missing\n";
-   		
-   		ok = 0;
-   	}
 
-		if ((val=getkey("enforce_ident",daten)) != "ERROR")
-   	{
-   		enforce_ident = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "enforce_ident missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("enforce_tls",daten)) != "ERROR")
-    {
-	 		enforce_tls = atoi(val.c_str());
-	 	}
-	 	else
-	 	{
-	 		cout << "enforce_tls missing\n";
-	 		
-	 		ok = 0;
-	 	}
-
- 		if ((val=getkey("send_traffic_info",daten)) != "ERROR")
-    {
-   		send_traffic_info = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "send_traffic_info missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("relink_ip",daten)) != "ERROR")
-   	{
-   		relink_ip = val;
-   	}
-   	else
-   	{
-   		cout << "relink_ip missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("relink_port",daten)) != "ERROR")
-   	{
-   		relink_port = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "relink_port missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("relink_user",daten)) != "ERROR")
-   	{
-   		relink_user = val;
-   	}
-   	else
-   	{
-   		cout << "relink_user missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("relink_pass",daten)) != "ERROR")
-   	{
-   		relink_pass = val;
-   	}
-   	else
-   	{
-   		cout << "relink_pass missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("user_access_denied",daten)) != "ERROR")
-   	{
-   		user_access_denied = val;
-   	}
-   	else
-   	{
-   		cout << "user_access_denied\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("user_login_success",daten)) != "ERROR")
-   	{
-   		user_login_success = val;
-   	}
-   	else
-   	{
-   		cout << "user_login_success\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("add_to_passive_port",daten)) != "ERROR")
-   	{
-   		add_to_passive_port = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "add_to_passive_port missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("add_to_passive_port",daten)) != "ERROR")
-   	{
-   		add_to_passive_port = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "add_to_passive_port missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("port_range_start",daten)) != "ERROR")
-   	{
-   		port_range_start = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "port_range_start missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("port_range_end",daten)) != "ERROR")
-   	{
-   		port_range_end = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "port_range_end missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("use_port_range",daten)) != "ERROR")
-   	{
-   		use_port_range = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "use_port_range missing\n";
-   		
-   		ok = 0;
-   	}
-	
-
- 		if ((val=getkey("buffersize",daten)) != "ERROR")
-   	{
-   		buffersize = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "buffersize missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("buffersize",daten)) != "ERROR")
-   	{
-   		buffersize = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "buffersize missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("pending",daten)) != "ERROR")
-   	{
-   		pending = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "pending missing\n";
-   		
-   		ok = 0;
-   	}
-
- 		if ((val=getkey("connect_timeout",daten)) != "ERROR")
-   	{
-   		connect_timeout = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "connect_timeout missing\n";
-   		
-   		ok = 0;
-   	}
-
-   	if ((val=getkey("ident_timeout",daten)) != "ERROR")
-   	{
-   		ident_timeout = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "ident_timeout missing\n";
-   		
-   		ok = 0;
-   	}
-
-   	if ((val=getkey("read_write_timeout",daten)) != "ERROR")
-   	{
-   		read_write_timeout = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "read_write_timeout missing\n";
-   		
-   		ok = 0;
-   	}
-
- 
-   	if ((val=getkey("admin_list",daten)) != "ERROR")
-   	{
-   		admin_list = val;
-   	}
-   	else
-   	{
-   		cout << "admin_list missing\n";
-   		
-   		ok = 0;
-   	}
-		
-		if ((val=getkey("use_fxptosite_list",daten)) != "ERROR")
-    {
-   		use_fxptosite_list = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "use_fxptosite_list missing\n";
-   		
-   		ok = 0;
-   	}
-		
-		if ((val=getkey("fxp_tosite_list",daten)) != "ERROR")
-    {
-   		fxp_tosite_list = val;
-   	}
-   	else
-   	{
-   		cout << "fxp_tosite_list missing\n";
-   		
-   		ok = 0;
-   	}
-		
-		
-		if ((val=getkey("uid",daten)) != "ERROR")
-   	{
-   		uid = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "uid missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	
-   	if ((val=getkey("debug_logfile",daten)) != "ERROR")
-   	{
-   		debug_logfile = val;
-   	}
-   	else
-   	{
-   		cout << "debug_logfile missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("command_logfile",daten)) != "ERROR")
-   	{
-   		command_logfile = val;
-   	}
-   	else
-   	{
-   		cout << "command_logfile missing\n";
-   		
-   		ok = 0;
-   	}
-		
-		if ((val=getkey("log_to_screen",daten)) != "ERROR")
-   	{
-   		log_to_screen = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "log_to_screen missing\n";
-   		
-   		ok = 0;
-   	}
-		 		 		
-   	
-   	if ((val=getkey("use_ssl_exclude",daten)) != "ERROR")
-   	{
-   		use_ssl_exclude = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "use_ssl_exclude missing\n";
-   		
-   		ok = 0;
-   	}
- 		
- 		if ((val=getkey("sslexclude_list",daten)) != "ERROR")
-   	{
-   		sslexclude_list = val;
-   	}
-   	else
-   	{
-   		cout << "sslexclude_list missing\n";
-   		
-   		ok = 0;
-   	}
- 		
-
- 		if ((val=getkey("infocmd",daten)) != "ERROR")
-   	{
-   		infocmd = val;
-   	}
-   	else
-   	{
-   		cout << "infocmd missing\n";
-   		
-   		ok = 0;
-   	}
- 		
- 		if ((val=getkey("helpcmd",daten)) != "ERROR")
-   	{
-   		helpcmd = val;
-   	}
-   	else
-   	{
-   		cout << "helpcmd missing\n";
-   		
-   		ok = 0;
-   	}
- 		
- 		if ((val=getkey("admincmd",daten)) != "ERROR")
-   	{
-   		admincmd = val;
-   	}
-   	else
-   	{
-   		cout << "admincmd missing\n";
-   		
-   		ok = 0;
-   	}
- 		
- 	if ((val=getkey("tositecmd",daten)) != "ERROR")
-   	{
-   		tositecmd = val;
-   	}
-   	else
-   	{
-   		cout << "tositecmd missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("killcmd",daten)) != "ERROR")
-   	{
-   		killcmd = val;
-   	}
-   	else
-   	{
-   		cout << "killcmd missing\n";
-   		
-   		ok = 0;
-   	}
- 		
- 	if ((val=getkey("fromsitecmd",daten)) != "ERROR")
-   	{
-   		fromsitecmd = val;
-   	}
-   	else
-   	{
-   		cout << "fromsitecmd missing\n";
-   		
-   		ok = 0;
-   	}
- 		
- 		if ((val=getkey("sslexcludecmd",daten)) != "ERROR")
-   	{
-   		sslexcludecmd = val;
-   	}
-   	else
-   	{
-   		cout << "sslexcludecmd missing\n";
-   		
-   		ok = 0;
-   	}
- 		
- 		if ((val=getkey("site_closed",daten)) != "ERROR")
-   	{
-   		site_closed = val;
-   	}
-   	else
-   	{
-   		cout << "site_closed missing\n";
-   		
-   		ok = 0;
-   	}
- 		
- 		if ((val=getkey("site_full",daten)) != "ERROR")
-   	{
-   		site_full = val;
-   	}
-   	else
-   	{
-   		cout << "site_full missing\n";
-   		
-   		ok = 0;
-   	}
- 		
- 		if ((val=getkey("reloadcmd",daten)) != "ERROR")
-   	{
-   		reloadcmd = val;
-   	}
-   	else
-   	{
-   		cout << "reloadcmd missing\n";
-   		
-   		ok = 0;
-   	}
- 		
- 		if ((val=getkey("usecommands",daten)) != "ERROR")
-   	{
-   		usecommands = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "usecommands missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("show_connect_failmsg",daten)) != "ERROR")
-   	{
-   		show_connect_failmsg = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "show_connect_failmsg missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("pidfile",daten)) != "ERROR")
-   	{
-   		pidfile = val;
-   	}
-   	else
-   	{
-   		cout << "pidfile missing\n";
-   		
-   		ok = 0;
-   	}
- 		
- 		if ((val=getkey("connectfailmsg",daten)) != "ERROR")
-   	{
-   		connectfailmsg = val;
-   	}
-   	else
-   	{
-   		cout << "connectfailmsg missing\n";
-   		
-   		ok = 0;
-   	}
- 		
- 		if ((val=getkey("syslog",daten)) != "ERROR")
-   	{
-   		syslog = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "syslog missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("ssl_forward",daten)) != "ERROR")
-   	{
-   		ssl_forward = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "ssl_forward missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("use_forwarder",daten)) != "ERROR")
-   	{
-   		use_forwarder = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "use_forwarder missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("forwarder_sport",daten)) != "ERROR")
-   	{
-   		forwarder_sport = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "forwarder_sport missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("forwarder_dport",daten)) != "ERROR")
-   	{
-   		forwarder_dport = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "forwarder_dport missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("forwarder_ip",daten)) != "ERROR")
-   	{
-   		forwarder_ip = val;
-   	}
-   	else
-   	{
-   		cout << "forwarder_ip missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("retry_count",daten)) != "ERROR")
-   	{
-   		retry_count = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "retry_count missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("no_idnt_cmd",daten)) != "ERROR")
-   	{
-   		no_idnt_cmd = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "no_idnt_cmd missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("ssl_ascii_cache",daten)) != "ERROR")
-   	{
-   		ssl_ascii_cache = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "ssl_ascii_cache missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("cmd_prefix",daten)) != "ERROR")
-   	{
-   		cmd_prefix = val;
-   	}
-   	else
-   	{
-   		cout << "cmd_prefix missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("crypted_cert",daten)) != "ERROR")
-   	{
-   		crypted_cert = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "crypted_cert missing\n";
-   		
-   		ok = 0;
-   	}
-
-    if ((val=getkey("ssl_relink",daten)) != "ERROR")
-   	{
-   		ssl_relink = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "ssl_relink missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("day_limit",daten)) != "ERROR")
-   	{
-   		day_limit = atof(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "day_limit missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("week_limit",daten)) != "ERROR")
-   	{
-   		week_limit = atof(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "week_limit missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("month_limit",daten)) != "ERROR")
-   	{
-   		month_limit = atof(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "month_limit missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("opt_dh_file",daten)) != "ERROR")
-   	{
-   		opt_dh_file = val;
-   	}
-   	else
-   	{
-   		cout << "opt_dh_file missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("entrycmd",daten)) != "ERROR")
-   	{
-   		entrycmd = val;
-   	}
-   	else
-   	{
-   		cout << "entrycmd missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("translate_nosslfxp",daten)) != "ERROR")
-   	{
-   		translate_nosslfxp = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "translate_nosslfxp missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("disable_noop",daten)) != "ERROR")
-   	{
-   		disable_noop = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "disable_noop missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-   	if ((val=getkey("max_numlogins",daten)) != "ERROR")
-   	{
-   		max_numlogins = val;
-   	}
-   	else
-   	{
-   		cout << "max_numlogins missing\n";
-   		
-   		ok = 0;
-   	}
-   	
-	if ((val=getkey("relink_notls",daten)) != "ERROR")
-   	{
-   		relink_notls = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "relink_notls missing\n";
-   		
-   		ok = 0;
-   	}
-	
-	if ((val=getkey("traffic_bnc_relink",daten)) != "ERROR")
-   	{
-   		traffic_bnc_relink = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "traffic_bnc_relink missing\n";
-   		
-   		ok = 0;
-   	}
-	
-	if ((val=getkey("fxpipcmd",daten)) != "ERROR")
-   	{
-   		fxpipcmd = val;
-   	}
-   	else
-   	{
-   		cout << "fxpipcmd missing\n";
-   		
-   		ok = 0;
-   	}
-	
-	if ((val=getkey("use_fxpiplist",daten)) != "ERROR")
-   	{
-   		use_fxpiplist = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "use_fxpiplist missing\n";
-   		
-   		ok = 0;
-   	}
-
-	if ((val=getkey("use_fxpiphash",daten)) != "ERROR")
-   	{
-   		use_fxpiphash = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "use_fxpiphash missing\n";
-   		
-   		ok = 0;
-   	}
-
-	if ((val=getkey("hash_algo",daten)) != "ERROR")
-   	{
-   		hash_algo = val;
-   	}
-   	else
-   	{
-   		cout << "hash_algo missing\n";
-   		
-   		ok = 0;
-   	}
-	
-	if ((val=getkey("iplist_file",daten)) != "ERROR")
-   	{
-   		iplist_file = val;
-   	}
-   	else
-   	{
-   		cout << "iplist_file missing\n";
-   		
-   		ok = 0;
-   	}
-
-	if ((val=getkey("crypted_iplist",daten)) != "ERROR")
-   	{
-   		crypted_iplist = atoi(val.c_str());
-   	}
-   	else
-   	{
-   		cout << "crypted_iplist missing\n";
-   		
-   		ok = 0;
-   	}
-
-   	for(unsigned int i=0;i < daten.length();i++)
-   	{
-   		daten[i] = '0';
-   	}
-		
- 		if (ok == 1) return 1;
- 		else return 0;
+   		for(unsigned int i=0;i < daten.length();i++)
+   		{
+   			daten[i] = '0';
+   		}
+		return 1;
+ 		//if (ok == 1) return 1;
+ 		//else return 0;
 	}
 
 }

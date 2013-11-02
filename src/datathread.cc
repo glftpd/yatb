@@ -5,7 +5,8 @@
 #include "stringlist.h"
 #include "counter.h"
 #include "tls.h"
-#include "fxpiplist.h"
+#include "whitelist.h"
+#include "fpwhitelist.h"
 
 // c wrapper for creating data connection thread
 void *makedatathread(void* pData)
@@ -71,8 +72,9 @@ CDataThread::CDataThread(int sscn,int cpsv, int tt, int pp, int rl, int ussl, in
 	tmpctx = NULL;
 	buffer = new char[config.buffersize];
 	sscncmd = sscn;
-	controlthread = ct;
+	controlthread = ct;	
 	debugmsg(username,"[datathread] constructor end");
+	fp = "NO-FINGERPRINT";
 }
 
 CDataThread::~CDataThread()
@@ -303,6 +305,9 @@ void CDataThread::dataloop(void)
 			debugmsg(username, "[datathread] ssl connect failed",errno);
 			return;
 		}
+		// show fingerprint of site
+		//controlthread->Write(controlthread->client_sock,"220 Site (SSL connect) datachannel fingerprint: " + fingerprint(sitessl) + "\r\n",controlthread->clientssl);
+		
 	}
 	
 	if(cpsvcmd || sscncmd)
@@ -316,6 +321,11 @@ void CDataThread::dataloop(void)
 				debugmsg(username, "[datathread] ssl connect failed",errno);
 				return;
 			}
+			fp = fingerprint(clientssl);
+			if(config.show_fp_on_control)
+			{
+				controlthread->Write(controlthread->client_sock,"220 Client (SSL connect) datachannel fingerprint: " + fp + "\r\n",controlthread->clientssl);
+			}
 		}
 	}
 	else 
@@ -328,6 +338,11 @@ void CDataThread::dataloop(void)
 			{
 				debugmsg(username, "[datathread] ssl accept failed",errno);
 				return;
+			}
+			fp = fingerprint(clientssl);
+			if(config.show_fp_on_control)
+			{
+				controlthread->Write(controlthread->client_sock,"220 Client (SSL accept) datachannel fingerprint: " + fp + "\r\n",controlthread->clientssl);
 			}
 		}
 	}
@@ -394,14 +409,18 @@ void CDataThread::dataloop(void)
 			debugmsg(username, "[datathread] passive - fxp");
 			if(config.use_fxpiplist)
 			{
-				// check ip ip is allowed or user is admin
-				if(!fxpiplist.IsInList(clip) && !adminlist.IsInList(username) )
+				// first check fingerprint
+				if(!fpwhitelist.IsInList(fp) && !adminlist.IsInList(username))
 				{
-					if(clip != controlthread->dirlist_ip)
+					// check ip ip is allowed or user is admin
+					if(!whitelist.IsInList(clip) && !adminlist.IsInList(username) )
 					{
-						debugmsg(username,"[datathread] fxp not allowed - clip: " + clip + " dirlistip: " + controlthread->dirlist_ip);
-						controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
-						return;
+						if(clip != controlthread->dirlist_ip)
+						{
+							debugmsg(username,"[datathread] fxp not allowed - clip: " + clip + " dirlistip: " + controlthread->dirlist_ip);
+							controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+							return;
+						}
 					}
 				}
 			}
@@ -461,14 +480,18 @@ void CDataThread::dataloop(void)
 			debugmsg(username, "[datathread] active - fxp");
 			if(config.use_fxpiplist)
 			{
-				// check ip ip is allowed or user is admin
-				if(!fxpiplist.IsInList(activeip) && !adminlist.IsInList(username))
+				// first check fingerprint
+				if(!fpwhitelist.IsInList(fp) && !adminlist.IsInList(username))
 				{
-					if(activeip != controlthread->dirlist_ip)
+					// check ip ip is allowed or user is admin
+					if(!whitelist.IsInList(activeip) && !adminlist.IsInList(username))
 					{
-						debugmsg(username,"[datathread] fxp not allowed - clip: " + clip + " dirlistip: " + controlthread->dirlist_ip);
-						controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
-						return;
+						if(activeip != controlthread->dirlist_ip)
+						{
+							debugmsg(username,"[datathread] fxp not allowed - clip: " + clip + " dirlistip: " + controlthread->dirlist_ip);
+							controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+							return;
+						}
 					}
 				}
 			}

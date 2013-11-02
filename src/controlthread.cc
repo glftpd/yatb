@@ -5,8 +5,8 @@
 #include "stringlist.h"
 #include "lock.h"
 #include "tls.h"
-#include "fxpiplist.h"
-
+#include "whitelist.h"
+#include "fpwhitelist.h"
 
 // c wrapper for creating main connection thread
 void *makethread(void* pData)
@@ -1064,6 +1064,10 @@ void CControlThread::mainloop(void)
 					ss << "230- '" + config.cmd_prefix+config.fxpipcmd + "add ip,comment,user' - add new ip\r\n";
 					ss << "230- '" + config.cmd_prefix+config.fxpipcmd + "del ip' - delete ip\r\n";
 					ss << "230-\r\n";
+					ss << "230- '" + config.cmd_prefix+config.fpwlcmd + "show' - show allowed fxp fingerprints(s)\r\n";
+					ss << "230- '" + config.cmd_prefix+config.fpwlcmd + "add fp,comment,user' - add new fingerprint\r\n";
+					ss << "230- '" + config.cmd_prefix+config.fpwlcmd + "del fp' - delete fingerprint\r\n";
+					ss << "230-\r\n";
 					ss << "230- '" + config.cmd_prefix+config.infocmd + "' - show some infos\r\n";
 					ss << "230-\r\n";
 					ss << "230- '" + config.cmd_prefix+config.helpcmd + "' - show this help\r\n";
@@ -1840,12 +1844,12 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			// fxp ip list show
+			// ip whitelist list show
 			else if (config.usecommands && upper(s,config.fxpipcmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.fxpipcmd,0) + "SHOW",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{					
-					if (!Write(client_sock,fxpiplist.GetList(),clientssl))
+					if (!Write(client_sock,whitelist.GetList(),clientssl))
 					{						
 						return;
 					}
@@ -1858,7 +1862,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			// fxp ip list add
+			// ip whitelist list add
 			else if (config.usecommands && upper(s,config.fxpipcmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.fxpipcmd,0) + "ADD",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
@@ -1868,9 +1872,10 @@ void CControlThread::mainloop(void)
 					if (pos != string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
-						int res = fxpiplist.Insert(s);
+						int res = whitelist.Insert(s);
 						if(res == 1)
 						{
+							whitelist.WriteList(config.iplist_file,ip_bk);
 							if (!Write(client_sock,"230 ip added.\r\n",clientssl))
 							{							
 								return;
@@ -1878,7 +1883,7 @@ void CControlThread::mainloop(void)
 						}
 						else if(res == 2)
 						{
-							if (!Write(client_sock,"230 ip already added! [" + fxpiplist.GetComment(s) + "]\r\n",clientssl))
+							if (!Write(client_sock,"230 ip already added! [" + whitelist.GetComment(s) + "]\r\n",clientssl))
 							{							
 								return;
 							}
@@ -1908,7 +1913,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			// fxp ip list del
+			// ip whitelist list del
 			else if (config.usecommands && upper(s,config.fxpipcmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.fxpipcmd,0) + "DEL",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
@@ -1918,8 +1923,8 @@ void CControlThread::mainloop(void)
 					if (pos != string::npos)
 					{
 						s = s.substr(pos+1,s.length()-pos-3);
-						fxpiplist.Remove(s);
-						
+						whitelist.Remove(s);
+						whitelist.WriteList(config.iplist_file,ip_bk);
 						if (!Write(client_sock,"230 ip removed.\r\n",clientssl))
 						{							
 							return;
@@ -1941,26 +1946,15 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			// fxp ip list save
-			else if (config.usecommands && upper(s,config.fxpipcmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.fxpipcmd,0) + "SAVE",0) != string::npos)
+			// fp whitelist list show
+			else if (config.usecommands && upper(s,config.fpwlcmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.fpwlcmd,0) + "SHOW",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
-				{
-					if(!fxpiplist.WriteList(config.iplist_file,ip_bk))
-					{
-						if (!Write(client_sock,"230 error saving file!\r\n",clientssl))
-						{							
-							return;
-						}
+				{					
+					if (!Write(client_sock,fpwhitelist.GetList(),clientssl))
+					{						
+						return;
 					}
-					else
-					{
-						if (!Write(client_sock,"230 done!\r\n",clientssl))
-						{							
-							return;
-						}
-					}
-					
 				}
 				else
 				{
@@ -1970,6 +1964,91 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
+			// fp whitelist list add
+			else if (config.usecommands && upper(s,config.fpwlcmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.fpwlcmd,0) + "ADD",0) != string::npos)
+			{
+				if (adminlist.IsInList(username) && !relinked)
+				{
+					unsigned int pos;
+					pos = s.find(" ",0);
+					if (pos != string::npos)
+					{
+						s = s.substr(pos+1,s.length()-pos-3);
+						int res = fpwhitelist.Insert(s);
+						if(res == 1)
+						{
+							fpwhitelist.WriteList(config.fpwhitelist_file,fpwl_bk);
+							if (!Write(client_sock,"230 fp added.\r\n",clientssl))
+							{							
+								return;
+							}
+						}
+						else if(res == 2)
+						{
+							if (!Write(client_sock,"230 fp already added! [" + fpwhitelist.GetComment(s) + "]\r\n",clientssl))
+							{							
+								return;
+							}
+						}
+						else
+						{
+							if (!Write(client_sock,"230 check your syntax!\r\n",clientssl))
+							{							
+								return;
+							}
+						}
+
+					}
+					else
+					{
+						if (!Write(client_sock,"230 no fp to add!\r\n",clientssl))
+						{							
+							return;
+						}
+					}				
+				}
+				else
+				{
+					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
+					{					
+						return;
+					}
+				}
+			}
+			// fp whitelist list del
+			else if (config.usecommands && upper(s,config.fpwlcmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.fpwlcmd,0) + "DEL",0) != string::npos)
+			{
+				if (adminlist.IsInList(username) && !relinked)
+				{
+					unsigned int pos;
+					pos = s.find(" ",0);
+					if (pos != string::npos)
+					{
+						s = s.substr(pos+1,s.length()-pos-3);
+						fpwhitelist.Remove(s);
+						fpwhitelist.WriteList(config.fpwhitelist_file,fpwl_bk);
+						if (!Write(client_sock,"230 fp removed.\r\n",clientssl))
+						{							
+							return;
+						}
+					}
+					else
+					{
+						if (!Write(client_sock,"230 no fp to remove!\r\n",clientssl))
+						{							
+							return;
+						}
+					}
+				}
+				else
+				{
+					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
+					{						
+						return;
+					}
+				}
+			}
+
 			else if (upper(s,5).find("STOR",0) != string::npos)
 			{
 				direction = "upload";
@@ -2032,7 +2111,13 @@ string CControlThread::CreatePsvCommand(int port)
 	string newpassivecmd = "227 Entering Passive Mode (";
 		
 	string tmpip;
-	if (config.listen_ip != "") 
+	if(config.nat_pasv_ip != "")
+	{		
+		struct sockaddr_in adr;
+		adr = GetIp(config.nat_pasv_ip,0);		
+		tmpip = inet_ntoa(adr.sin_addr);
+	}
+	else if (config.listen_ip != "") 
 	{ 
 		tmpip = config.listen_ip; 
 	}
