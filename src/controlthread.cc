@@ -666,6 +666,13 @@ void CControlThread::mainloop(void)
 					
 					debugmsg(username,"[controlthread] create datathread");
 					deletedatathread();
+					
+					if(!trafficcheck())
+					{
+						control_write(client_sock ,"427 traffic limit reached\r\n" ,clientssl);
+						return;
+					}
+		
 					string passiveip;
 					int passiveport,newpassiveport;
 					if(ParsePsvCommand(s,passiveip,passiveport))
@@ -708,6 +715,13 @@ void CControlThread::mainloop(void)
 					activecon = 1;
 					debugmsg(username,"[controlthread] create datathread");
 					deletedatathread();	
+					
+					if(!trafficcheck())
+					{
+						control_write(client_sock ,"427 traffic limit reached\r\n" ,clientssl);
+						return;
+					}
+		
 					string activeip,passiveip;
 					int activeport,passiveport;
 					if(ParsePortCommand(portcmd,activeip,activeport))

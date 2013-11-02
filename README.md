@@ -477,6 +477,25 @@ make sure bnc has rights to overwrite/delete files!
 
 --------------------------------------------------------
 
+day_limit=0;
+
+dayly traffic limit in GB (0 for unlimited)
+
+--------------------------------------------------------
+
+week_limit=0;
+
+weekly traffic limit in GB (0 for unlimited)
+(resetted on Monday)
+
+--------------------------------------------------------
+
+month_limit=0;
+
+monthly traffic limit in GB (0 for unlimited)
+
+--------------------------------------------------------
+
 special bnc commands:
 ---------------------
 

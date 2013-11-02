@@ -66,7 +66,8 @@ CLock list_lock,config_lock,globals_lock,sock_lock;
 string bk = "";
 string cert_bk;
 string conffile,yatbfilename;
-string lastday="",lastweek="",lastmonth="";
+string lastday="",lastmonth="";
+int lastweek = 0;
 
 void reload(int)
 {
@@ -85,7 +86,7 @@ void reload(int)
 	}
 }
 
-void *trafficthread(void *data)
+void *trafficthread(void *)
 {
 	while(1)
 	{
@@ -97,11 +98,19 @@ void *trafficthread(void *data)
 		
 		string tmpday = ti.substr(0,3);
 		string tmpmonth = ti.substr(4,3);
+		int tmpweek = atoi(ti.substr(7,3).c_str());
+		
 		if (lastday != tmpday)
 		{
 			debugmsg("-SYSTEM-","new day - reset limit");
 			lastday = tmpday;
 			daycounter.reset();
+		}
+		if(lastweek != tmpweek && tmpday == "Mon")
+		{
+			debugmsg("-SYSTEM-","new week - reset limit");
+			lastweek = tmpweek;
+			weekcounter.reset();
 		}
 		if(lastmonth != tmpmonth)
 		{
@@ -290,7 +299,7 @@ int main(int argc,char *argv[])
 	
 	
 	//make gethostbyname working after chroot
-	struct sockaddr_in tmpaddr = GetIp("www.glftpd.at",21);
+	struct sockaddr_in tmpaddr = GetIp("www.glftpd.com",21);
 	
 	char *cwd = getcwd(NULL, 4096);	
 	if (chroot(cwd))
