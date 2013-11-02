@@ -1222,7 +1222,11 @@ void CControlThread::mainloop(void)
 						{		
 							config.fake_serverstring = 0;
 							config.use_ident = 0;		
-						}				
+						}
+						adminlist.Insert(config.admin_list);
+						fxpfromsitelist.Insert(config.fxp_fromsite_list);
+						fxptositelist.Insert(config.fxp_tosite_list);
+						sslexcludelist.Insert(config.sslexclude_list);			
 						if (!Write(client_sock,"230 config reloaded.\r\n",clientssl))
 						{							
 							return;

@@ -91,6 +91,10 @@ void reload(int)
 			config.fake_serverstring = 0;
 			config.use_ident = 0;		
 		}
+		adminlist.Insert(config.admin_list);
+		fxpfromsitelist.Insert(config.fxp_fromsite_list);
+		fxptositelist.Insert(config.fxp_tosite_list);
+		sslexcludelist.Insert(config.sslexclude_list);
 	}
 }
 
