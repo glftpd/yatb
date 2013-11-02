@@ -147,6 +147,8 @@ void CControlThread::deletedatathread(void)
 	if (datathread != NULL) 
 	{	
 		debugmsg(username,"[deletedatathread] join datathread");
+		datathread->closeconnection();
+		
 		pthread_join(datathread->tid,NULL); 
 		debugmsg(username,"[deletedatathread] delete datathread");
 		delete datathread; 

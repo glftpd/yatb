@@ -18,12 +18,14 @@ class CDataThread
 	void getactive_data(string);
 	string getpassive_data(string);
 	
+	void closeconnection();
+	
 	private:
 	
 	friend void *makedatathread(void *pData);
 	
 	void dataloop(void);
-	void closeconnection();
+	
 	
 	int data_write(int,char*,int);
 	int data_read(int,char *,int &);
