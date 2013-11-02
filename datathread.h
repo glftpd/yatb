@@ -15,10 +15,6 @@ class CDataThread
 	
 	pthread_t tid; // thread id
 	
-	
-	
-	void closeconnection();
-	
 	int shouldquit;	
 	
 	private:
@@ -27,6 +23,10 @@ class CDataThread
 	
 	void dataloop(void);
 	
+	void closeconnection();
+	
+	int Write(int ,char *,int ,SSL *);
+	int Read(int  ,char *,int &,SSL *);
 	
 	SSL *sitessl,*clientssl;
 	SSL_CTX *sitesslctx;

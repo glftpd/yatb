@@ -32,6 +32,8 @@ class CControlThread
 	
 	void mainloop(void);
 		
+	int Read(int ,SSL *,string &);
+	int Write(int ,string ,SSL *);
 	
 	int trytls(void);
 
@@ -40,6 +42,7 @@ class CControlThread
 	string CreatePsvCommand(int);
 	
 	CCounter localcounter;
+	CLock rwlock;
 	
 	int client_sock,site_sock; //connection sockets
 	int datalisten_sock,datasite_sock,dataclient_sock; // data connections sockets

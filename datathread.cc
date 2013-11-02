@@ -9,12 +9,20 @@
 // c wrapper for creating data connection thread
 void *makedatathread(void* pData)
 {
-	debugmsg("SYSTEM","[makedatathread] start");
+	debugmsg("-SYSTEM-","[makedatathread] start");
 	CDataThread *pDataThread = (CDataThread*)pData;
-
-	pDataThread->dataloop();
- 	pDataThread->closeconnection();
-	debugmsg("SYSTEM","[makedatathread] end");
+	try
+	{
+		pDataThread->dataloop();
+	}
+	catch(...)
+	{
+		debugmsg("--DATATHREAD EXEPTION--","");
+	}
+	debugmsg("-SYSTEM-","[makedatathread] closeconnection");
+	pDataThread->closeconnection();
+ 	
+	debugmsg("-SYSTEM-","[makedatathread] end");
 	return NULL;
 }
 
@@ -61,31 +69,32 @@ CDataThread::~CDataThread()
 
 void CDataThread::closeconnection(void)
 {	
+	debugmsg(username, "[closeconnection] start");
 	if (usingssl)
 	{
 		
 		if (sitessl != NULL) 
 		{
-			debugmsg(username,"[datathread] close site ssl"); 
+			debugmsg(username,"[closeconnection] close site ssl"); 
 			SSL_shutdown(sitessl);
 						
 		}
 		
 		if (clientssl != NULL) 
 		{
-			debugmsg(username,"[datathread] close client ssl"); 
+			debugmsg(username,"[closeconnection] close client ssl"); 
 			SSL_shutdown(clientssl); 	
 		
 		}
 	}
 	
-		debugmsg(username,"[datathread] close site sock"); 
+		debugmsg(username,"[closeconnection] close site sock"); 
 		close(datasite_sock); 
 	
-		debugmsg(username,"[datathread] close client sock"); 
+		debugmsg(username,"[closeconnection] close client sock"); 
 		close(dataclient_sock); 
 	
-		debugmsg(username,"[datathread] close listen sock");		
+		debugmsg(username,"[closeconnection] close listen sock");		
 		close(datalisten_sock); 	
 		
 		if (usingssl)
@@ -93,29 +102,29 @@ void CDataThread::closeconnection(void)
 		
 		if (sitessl != NULL) 
 		{ 
-			debugmsg(username, "[datathread] free site ssl");
+			debugmsg(username, "[closeconnection] free site ssl");
 			SSL_free(sitessl); 
 			sitessl = NULL; 
 		}
 		
 		if (clientssl != NULL) 
 		{ 
-			debugmsg(username, "[datathread] free client ssl");
+			debugmsg(username, "[closeconnection] free client ssl");
 			SSL_free(clientssl); 
 			clientssl = NULL; 
 		}
 		
 		if (sitesslctx != NULL) 
 		{ 
-			debugmsg(username, "[datathread] free sitesslctx");
+			debugmsg(username, "[closeconnection free sitesslctx");
 			SSL_CTX_free(sitesslctx); 
 			sitesslctx = NULL; 
 		}
 		
-		debugmsg(username, "[datathread] free ssl error queue");
+		debugmsg(username, "[closeconnection] free ssl error queue");
 		ERR_remove_state(0);
 	}
-	
+	debugmsg(username, "[closeconnection] end");
 }
 
 
@@ -194,7 +203,7 @@ void CDataThread::dataloop(void)
 		}
 		string clip;
 		int clport;
-		if (!control_write(controlthread->client_sock,passivecmd,controlthread->clientssl))
+		if (!controlthread->Write(controlthread->client_sock,passivecmd,controlthread->clientssl))
 		{								
 			return;
 		}
@@ -517,7 +526,7 @@ void CDataThread::dataloop(void)
 		if (select(tmpsock+1, &data_readfds, NULL, NULL, NULL) < 1)
 		{
 			debugmsg(username,"[datathread] read timeout",errno);
-			break;
+			return;
 		}
 
 		// read from site - send to client
@@ -527,25 +536,17 @@ void CDataThread::dataloop(void)
 
 			memset(buffer,'\0',1);
 	
-				int rc;
-				if(!DataRead(datasite_sock,buffer,rc,sitessl))
-				{
-					debugmsg(username,"[datathread] read from site failed");
-					break;
-				}
+			int rc;
+			if(!Read(datasite_sock,buffer,rc,sitessl))
+			{					
+				return;
+			}
 
-				if(!DataWrite(dataclient_sock,buffer,rc,clientssl))
-				{
-					debugmsg(username,"[datathread] send to client failed");
-					break;
-				}
-				else
-				{
+			if(!Write(dataclient_sock,buffer,rc,clientssl))
+			{					
+				return;
+			}
 				
-					controlthread->localcounter.addsend(rc);
-					totalcounter.addsend(rc);
-					
-				}
 
 		}
 		// read from client - send to site
@@ -554,25 +555,16 @@ void CDataThread::dataloop(void)
 
 			memset(buffer,'\0',1);
 
-				int rc;
-				if(!DataRead(dataclient_sock,buffer,rc,clientssl))
-				{
-					debugmsg(username,"[datathread] read from client failed");
-					break;
-				}
-				else
-				{
-					
-					controlthread->localcounter.addrecvd(rc);
-					totalcounter.addrecvd(rc);
-					
-				}
-
-				if(!DataWrite(datasite_sock,buffer,rc,sitessl))
-				{
-					debugmsg(username,"[datathread] send to site failed");
-					break;
-				}
+			int rc;
+			if(!Read(dataclient_sock,buffer,rc,clientssl))
+			{					
+				return;
+			}
+			
+			if(!Write(datasite_sock,buffer,rc,sitessl))
+			{				
+				return;
+			}
 
 		}
 
@@ -584,5 +576,39 @@ void CDataThread::dataloop(void)
 
 }
 
+int CDataThread::Read(int sock ,char *buffer,int &nrbytes,SSL *ssl)
+{
+	if(!DataRead(sock ,buffer,nrbytes,ssl))
+	{
+		debugmsg(username,"[Read] read failed!");
+		return 0;
+	}
+	if(sock == dataclient_sock)
+	{
+		controlthread->localcounter.addrecvd(nrbytes);
+		totalcounter.addrecvd(nrbytes);
+	}
+	else if(sock == datasite_sock)
+	{
+	}
+	return 1;
+}
 
+int CDataThread::Write(int sock,char *data,int nrbytes,SSL *ssl)
+{
+	if(!DataWrite(sock,data,nrbytes,ssl))
+	{
+		debugmsg(username,"[Write] write failed!");
+		return 0;
+	}
+	if(sock == dataclient_sock)
+	{
+		controlthread->localcounter.addsend(nrbytes);
+		totalcounter.addsend(nrbytes);
+	}
+	else if(sock == datasite_sock)
+	{
+	}
+	return 1;
+}
 
