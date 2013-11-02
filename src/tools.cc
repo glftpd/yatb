@@ -826,7 +826,7 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 		return 0;
 	}
 	debugmsg("SSLCONNECT", "[SslConnect] start");
-	*sslctx = SSL_CTX_new(TLSv1_client_method());
+	*sslctx = SSL_CTX_new(SSLv23_client_method());
 	
 	if (*sslctx == NULL)
 	{
