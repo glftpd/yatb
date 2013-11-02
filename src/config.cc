@@ -38,6 +38,8 @@ CConfig::CConfig()
 	use_ssl_exclude = 0;
 	sslexclude_list = "";
 	translate_nosslfxp = 0;
+	control_cipher = "ALL:!ADH:!EXP";
+	data_cipher = "ALL:!ADH:!EXP";
 
 	// section [IDENT]
 	use_ident = 1;
@@ -271,6 +273,8 @@ int CConfig::readconf(string filename,string key,int crypted)
 		getentry(use_ssl_exclude,"use_ssl_exclude",ok,daten);
 		getentry(sslexclude_list,"sslexclude_list",ok,daten);
 		getentry(translate_nosslfxp,"translate_nosslfxp",ok,daten);
+		getentry(control_cipher,"control_cipher",ok,daten);
+		getentry(data_cipher,"data_cipher",ok,daten);
 		
 		// section [IDENT]
 		getentry(use_ident,"use_ident",ok,daten);

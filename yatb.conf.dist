@@ -31,6 +31,8 @@ ssl_forward=1;
 use_ssl_exclude=0;
 sslexclude_list=;
 translate_nosslfxp=0;
+control_cipher=ALL:!ADH:!EXP;
+data_cipher=ALL:!ADH:!EXP;
 
 [ Ident ]
 use_ident=1;

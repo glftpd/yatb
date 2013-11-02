@@ -15,7 +15,7 @@ int THREAD_cleanup(void);
 
 
 
-extern SSL_CTX *clientsslctx;
+extern SSL_CTX *clientsslctx, *connectsslctx;
 extern string cert_bk;
 
 struct CRYPTO_dynlock_value

@@ -808,7 +808,7 @@ int kill_file(string filename)
     }
     return 1;
 }
-
+/*
 static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
 	if(preverify_ok == 2)
@@ -821,13 +821,11 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 	}
 	return 1;
 }
-
+*/
 int ssl_setup()
 {
 	clientsslctx = NULL;
-	SSL_load_error_strings();
-	SSL_library_init();
-	OpenSSL_add_all_algorithms();
+	
 	if (RAND_status()) { debugmsg("-SYSTEM-","RAND_status ok"); }
 	else { cout << "RAND_status not ok\n"; return 0; }
 	clientsslctx = 	SSL_CTX_new(SSLv23_server_method());
@@ -840,12 +838,24 @@ int ssl_setup()
 		}
 		return 0;
 	}
-
+	connectsslctx = 	SSL_CTX_new(SSLv23_client_method());
+	if (connectsslctx == NULL)
+	{
+		debugmsg("-SYSTEM-", "error connectcreating ctx");
+		if(config.syslog)
+		{
+			syslog(LOG_ERR, "error creating connectctx");
+		}
+		return 0;
+	}
   
+	SSL_CTX_set_default_verify_paths(connectsslctx);
+	SSL_CTX_set_options(connectsslctx,SSL_OP_ALL);
+	SSL_CTX_set_mode(connectsslctx,SSL_MODE_AUTO_RETRY);
+	
 	SSL_CTX_set_default_verify_paths(clientsslctx);
 	SSL_CTX_set_options(clientsslctx,SSL_OP_ALL);
 	SSL_CTX_set_mode(clientsslctx,SSL_MODE_AUTO_RETRY);
-	SSL_CTX_set_verify(clientsslctx,SSL_VERIFY_PEER,verify_callback);
 
 	string certfile = "certtmp";
 	
@@ -864,7 +874,7 @@ int ssl_setup()
 	
 	debugmsg("-SYSTEM-", "try to load cert file");
 	if (SSL_CTX_use_certificate_chain_file(clientsslctx,certfile.c_str()) <= 0)
-	{
+	{		
 		if(config.syslog)
 		{
 			syslog(LOG_ERR, "error loading cert file!");
@@ -874,15 +884,20 @@ int ssl_setup()
 	}
 	else 
 	{
+		SSL_CTX_use_certificate_chain_file(connectsslctx,certfile.c_str());
 		debugmsg("-SYSTEM-", "try to load private key");
 		if (SSL_CTX_use_PrivateKey_file(clientsslctx, certfile.c_str(), SSL_FILETYPE_PEM) <=0 )
-		{
+		{			
 			if(config.syslog)
 			{
 				syslog(LOG_ERR, "error loading private key!");
 			}
 			debugmsg("-SYSTEM-", "error loading private key!");
 			return 0;
+		}
+		else
+		{
+			SSL_CTX_use_PrivateKey_file(connectsslctx, certfile.c_str(), SSL_FILETYPE_PEM);
 		}
 	}
 	debugmsg("-SYSTEM-", "try to load dh params");
@@ -937,10 +952,10 @@ int ssl_setup()
 	}
 	
 	SSL_CTX_set_session_cache_mode(clientsslctx,SSL_SESS_CACHE_OFF);
+	SSL_CTX_set_session_cache_mode(connectsslctx,SSL_SESS_CACHE_OFF);
 
 	SSL_CTX_set_tmp_dh_callback(clientsslctx, tmp_dh_cb);
-	char	*tls_cipher_list = "ALL:!EXP";
-	SSL_CTX_set_cipher_list(clientsslctx, tls_cipher_list);
+	
 
 	if(!THREAD_setup())
 	{

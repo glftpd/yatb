@@ -34,8 +34,8 @@ int control_read(int ,SSL *,string &);
 int control_write(int ,string ,SSL *);
 struct sockaddr_in GetIp(string,int);
 int Ident(string,int,int, string, string &,int);
-int SslConnect(int &,SSL **,SSL_CTX **,int &);
-int SslAccept(int &,SSL **,SSL_CTX **,int &);
+int SslConnect(int &,SSL **,SSL_CTX **,int &,string);
+int SslAccept(int &,SSL **,SSL_CTX **,int &,string);
 
 int ParsePortCommand(string,string &,int &);
 int ParsePsvCommand(string ,string &, int &);

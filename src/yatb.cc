@@ -63,6 +63,7 @@ time_t start_time;
 int use_blowconf = 1;
 long *lock_count;
 SSL_CTX *clientsslctx;
+SSL_CTX *connectsslctx; // ctx used for connecting, store cert in it
 CLock list_lock,config_lock,globals_lock,sock_lock;
 // blowkey used as salt for hashing
 string bk = "";
@@ -70,6 +71,7 @@ string cert_bk="",ip_bk="",fpwl_bk="";
 string conffile,yatbfilename;
 string lastday="",lastmonth="";
 int lastweek = 0;
+
 
 void reload(int)
 {
@@ -148,7 +150,8 @@ pthread_attr_t threadattr;
 
 int main(int argc,char *argv[])
 {		
-	OpenSSL_add_all_digests();	
+	SSL_load_error_strings();
+	SSL_library_init();
 	pthread_attr_init(&threadattr);
   pthread_attr_setdetachstate(&threadattr,PTHREAD_CREATE_DETACHED);
 	
@@ -339,8 +342,7 @@ int main(int argc,char *argv[])
 	{
 		return -1;
 	}
-	
-	
+		
 	//make gethostbyname working after chroot
 	struct sockaddr_in tmpaddr = GetIp("www.glftpd.com",21);
 	

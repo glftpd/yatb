@@ -90,6 +90,7 @@ CDataThread::~CDataThread()
 void CDataThread::closeconnection(void)
 {	
 	debugmsg(username, "[closeconnection] start");
+	
 	if (usingssl)
 	{
 		
@@ -321,15 +322,15 @@ void CDataThread::dataloop(void)
 	if(usingssl) debugmsg(username, "[datathread] using ssl");
 	if(sslprotp) debugmsg(username, "[datathread] protection set to private");
 	if(!config.ssl_forward) debugmsg(username, "[datathread] not using ssl forward");
-	
+	if(sscncmd) debugmsg(username, "[datathread] sscn set to 1 (client method)");
 	
 	
 	// ssl stuff
-	if((!config.ssl_forward && usingssl && sslprotp && !relinked) || (relinked && config.ssl_relink))
+	if(!config.translate_nosslfxp && ((!config.ssl_forward && usingssl && sslprotp && !relinked) || (relinked && config.ssl_relink)))
 	{
-		if(!SslConnect(datasite_sock,&sitessl,&sitesslctx,shouldquit))
+		if(!SslConnect(datasite_sock,&sitessl,&sitesslctx,shouldquit,config.data_cipher))
 		{
-			debugmsg(username, "[datathread] ssl connect failed",errno);
+			debugmsg(username, "[datathread] ssl connect to site failed",errno);
 			return;
 		}
 		debugmsg(username,"[datathread] site fingerprint: " + fingerprint(sitessl) + "\r\n");
@@ -337,16 +338,20 @@ void CDataThread::dataloop(void)
 		//controlthread->Write(controlthread->client_sock,"220 Site (SSL connect) datachannel fingerprint: " + fingerprint(sitessl) + "\r\n",controlthread->clientssl);
 		
 	}
-	
+	while(!controlthread->DirectionSet())
+	{
+		if(getQuit()) return;
+	}
 	if((cpsvcmd || sscncmd) && !controlthread->dirlisting)
+	//if((cpsvcmd || sscncmd) )
 	{
 		debugmsg(username,"[datathread] ssl client method");
 		if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink))
 		{
 			debugmsg(username,"[datathread] client ssl connect");
-			if(!SslConnect(dataclient_sock,&clientssl,&tmpctx,shouldquit))
+			if(!SslConnect(dataclient_sock,&clientssl,&connectsslctx,shouldquit,config.data_cipher))
 			{
-				debugmsg(username, "[datathread] ssl connect failed",errno);
+				debugmsg(username, "[datathread] ssl connect to client failed",errno);
 				return;
 			}
 			fp = fingerprint(clientssl);
@@ -359,9 +364,9 @@ void CDataThread::dataloop(void)
 		if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink))
 		{
 			debugmsg(username,"[datathread] client ssl accept");
-			if(!SslAccept(dataclient_sock,&clientssl,&clientsslctx,shouldquit))
+			if(!SslAccept(dataclient_sock,&clientssl,&clientsslctx,shouldquit,config.data_cipher))
 			{
-				debugmsg(username, "[datathread] ssl accept failed",errno);
+				debugmsg(username, "[datathread] ssl accept from client failed",errno);
 				return;
 			}
 			fp = fingerprint(clientssl);
@@ -446,13 +451,13 @@ void CDataThread::dataloop(void)
 				// first check fingerprint
 				if(!fpwhitelist.IsInList(fp) && !adminlist.IsInList(username))
 				{
-					// check ip ip is allowed or user is admin
+					// check if ip is allowed or user is admin
 					if(!whitelist.IsInList(clip) && !adminlist.IsInList(username) )
 					{
 						if(clip != controlthread->dirlist_ip)
 						{
 							debugmsg(username,"[datathread] fxp not allowed - clip: " + clip + " dirlistip: " + controlthread->dirlist_ip);
-							controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+							controlthread->Write(controlthread->client_sock,"427 passive FXP fp: " + fp + " - not allowed!\r\n",controlthread->clientssl);
 							return;
 						}
 					}
@@ -466,7 +471,7 @@ void CDataThread::dataloop(void)
 				}
 				else
 				{
-					controlthread->Write(controlthread->client_sock,"427 Use SSL!\r\n",controlthread->clientssl);
+					controlthread->Write(controlthread->client_sock,"427 Use SSL FXP!\r\n",controlthread->clientssl);
 					return;
 				}
 			}
@@ -474,7 +479,7 @@ void CDataThread::dataloop(void)
 			{
 				if(config.use_fxpfromsite_list && !fxpfromsitelist.IsInList(username))
 				{
-					controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+					controlthread->Write(controlthread->client_sock,"427 passive FXP (dl) not allowed!\r\n",controlthread->clientssl);
 					return;
 				}
 			}
@@ -482,7 +487,7 @@ void CDataThread::dataloop(void)
 			{
 				if(config.use_fxptosite_list && !fxptositelist.IsInList(username))
 				{
-					controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+					controlthread->Write(controlthread->client_sock,"427 passive FXP (ul) not allowed!\r\n",controlthread->clientssl);
 					return;
 				}
 			}
@@ -537,7 +542,7 @@ void CDataThread::dataloop(void)
 						if(activeip != controlthread->dirlist_ip)
 						{
 							debugmsg(username,"[datathread] fxp not allowed - clip: " + clip + " dirlistip: " + controlthread->dirlist_ip);
-							controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+							controlthread->Write(controlthread->client_sock,"427 active FXP fp: " + fp + " - not allowed!\r\n",controlthread->clientssl);
 							return;
 						}
 					}
@@ -551,7 +556,7 @@ void CDataThread::dataloop(void)
 				}
 				else
 				{
-					controlthread->Write(controlthread->client_sock,"427 Use SSL!\r\n",controlthread->clientssl);
+					controlthread->Write(controlthread->client_sock,"427 Use SSL FXP!\r\n",controlthread->clientssl);
 					return;
 				}
 			}
@@ -559,7 +564,7 @@ void CDataThread::dataloop(void)
 			{
 				if(config.use_fxpfromsite_list && !fxpfromsitelist.IsInList(username))
 				{
-					controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+					controlthread->Write(controlthread->client_sock,"427 active FXP (dl) not allowed!\r\n",controlthread->clientssl);
 					return;
 				}
 			}
@@ -567,7 +572,7 @@ void CDataThread::dataloop(void)
 			{
 				if(config.use_fxptosite_list && !fxptositelist.IsInList(username))
 				{
-					controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+					controlthread->Write(controlthread->client_sock,"427 active FXP (ul) not allowed!\r\n",controlthread->clientssl);
 					return;
 				}
 			}
@@ -576,7 +581,6 @@ void CDataThread::dataloop(void)
 	}
 	
 	fd_set data_readfds;
-	
 	
 	
 	debugmsg(username,"[datathread] entering dataloop");
@@ -680,6 +684,7 @@ int CDataThread::Read(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 		debugmsg(username,"[DataRead] read failed!",errno);
 		return 0;
 	}
+	
 	if(sock == dataclient_sock)
 	{
 		controlthread->localcounter.addrecvd(nrbytes);
@@ -701,6 +706,7 @@ int CDataThread::Write(int sock,char *data,int nrbytes,SSL *ssl)
 		debugmsg(username,"[DataWrite] write failed!",errno);
 		return 0;
 	}
+	
 	if(sock == dataclient_sock)
 	{
 		controlthread->localcounter.addsend(nrbytes);

@@ -57,6 +57,8 @@ class CConfig
 	int enforce_tls;
 	int enforce_tls_fxp;
 	int crypted_cert;
+	string control_cipher;
+	string data_cipher;
 
 	// section [IDENT]
 	int use_ident;

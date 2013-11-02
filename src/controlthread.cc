@@ -27,12 +27,31 @@ void *makethread(void* pData)
 	return NULL;
 }
 
+// replace all 'src' in 'res' with 'target'
+void replaceall(string &res, string src, string target) 
+{
+  int pos;
+  while (true) 
+  {
+    pos = (int)res.find(src);
+	if (pos == (int)string::npos) 
+	{
+      break;
+    } 
+	else 
+	{
+      res.erase(pos, src.length());
+      res.insert(pos, target);
+    }
+  }  
+}
 
 
 // constructor
 CControlThread::CControlThread(int fd,string cip,int cport,string sip,int sport)
 {
 	debugmsg("-SYSTEM-","[konstruktor] start");
+	pthread_attr_setdetachstate(&threadattr,PTHREAD_CREATE_JOINABLE);
 	client_sock = fd;
 	site_ip = sip;
 	site_port = sport;
@@ -59,7 +78,12 @@ CControlThread::CControlThread(int fd,string cip,int cport,string sip,int sport)
 	cpsvcmd = 0;
 	shouldquit = 0;
 	username = "-EMPTY-";
-	
+	sendadminmsg = 0;
+	struct sockaddr_in tmpadr;
+	tmpadr = GetIp(site_ip,0);
+	_site_ip = "(" + (string)inet_ntoa(tmpadr.sin_addr);
+	replaceall(_site_ip,".",",");
+
 	if (config.entry_list == "")
 	{
 		using_entry = 0;
@@ -156,8 +180,9 @@ CControlThread::~CControlThread()
 }
 
 
-void CControlThread::deletedatathread(void)
+int CControlThread::deletedatathread(void)
 {
+	debugmsg(username,"[deletedatathread] start");
 	if (datathread != NULL) 
 	{	
 		debugmsg(username,"[deletedatathread] set shouldquit=1");
@@ -170,11 +195,20 @@ void CControlThread::deletedatathread(void)
 		if(pthread_join(datathread->tid,NULL) != 0)
 		{
 			debugmsg(username,"[deletedatathread] error joining thread",errno);
+			delete datathread; 
+			datathread = NULL; 
+			return 0;
 		}
 		debugmsg(username,"[deletedatathread] delete datathread");
 		delete datathread; 
 		datathread = NULL; 
-	}	
+		return 1;
+	}
+	else
+	{
+		debugmsg(username,"[deletedatathread] no datathread running");
+	}
+	return 1;
 }
 
 
@@ -274,13 +308,13 @@ int CControlThread::trytls(void)
 	debugmsg(username,"[trytls] trying tls connection");
 	username = "-TRYTLS-";
 	int shouldquit = 0;
-	if(!SslConnect(site_sock,&sitessl,&sitesslctx,shouldquit))
+	if(!SslConnect(site_sock,&sitessl,&sitesslctx,shouldquit,config.control_cipher))
 	{
 		debugmsg(username,"[trytls] ssl connect failed");
 		return 0;
 	}
 	
-	if(!SslAccept(client_sock,&clientssl,&clientsslctx,shouldquit))
+	if(!SslAccept(client_sock,&clientssl,&clientsslctx,shouldquit,config.control_cipher))
 	{
 		debugmsg(username,"[trytls] ssl accept failed");
 		return 0;
@@ -701,7 +735,11 @@ void CControlThread::mainloop(void)
 				{			
 					
 					debugmsg(username,"[controlthread] create datathread");
-					deletedatathread();
+					if(!deletedatathread())
+					{
+						debugmsg(username,"ERROR joining datathread");
+						return;
+					}
 					
 					if(!trafficcheck())
 					{
@@ -745,6 +783,7 @@ void CControlThread::mainloop(void)
 					activecon = 0;
 					cpsvcmd = 0;
 					dirlisting = 0;
+					SetDirection(0);
 					//sscn = 0;
 	
 				}
@@ -752,7 +791,11 @@ void CControlThread::mainloop(void)
 				{
 					activecon = 1;
 					debugmsg(username,"[controlthread] create datathread");
-					deletedatathread();	
+					if(!deletedatathread())
+					{
+						debugmsg(username,"ERROR joining datathread");
+						return;
+					}
 					
 					if(!trafficcheck())
 					{
@@ -801,10 +844,15 @@ void CControlThread::mainloop(void)
 					activecon = 0;
 					cpsvcmd = 0;
 					dirlisting = 0;
+					SetDirection(0);
 					//sscn = 0;
 
 				}
-				
+				else if(sendadminmsg && IsEndline(s) && upper(s,s.length()).find("200 MESSAGE SENT SUCCESSFULLY TO",0) != string::npos)
+				{
+					// don't show "message send" msg to user if admin msg was send
+					sendadminmsg = 0;
+				}
 				else
 				{
 					if (!Write(client_sock,s,clientssl))
@@ -825,6 +873,7 @@ void CControlThread::mainloop(void)
 									return;
 								}
 								admin_msg = "";
+								sendadminmsg = 1;
 							}
 						}
 					}
@@ -859,7 +908,11 @@ void CControlThread::mainloop(void)
 				s = "ABOR\r\n";
 				if(config.traffic_bnc || (relinked && config.traffic_bnc_relink))
 				{
-					deletedatathread();	
+					if(!deletedatathread())
+					{
+						debugmsg(username,"ERROR joining datathread");
+						return;
+					}
 				}
 				if(!Write(site_sock,s,sitessl))
 				{					
@@ -903,7 +956,7 @@ void CControlThread::mainloop(void)
 			{
 				debugmsg(username,"[controlthread] prot p msg");
 				if (usingssl) { sslprotp = 1; }
-				if(relinked)
+				if(relinked || config.translate_nosslfxp)
 				{
 					if(!Write(client_sock,"200 Protection set to Private\r\n",clientssl))
 					{					
@@ -997,7 +1050,11 @@ void CControlThread::mainloop(void)
 			{
 				if (config.traffic_bnc || (relinked && config.traffic_bnc_relink))
 				{
-					deletedatathread();
+					if(!deletedatathread())
+					{
+						debugmsg(username,"ERROR joining datathread");
+						return;
+					}
 					gotpasvcmd = 1;
 				}
 				if(!Write(site_sock,s,sitessl))
@@ -1016,7 +1073,11 @@ void CControlThread::mainloop(void)
 				portcmd = s;
 				if(config.traffic_bnc || (relinked && config.traffic_bnc_relink))
 				{
-					deletedatathread();				
+					if(!deletedatathread())
+					{
+						debugmsg(username,"ERROR joining datathread");
+						return;
+					}
 					if (!Write(site_sock,"PASV\r\n",sitessl))
 					{											
 						return;
@@ -1244,11 +1305,15 @@ void CControlThread::mainloop(void)
 			{
 				if (config.traffic_bnc || (relinked && config.traffic_bnc_relink))
 				{
-					deletedatathread();
+					if(!deletedatathread())
+					{
+						debugmsg(username,"ERROR joining datathread");
+						return;
+					}
 					gotpasvcmd = 1;
 					sslprotp = 1;
 					cpsvcmd = 1;
-					if(config.ssl_forward == 0)
+					if(config.translate_nosslfxp || config.ssl_forward == 0)
 					{
 						if(!Write(site_sock,"PASV\r\n",sitessl))
 						{					
@@ -2108,7 +2173,7 @@ void CControlThread::mainloop(void)
 				}				
 			}
 			else
-			{
+			{				
 				if (!Write(site_sock,s,sitessl))
 				{					
 					return;
@@ -2222,6 +2287,7 @@ int CControlThread::Read(int sock,SSL *ssl,string &s)
 	return 1;
 }
 
+
 int CControlThread::Write(int sock,string s,SSL *ssl)
 {
 	rwlock.Lock();
@@ -2234,6 +2300,17 @@ int CControlThread::Write(int sock,string s,SSL *ssl)
 		debugmsg(username,"[ControlWrite] write to site");
 	}
 	
+	//------------- hotfix start ---------------
+	if(sock == client_sock && config.traffic_bnc)
+	{		
+		if(s.find(_site_ip,0) != string::npos)
+		{
+			debugmsg("-----WARNING------","Write() tried to send site ip - drop connection");
+			return 0;
+		}
+	}
+	//------------- hotfix end ---------------
+
 	if(!control_write(sock ,s ,ssl))
 	{
 		debugmsg(username,"[ControlWrite] write failed");
@@ -2241,7 +2318,7 @@ int CControlThread::Write(int sock,string s,SSL *ssl)
 		return 0;
 	}
 	if(sock == client_sock)
-	{
+	{		
 		localcounter.addsend(s.length());
 		totalcounter.addsend(s.length());
 		daycounter.addsend(s.length());

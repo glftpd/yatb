@@ -1168,8 +1168,7 @@ struct sockaddr_in GetIp(string ip,int port)
 	
 		if((he = gethostbyname(ip.c_str())) == NULL)
 		{
-			debugmsg("-GETIP-","error resolving ip: " + ip);
-			//cout << "Error resolving ip\n";
+			debugmsg("-GETIP-","error resolving ip: " + ip);			
 			inet_aton("0.0.0.0", &addr.sin_addr); 
 		}
 		else
@@ -1179,6 +1178,13 @@ struct sockaddr_in GetIp(string ip,int port)
 			tmp = inet_ntoa(addr.sin_addr);
 			debugmsg("-GETIP-","resolved ip: " + tmp);
 		}
+	}
+	else
+	{
+		//debugmsg("-GETIP-","error resolving ip: " + ip + " using inet_addr - check your conf");
+		///addr.sin_addr.s_addr = inet_addr(ip.c_str());
+		//debugmsg("-GETIP-","error resolving ip: " + ip);
+		//inet_aton("0.0.0.0", &addr.sin_addr); 
 	}
 	addr.sin_port = htons(port);
 	memset(&(addr.sin_zero), '\0', 8);
@@ -1490,38 +1496,59 @@ int control_read(int sock,SSL *sslcon,string &str)
 	}
 }
 
+static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+{
+	if(preverify_ok == 2)
+	{
+		// do nothing
+	}
+	if(ctx == NULL)
+	{
+		// do nothing
+	}
+	return 1;
+}
 
-int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit)
+int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit,string cipher)
 {
 	if(!setnonblocking(sock))
 	{				
 		return 0;
 	}
 	debugmsg("SSLCONNECT", "[SslConnect] start");
-	*sslctx = SSL_CTX_new(SSLv23_client_method());
-	
-	if (*sslctx == NULL)
+	if(*sslctx == NULL)
 	{
-		debugmsg("SSLCONNECT", "[SslConnect] sitesslctx failed!");
-		return 0;
+		debugmsg("SSLCONNECT", "[SslConnect] ctx == NULL - make new");
+		*sslctx = SSL_CTX_new(SSLv23_client_method());
+		
+		if (*sslctx == NULL)
+		{
+			debugmsg("SSLCONNECT", "[SslConnect] sitesslctx failed!");
+			return 0;
+		}
+		SSL_CTX_set_default_verify_paths(*sslctx);
+		SSL_CTX_set_options(*sslctx,SSL_OP_ALL);
+		SSL_CTX_set_mode(*sslctx,SSL_MODE_AUTO_RETRY);
+		SSL_CTX_set_session_cache_mode(*sslctx,SSL_SESS_CACHE_OFF);			
 	}
-	SSL_CTX_set_default_verify_paths(*sslctx);
-	SSL_CTX_set_options(*sslctx,SSL_OP_ALL);
-	SSL_CTX_set_mode(*sslctx,SSL_MODE_AUTO_RETRY);
-	SSL_CTX_set_session_cache_mode(*sslctx,SSL_SESS_CACHE_OFF);
-	
 	*ssl = SSL_new(*sslctx);
 	if (*ssl == NULL)
 	{
 		debugmsg("SSLCONNECT", "[SslConnect] sslnew failed!");
 		return 0;
 	}
+	if(cipher != "")
+	{
+		SSL_set_cipher_list(*ssl,cipher.c_str());
+	}
+	
 	if(SSL_set_fd(*ssl,sock) == 0)
 	{
 		debugmsg("SSLCONNECT", "[SslConnect] ssl set fd failed!");
 		debugmsg("SSLCONNECT","[SslConnect] " +  (string)ERR_error_string(ERR_get_error(), NULL));
 		return 0;
 	}
+	SSL_set_verify(*ssl,SSL_VERIFY_PEER,verify_callback);
 	debugmsg("SSLCONNECT","[SslConnect] try to connect...");
 	// try for 10 seconds
 	for(int i=0; i <200;i++)
@@ -1562,7 +1589,7 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit)
 	return 1;
 }
 
-int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit)
+int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit, string cipher)
 {	
 	if(!setnonblocking(sock))
 	{				
@@ -1570,19 +1597,23 @@ int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit)
 	}
 	debugmsg("SSLACCEPT", "[SslAccept] start");
 	*ssl = SSL_new(*sslctx);
+	
 	if (*ssl == NULL)
 	{
 		debugmsg("SSLACCEPT", "[SslAccept] clientssl failed!");
 		return 0;
 	}
-
+	if(cipher != "")
+	{
+		SSL_set_cipher_list(*ssl,cipher.c_str());
+	}
 	if (SSL_set_fd(*ssl,sock) == 0)
 	{
 		debugmsg("SSLACCEPT","[SslAccept] " +  (string)ERR_error_string(ERR_get_error(), NULL));
 		return 0;
 	}
 	
-	
+	SSL_set_verify(*ssl,SSL_VERIFY_PEER,verify_callback);
 	
 	debugmsg("SSLACCEPT","[SslAccept] try ssl accept");
 	for(int i=0; i <200;i++)
@@ -1595,6 +1626,7 @@ int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit)
 		else
 		{
 			int sslerr = SSL_get_error(*ssl, err);
+			
 			if( sslerr == SSL_ERROR_WANT_READ || sslerr == SSL_ERROR_WANT_WRITE || sslerr == SSL_ERROR_WANT_X509_LOOKUP)
 			{
 				if (shouldquit == 1) 
@@ -1606,10 +1638,10 @@ int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit)
 			}
 			else
 			{
-				debugmsg("SSLACCEPT", "[SslAccept] TLS Connection failed!");
-				debugmsg("SSLACCEPT","[SslAccept] " +  (string)ERR_error_string(ERR_get_error(), NULL));
+				debugmsg("SSLACCEPT","[SslAccept] unknown error end(0-3)");		
 				return 0;
 			}
+						
 		}
 		
 	}
@@ -1849,6 +1881,7 @@ int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl,int tt,int ussl)
 		                break;
 		        }
               
+				  
 		        if (rc > 0) 
 		        { 
 		           sslasciiread += rc;                
@@ -2175,7 +2208,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
 		    message = "AUTH TLS failed";	
 			return 0;
 		}	
-		if(!SslConnect(sock,ssl,sslctx,shouldquit))
+		if(!SslConnect(sock,ssl,sslctx,shouldquit,config.control_cipher))
 		{
 		   
 			return 0;
@@ -2373,6 +2406,7 @@ string fingerprint(SSL *ssl)
 {
 	X509 *cert;
 	cert = SSL_get_peer_certificate(ssl);
+	
 	if(cert == NULL)
 	{
 		debugmsg("-SYSTEM-", "[datathread] failed to get cert",errno);

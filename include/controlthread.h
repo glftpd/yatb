@@ -25,13 +25,13 @@ class CControlThread
 	
 
 	private:
-
+	pthread_attr_t threadattr;
 	friend void *makethread(void *pData);
 	friend class CDataThread;
 	
 	CDataThread *datathread;
 
-	void deletedatathread(void);
+	int deletedatathread(void);
 	
 	void mainloop(void);
 		
@@ -57,6 +57,7 @@ class CControlThread
 	int gotwelcomemsg;
 	int gotpasvcmd;
 	int gotportcmd;
+	int sendadminmsg; // store if a admin msg was send
 	int sscn;
 	int cpsvcmd; // ssl fxp
 	int sslprotp; // using secure dirlisting
@@ -77,6 +78,8 @@ class CControlThread
 
 	int shouldquit;
 	
+	string _site_ip; // to store site ip for security check in Write()
+
 	int using_entry;
 	CLock writelock;
 	string clientip;
