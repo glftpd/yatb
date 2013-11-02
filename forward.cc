@@ -85,7 +85,7 @@ class CFwData
 			return;
 		}
 		
-		fd_set data_readfds;
+		fd_set data_readfds,data_writefds;
 		
 		while(1)
 		{
@@ -107,9 +107,8 @@ class CFwData
 			}
 			
 			if (select(tmpsock+1, &data_readfds, NULL, NULL, &tv) < 1)
-			{
-				debugmsg("-FW-THREAD-","[datathread] read timeout",errno);
-				return;
+			{				
+				break;
 			}
 	
 			// read from site - send to client
@@ -124,10 +123,21 @@ class CFwData
 				{					
 					break;
 				}
-	
-				if(!DataWrite(client_sock,buffer,rc,clientssl))
+				FD_ZERO(&data_writefds);
+				FD_SET(client_sock,&data_writefds);
+				struct timeval tv;
+				tv.tv_sec = config.read_write_timeout;
+				tv.tv_usec = 0;
+				if (select(client_sock+1, NULL, &data_writefds, NULL, &tv) < 1)
 				{					
 					break;
+				}
+				if (FD_ISSET(client_sock, &data_writefds))
+				{
+					if(!DataWrite(client_sock,buffer,rc,clientssl))
+					{					
+						break;
+					}
 				}
 				
 
@@ -143,11 +153,22 @@ class CFwData
 				{					
 					break;
 				}
-				
-				if(!DataWrite(server_sock,buffer,rc,sitessl))
-				{				
+				FD_ZERO(&data_writefds);
+				FD_SET(server_sock,&data_writefds);
+				struct timeval tv;
+				tv.tv_sec = config.read_write_timeout;
+				tv.tv_usec = 0;
+				if (select(server_sock+1, NULL, &data_writefds, NULL, &tv) < 1)
+				{					
 					break;
 				}
+				if (FD_ISSET(server_sock, &data_writefds))
+				{
+					if(!DataWrite(server_sock,buffer,rc,sitessl))
+					{				
+						break;
+					}
+					}
 	
 			}
 			

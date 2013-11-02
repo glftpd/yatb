@@ -90,6 +90,7 @@ class CConfig
 	int forwarder_sport;
 	int forwarder_dport;
 	string forwarder_ip;
+	int retry_count;
 };
 
 extern CConfig config;

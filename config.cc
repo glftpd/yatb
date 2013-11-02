@@ -68,6 +68,7 @@ CConfig::CConfig()
 	forwarder_sport=0;
 	forwarder_dport=0;
 	forwarder_ip="";
+	retry_count = 0;
 }
 
 CConfig::~CConfig()
@@ -870,6 +871,17 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "forwarder_ip missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	if ((val=getkey("retry_count",daten)) != "ERROR")
+   	{
+   		retry_count = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "retry_count missing\n";
    		
    		return 0;
    	}

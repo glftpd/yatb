@@ -425,6 +425,13 @@ destination port for forwarding
 ip to forward to
 
 --------------------------------------------------------
+
+- retry_count=10;
+
+maximum # of retries for EAGAIN/SSL_WANT_READ/WRITE errors
+
+--------------------------------------------------------
+
 special bnc commands:
 ---------------------
 

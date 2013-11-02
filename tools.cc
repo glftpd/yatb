@@ -603,7 +603,7 @@ int control_write(int sock,string s,SSL *sslcon)
 		{
 			if (sslcon != NULL)
 			{
-				if(count == 3) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then 3 retries
+				if(count == config.retry_count) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then x retries
 				int err = SSL_get_error(sslcon,n);
 				
 				if (err == SSL_ERROR_WANT_READ) { usleep(2000);count++; continue; }
@@ -691,7 +691,7 @@ int control_read(int sock,SSL *sslcon,string &str)
 			{
 				if (sslcon != NULL)
 				{
-					if(count == 3) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then 3 retries
+					if(count == config.retry_count) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then x retries
 					int err = SSL_get_error(sslcon,rc);
 					
 					if (err == SSL_ERROR_WANT_READ) { usleep(2000);count++; continue; }
@@ -957,7 +957,7 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 			}
 			else
 			{
-				if(count == 3) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then 3 retries
+				if(count == config.retry_count) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then x retries
 				if (ssl != NULL)
 				{
 					
@@ -1012,7 +1012,7 @@ int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 			}
 			else
 			{	
-				if(count == 3) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then 3 retries
+				if(count == config.retry_count) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then x retries
 				if (ssl != NULL)
 				{
 					int err = SSL_get_error(ssl,rc);
