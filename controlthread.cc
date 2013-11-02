@@ -280,7 +280,7 @@ int CControlThread::tryrelink(int state)
 int CControlThread::trytls(void)
 {
 	debugmsg(username,"[trytls] trying tls connection");
-		
+	username = "-TRYTLS-";
 	if(!SslConnect(site_sock,&sitessl,&sitesslctx))
 	{
 		debugmsg(username,"[trytls] ssl connect failed");

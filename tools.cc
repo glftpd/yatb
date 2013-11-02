@@ -921,7 +921,7 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 		}
 		else
 		{
-			debugmsg("-SYSTEM-","[data_write] error!",errno);
+			debugmsg("-SYSTEM-","[data_write] FD_ISSET error!",errno);
 			return 0;
 		}
 		
@@ -987,7 +987,7 @@ int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 		}
 		else
 		{
-			debugmsg("-SYSTEM-","[data_read] error!",errno);
+			debugmsg("-SYSTEM-","[data_read] FD_ISSET error!",errno);
 			return 0;
 		}
 	}	

@@ -237,7 +237,7 @@ void CDataThread::dataloop(void)
 	}
 	
 	// ssl stuff
-	if(!config.ssl_forward && usingssl)
+	if(!config.ssl_forward && usingssl && sslprotp)
 	{
 		if(!SslConnect(datasite_sock,&sitessl,&sitesslctx))
 		{
@@ -246,7 +246,7 @@ void CDataThread::dataloop(void)
 		}
 	}
 	
-	if((usingssl && relinked) || (!config.ssl_forward && usingssl))
+	if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp))
 	{
 		if(!SslAccept(dataclient_sock,&clientssl,&clientsslctx))
 		{
