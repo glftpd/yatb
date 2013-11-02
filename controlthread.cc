@@ -6,6 +6,8 @@
 #include "lock.h"
 #include "tls.h"
 
+
+
 // c wrapper for creating main connection thread
 void *makethread(void* pData)
 {
@@ -303,6 +305,15 @@ int CControlThread::trytls(void)
 void CControlThread::mainloop(void)
 {
 	debugmsg(username,"[controlthread] start");
+	
+	#if defined(__linux__) && defined(__i386__)
+	stringstream ss;
+	ss << "Started controlthread " << gettid();
+	if (config.syslog) 
+	{			
+		syslog(LOG_ERR, ss.str().c_str());
+	}	
+	#endif
 	
 	fd_set readfds;
 	if (using_entry)

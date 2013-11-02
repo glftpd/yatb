@@ -138,6 +138,15 @@ void CDataThread::dataloop(void)
 {
 	debugmsg(username,"[datathread] dataloop start");
 	
+	#if defined(__linux__) && defined(__i386__)
+	stringstream ss;
+	ss << username << " started datathread " << gettid();
+	if (config.syslog) 
+	{			
+		syslog(LOG_ERR, ss.str().c_str());
+	}	
+	#endif
+	
 	// try to connect to site
 	if ((datasite_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
 	{

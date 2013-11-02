@@ -9,6 +9,11 @@ void debugmsg(string un,string s,int err)
 	
 	if (config.debug)
 	{
+		#if defined(__linux__) && defined(__i386__)
+		stringstream ss;
+		ss << gettid();
+		un = un + " - " + ss.str();
+		#endif
 		config_lock.Lock();
 		time_t rawtime;
 	  struct tm * timeinfo;
@@ -554,6 +559,7 @@ int control_write(int sock,string s,SSL *sslcon)
 
 	int maxsize = config.buffersize; // max size in bytes of packet
 	int total = 0;
+	int count = 0;
 	int bytesleft = s.length();
 	int blocksize;
 	if (bytesleft > maxsize)
@@ -592,11 +598,12 @@ int control_write(int sock,string s,SSL *sslcon)
 		{
 			if (sslcon != NULL)
 			{
+				if(count == 3) return 0;
 				int err = SSL_get_error(sslcon,n);
 				
-				if (err == SSL_ERROR_WANT_READ) { continue; }
-				if (err == SSL_ERROR_WANT_WRITE) { continue; }
-				if (err == SSL_ERROR_WANT_X509_LOOKUP) { continue; }				
+				if (err == SSL_ERROR_WANT_READ) { count++; continue; }
+				if (err == SSL_ERROR_WANT_WRITE) { count++; continue; }
+				if (err == SSL_ERROR_WANT_X509_LOOKUP) { count++; continue; }				
 				
 			}
 			
@@ -636,6 +643,7 @@ int control_read(int sock,SSL *sslcon,string &str)
 	int rc;
 	char *buffer;
 	buffer = new char[config.buffersize];
+	int count = 0;
 	
 	while(1)
 	{		
@@ -674,11 +682,12 @@ int control_read(int sock,SSL *sslcon,string &str)
 			{
 				if (sslcon != NULL)
 				{
+					if(count == 3) return 0;
 					int err = SSL_get_error(sslcon,rc);
 					
-					if (err == SSL_ERROR_WANT_READ) { continue; }
-					if (err == SSL_ERROR_WANT_WRITE) { continue; }
-					if (err == SSL_ERROR_WANT_X509_LOOKUP) { continue; }					
+					if (err == SSL_ERROR_WANT_READ) { count++; continue; }
+					if (err == SSL_ERROR_WANT_WRITE) { count++; continue; }
+					if (err == SSL_ERROR_WANT_X509_LOOKUP) { count++; continue; }					
 					
 				}
 				
@@ -738,8 +747,8 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 		return 0;
 	}
 	debugmsg("-SYSTEM-","[SslConnect] try to connect...");
-	// try for 3 seconds
-	for(int i=0; i <6;i++)
+	// try for 10 seconds
+	for(int i=0; i <20;i++)
 	{
 		int err = SSL_connect(*ssl);
 		if(err == 1)
@@ -786,7 +795,7 @@ int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx)
 	
 	
 	debugmsg("-SYSTEM-","[SslAccept] try ssl accept");
-	for(int i=0; i <6;i++)
+	for(int i=0; i <20;i++)
 	{
 		int err = SSL_accept(*ssl);
 		if(err == 1)
@@ -1053,3 +1062,15 @@ int printsockopt(int sock,string name)
 	}
 	return 1;
 }
+
+#if defined(__linux__) && defined(__i386__)
+pid_t gettid(void)
+{
+    pid_t ret;
+    __asm__("int $0x80" : "=a" (ret) : "0" (224) /* SYS_gettid */);
+    if (ret < 0) ret = -1;
+    return ret;
+
+}
+
+#endif

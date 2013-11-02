@@ -42,6 +42,10 @@ string traffic2str(double);
 
 int printsockopt(int, string );
 
+#if defined(__linux__) && defined(__i386__)
+pid_t gettid(void);
+#endif
+
 struct sockaddr_in GetIp(string,int);
 
 #endif
