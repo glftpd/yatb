@@ -81,6 +81,7 @@ CConfig::CConfig()
     month_limit = 0;
     opt_dh_file = "";
     translate_nosslfxp = 0;
+    disable_noop = 0;
 }
 
 CConfig::~CConfig()
@@ -1016,6 +1017,17 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "translate_nosslfxp missing\n";
+   		
+   		ok = 0;
+   	}
+   	
+   	if ((val=getkey("disable_noop",daten)) != "ERROR")
+   	{
+   		disable_noop = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "disable_noop missing\n";
    		
    		ok = 0;
    	}

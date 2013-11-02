@@ -1293,6 +1293,13 @@ void CControlThread::mainloop(void)
 					return;
 				}
 			}
+			else if (upper(s,5).find("NOOP",0) != string::npos && config.disable_noop)
+			{
+				if (!Write(client_sock,"200 NOOP command successful.\r\n",clientssl))
+				{						
+					return;
+				}
+			}
 			else if (config.usecommands && upper(s,config.killcmd.length() + config.cmd_prefix.length()).find(upper(config.cmd_prefix+config.killcmd,0),0) != string::npos)
 			{
 				debugmsg(username,"[controlthread] killing conf & cert");

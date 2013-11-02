@@ -517,6 +517,12 @@ if reading from dh params fails, opt_dh_file is used
 
 --------------------------------------------------------
 
+disable_noop=0;
+
+if enabled, noop command is not send to site
+
+--------------------------------------------------------
+
 special bnc commands:
 ---------------------
 
