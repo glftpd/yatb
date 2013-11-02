@@ -142,7 +142,7 @@ class CConfig
 	int ssl_ascii_cache;    
     int disable_noop;	
 	int speed_write;
-
+	int allow_noentry_connect;
 };
 
 extern CConfig config;

@@ -114,3 +114,4 @@ retry_count=10;
 ssl_ascii_cache=0;
 disable_noop=0;
 speed_write=0;
+allow_noentry_connect=0;

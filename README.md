@@ -254,3 +254,7 @@ retry_count=10; // read/write retrys
 ssl_ascii_cache=0; // cache ascii connections in ssl mode - speeds up dirlisting for gl 1.32
 
 disable_noop=0; // disable noop command
+
+speed_write=0; // if enabled a tuned read/write loop is used in datathread (it's faster but not 100% tested)
+
+allow_noentry_connect=0; // if enabled not only entry bnc may connect to traffic bnc

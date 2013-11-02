@@ -351,7 +351,7 @@ void CControlThread::mainloop(void)
 		debugmsg(username,"[controlthread] entry_list: " + entrylist.GetList());
 		// only allow connects from entry bnc
 		
-		if(!entrylist.IsInList(clientip))
+		if(!entrylist.IsInList(clientip) && !config.allow_noentry_connect)
 		{
 			debugmsg(username,"[controlthread] connect ip: " + clientip);
 			debugmsg(username,"[controlthread] connect ip not in entry_list");
@@ -424,6 +424,19 @@ void CControlThread::mainloop(void)
 			return;
 		}	
 	
+	}
+	// connect is no entry and no entry conncts are allowed
+	else if(!entrylist.IsInList(clientip) && config.allow_noentry_connect)
+	{
+		stringstream idnt_cmd;
+		idnt_cmd << "IDNT " << ident_user << "@" << clientip << ":" << clientip << "\r\n";
+		
+		debugmsg("-SYSTEM-","IDNT cmd: " + idnt_cmd.str());
+		
+		if (!Write(site_sock,idnt_cmd.str(),sitessl))
+		{			
+			return;
+		}	
 	}
 	else if(!config.no_idnt_cmd)
 	{

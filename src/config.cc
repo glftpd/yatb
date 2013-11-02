@@ -123,7 +123,7 @@ CConfig::CConfig()
 	ssl_ascii_cache = 0;
     disable_noop = 0;
 	speed_write = 0;
-
+	allow_noentry_connect = 0;
 }
 
 CConfig::~CConfig()
@@ -358,7 +358,7 @@ int CConfig::readconf(string filename,string key,int crypted)
 		getentry(ssl_ascii_cache,"ssl_ascii_cache",ok,daten);
 		getentry(disable_noop,"disable_noop",ok,daten);
 		getentry(speed_write,"speed_write",ok,daten);
-
+		getentry(allow_noentry_connect,"allow_noentry_connect",ok,daten);
 
    		for(int i=0;i < (int)daten.length();i++)
    		{
