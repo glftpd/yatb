@@ -229,11 +229,11 @@ void CDataThread::dataloop(void)
 			}
 		}
 		if(!Connect(dataclient_sock,activeip,activeport,config.connect_timeout,shouldquit))
-		{
-			
+		{			
 			debugmsg(username, "[datathread] could not connect to client!",errno);
 			return;
 		}
+		debugmsg(username,"[datathread] active connection successfull");
 	}
 	
 	// ssl stuff
@@ -539,12 +539,12 @@ void CDataThread::dataloop(void)
 			int rc;
 			if(!Read(datasite_sock,buffer,rc,sitessl))
 			{					
-				return;
+				break;
 			}
 
 			if(!Write(dataclient_sock,buffer,rc,clientssl))
 			{					
-				return;
+				break;
 			}
 				
 
@@ -558,20 +558,21 @@ void CDataThread::dataloop(void)
 			int rc;
 			if(!Read(dataclient_sock,buffer,rc,clientssl))
 			{					
-				return;
+				break;
 			}
 			
 			if(!Write(datasite_sock,buffer,rc,sitessl))
 			{				
-				return;
+				break;
 			}
 
 		}
 
 	}
 
+	debugmsg(username,"[datathread] call close connection");
+	closeconnection();
 	debugmsg(username,"[datathread] end");
-	
 	return;
 
 }
@@ -580,7 +581,7 @@ int CDataThread::Read(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 {
 	if(!DataRead(sock ,buffer,nrbytes,ssl))
 	{
-		debugmsg(username,"[Read] read failed!");
+		debugmsg(username,"[DataRead] read failed!");
 		return 0;
 	}
 	if(sock == dataclient_sock)
@@ -598,7 +599,7 @@ int CDataThread::Write(int sock,char *data,int nrbytes,SSL *ssl)
 {
 	if(!DataWrite(sock,data,nrbytes,ssl))
 	{
-		debugmsg(username,"[Write] write failed!");
+		debugmsg(username,"[DataWrite] write failed!");
 		return 0;
 	}
 	if(sock == dataclient_sock)

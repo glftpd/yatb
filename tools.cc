@@ -681,13 +681,7 @@ int control_read(int sock,SSL *sslcon,string &str)
 
 int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 {
-	
-	if(!setblocking(sock))
-	{ 
-		debugmsg("-SYSTEM-", "[SslConnect] set blocking failed!");
-		return 0;
-	}
-	
+	debugmsg("-SYSTEM-", "[SslConnect] start");
 	*sslctx = SSL_CTX_new(TLSv1_client_method());
 	SSL_CTX_set_options(*sslctx,SSL_OP_ALL);
 	SSL_CTX_set_mode(*sslctx,SSL_MODE_AUTO_RETRY);
@@ -710,35 +704,38 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 		return 0;
 	}
 	debugmsg("-SYSTEM-","[SslConnect] try to connect...");
-	if (SSL_connect(*ssl) == 1)
+	// try for 3 seconds
+	for(int i=0; i <6;i++)
 	{
-		//SSL_get_cipher_bits(sitessl,&sitesslbits);
-
-		// get reply
-
+		int err = SSL_connect(*ssl);
+		if(err == 1)
+		{
+			break;
+		}
+		else
+		{
+			int sslerr = SSL_get_error(*ssl, err);
+			if( sslerr == SSL_ERROR_WANT_READ || sslerr == SSL_ERROR_WANT_WRITE || sslerr == SSL_ERROR_WANT_X509_LOOKUP)
+			{
+				// still in progress - wait a half second
+				usleep(500000);
+			}
+			else
+			{
+				debugmsg("-SYSTEM-", "[SslConnect] TLS Connection failed!");
+				return 0;
+			}
+		}
+		
 	}
-	else
-	{
-		debugmsg("-SYSTEM-", "[SslConnect] TLS Connection failed!");
-		return 0;
-	}
-	if(!setnonblocking(sock))
-	{
-		debugmsg("-SYSTEM-", "[SslConnect] set non blocking failed!");
-		return 0;
-	}
+	
 	debugmsg("-SYSTEM-", "[SslConnect] end");
 	return 1;
 }
 
 int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx)
-{
-	if(!setblocking(sock))
-	{ 
-		debugmsg("-SYSTEM-", "[SslAccept] set blocking failed!");
-		return 0;
-	}
-	
+{	
+	debugmsg("-SYSTEM-", "[SslAccept] start");
 	*ssl = SSL_new(*sslctx);
 	if (*ssl == NULL)
 	{
@@ -755,21 +752,30 @@ int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx)
 	
 	
 	debugmsg("-SYSTEM-","[SslAccept] try ssl accept");
-	int err;
-	
-	if( (err = SSL_accept(*ssl)) != 1)
+	for(int i=0; i <6;i++)
 	{
-		debugmsg("-SYSTEM-", "[SslAccept] accept failed!");
-		debugmsg("-SYSTEM-","[SslAccept] " +  (string)ERR_error_string(ERR_get_error(), NULL));
+		int err = SSL_accept(*ssl);
+		if(err == 1)
+		{
+			break;
+		}
+		else
+		{
+			int sslerr = SSL_get_error(*ssl, err);
+			if( sslerr == SSL_ERROR_WANT_READ || sslerr == SSL_ERROR_WANT_WRITE || sslerr == SSL_ERROR_WANT_X509_LOOKUP)
+			{
+				// still in progress - wait a half second
+				usleep(500000);
+			}
+			else
+			{
+				debugmsg("-SYSTEM-", "[SslAccept] TLS Connection failed!");
+				return 0;
+			}
+		}
 		
-		return 0;
 	}
-	
-	if(!setnonblocking(sock))
-	{
-		debugmsg("-SYSTEM-", "[SslAccept] set non blocking failed!");
-		return 0;
-	}
+		
 	debugmsg("-SYSTEM-", "[SslAccept] end");
 	return 1;
 	

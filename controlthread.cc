@@ -295,6 +295,7 @@ int CControlThread::trytls(void)
 	
 	debugmsg(username, "[trytls] end trytls");
 	usingssl = 1;
+	username = "-AFTERTRYTLS-";
 	return 1;
 }
 
