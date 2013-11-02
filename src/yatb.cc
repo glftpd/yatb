@@ -1,8 +1,3 @@
-// define configfile/certfile password here to allow automatic startup
-// this is not secure!!
-//#define config_key "somekey"
-//#define cert_key "somekey"
-
 #include "global.h"
 #include "config.h"
 #include "counter.h"
@@ -67,8 +62,9 @@ int use_blowconf = 1;
 long *lock_count;
 SSL_CTX *clientsslctx;
 CLock list_lock,config_lock,globals_lock,sock_lock;
+// blowkey used as salt for hashing
 string bk = "";
-string cert_bk;
+string cert_bk="",ip_bk="";
 string conffile,yatbfilename;
 string lastday="",lastmonth="";
 int lastweek = 0;
@@ -144,7 +140,7 @@ pthread_attr_t threadattr;
 
 int main(int argc,char *argv[])
 {		
-		
+	OpenSSL_add_all_digests();	
 	pthread_attr_init(&threadattr);
   pthread_attr_setdetachstate(&threadattr,PTHREAD_CREATE_DETACHED);
 	
@@ -186,19 +182,12 @@ int main(int argc,char *argv[])
 	if (use_blowconf == 1)
 	{
 		conffile = argv[1];
-		
-		#ifndef config_key
-			char *k;
-			k = getpass("Enter config blowfish key: ");
-			bk = k;
-			memset(k, 0,bk.length());
-		   
-		#endif
-		
-		#ifdef config_key
-			bk = config_key;		       
-		#endif
-		
+				
+		char *k;
+		k = getpass("Enter config blowfish key: ");
+		bk = k;
+		memset(k, 0,bk.length());
+				
 		if (!config.readconf(conffile,bk))
 		{		
 			return -1;
@@ -214,24 +203,30 @@ int main(int argc,char *argv[])
 	}
 	
 	if(config.crypted_cert)
-	{
-	  #ifndef cert_key
+	{	  
 		char *ck;
 		ck = getpass("Enter cert blowfish key: ");
 		cert_bk = ck;
-		memset(ck, 0,cert_bk.length());
-	  #endif
-	  #ifdef cert_key
-		cert_bk = cert_key;
-    #endif
-	  
+		memset(ck, 0,cert_bk.length());	  
 	}
 	
+	if(config.crypted_iplist)
+	{	  
+		char *ck;
+		ck = getpass("Enter iplist blowfish key: ");
+		ip_bk = ck;
+		memset(ck, 0,ip_bk.length());	  
+	}
+
 	adminlist.Insert(config.admin_list);
 	fxpfromsitelist.Insert(config.fxp_fromsite_list);
 	fxptositelist.Insert(config.fxp_tosite_list);
 	sslexcludelist.Insert(config.sslexclude_list);
 	entrylist.Insert(config.entry_list);
+	if(!fxpiplist.ReadList(config.iplist_file,ip_bk))
+	{
+		debugmsg("-SYSTEM-","WARNING: can't read ip list");
+	}
 	if(!iplist.readlist(config.site_ip,config.site_port))
 	{
 		debugmsg("-SYSTEM-","error in ip/port list");

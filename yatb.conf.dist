@@ -1,8 +1,8 @@
 [ Debug ]
 debug=0;
-log_to_screen=0;
+log_to_screen=1;
 debug_logfile=log.txt;
-command_logfile=command.txt;
+command_logfile=;
 syslog=0;
 
 [ Connection ]
@@ -21,7 +21,7 @@ week_limit=0;
 month_limit=0;
 
 [ SSL ]
-cert_path=dsa.pem;
+cert_path=ftpd-dsa.pem;
 opt_dh_file=;
 crypted_cert=0;
 enforce_tls=1;
@@ -54,8 +54,11 @@ fxp_tosite_list=;
 use_fxpiplist=0;
 use_fxpiphash=0;
 hash_algo=sha256;
+iplist_file=;
+crypted_iplist=0;
 
 [ Admin ]
+usecommands=0;
 admin_list=hawk;
 cmd_prefix=e;
 infocmd=info;
@@ -68,12 +71,12 @@ reloadcmd=reload;
 entrycmd=entry;
 killcmd=kill;
 fxpipcmd=fxpip;
-usecommands=1;
+
 
 [ Ftpd setup ]
 server_string=220 FTP server ready.;
 fake_serverstring=1;
-send_traffic_info=1;
+send_traffic_info=0;
 user_access_denied=access denied.;
 user_login_success=logged in.;
 site_closed=The server has been shut down, try again later.;

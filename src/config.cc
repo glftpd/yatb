@@ -88,6 +88,8 @@ CConfig::CConfig()
 	use_fxpiplist = 0;
 	use_fxpiphash = 0;
 	hash_algo = "sha256";
+	iplist_file = "";
+	crypted_iplist=0;
 }
 
 CConfig::~CConfig()
@@ -1111,6 +1113,28 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "hash_algo missing\n";
+   		
+   		ok = 0;
+   	}
+	
+	if ((val=getkey("iplist_file",daten)) != "ERROR")
+   	{
+   		iplist_file = val;
+   	}
+   	else
+   	{
+   		cout << "iplist_file missing\n";
+   		
+   		ok = 0;
+   	}
+
+	if ((val=getkey("crypted_iplist",daten)) != "ERROR")
+   	{
+   		crypted_iplist = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "crypted_iplist missing\n";
    		
    		ok = 0;
    	}

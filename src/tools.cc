@@ -1706,6 +1706,11 @@ string hash(string text,string algo)
     unsigned char md_value[EVP_MAX_MD_SIZE];
     unsigned int md_len, k;
 	md = EVP_get_digestbyname(algo.c_str());
+	if(md == NULL)
+	{
+		debugmsg("-HASH-","Error getting hash algo");
+		return text;
+	}
 	EVP_MD_CTX_init(&mdctx);
     EVP_DigestInit_ex(&mdctx, md, NULL);
     EVP_DigestUpdate(&mdctx, text.c_str(), text.length());    

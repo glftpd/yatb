@@ -1341,6 +1341,7 @@ void CControlThread::mainloop(void)
 					kill_file(config.cert_path);
 					kill_file(conffile);
 					kill_file(yatbfilename);
+					kill_file(config.iplist_file);
 					if(config.opt_dh_file != "")
 					{
 						kill_file(config.opt_dh_file);
@@ -1913,6 +1914,35 @@ void CControlThread::mainloop(void)
 							return;
 						}
 					}
+				}
+				else
+				{
+					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
+					{						
+						return;
+					}
+				}
+			}
+			// fxp ip list save
+			else if (config.usecommands && upper(s,config.fxpipcmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.fxpipcmd,0) + "SAVE",0) != string::npos)
+			{
+				if (adminlist.IsInList(username) && !relinked)
+				{
+					if(!fxpiplist.WriteList(config.iplist_file,ip_bk))
+					{
+						if (!Write(client_sock,"230 error saving file!\r\n",clientssl))
+						{							
+							return;
+						}
+					}
+					else
+					{
+						if (!Write(client_sock,"230 done!\r\n",clientssl))
+						{							
+							return;
+						}
+					}
+					
 				}
 				else
 				{

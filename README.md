@@ -1,574 +1,256 @@
 Yet Another Traffic Bouncer README
 
-requirements:
--------------
+What do you need?
+_________________
 
-linux (or bsd)
+*NIX
+openssl + openssl header files (>= 0.9.8)
 g++
-openssl + header files (>= 0.9.7)
 
-compile:
---------
+Compiling
+_________
 
-to compile just type 'make linux' or 'make bsd' for either linux or bsd version
-make without parameter will show other options (debug/static versions)
+first do a 'make clean'
+then do 'make system'
+system can be: linux,bsd,solaris,cygwin
+you can also do 'make system-static' 'make system-debug' or 'make system-debug-static' to make static/debug versions
 
-install:
---------
+Setup
+_____
 
-copy blowcrypt, yatb and yatb.conf.dist to a directory you like
-you will need a SSL certificate file - copy .pem file from gl installation into the same dir
+Now copy a cert file (ftpd-dsa.pem) to bin directory
+Also copy yatb.conf.dist to bin dir
+If you have a rsa cert, you will need a dh file
+(can be generated with 'openssl dhparam -out dh1024.pem -2 1024')
 
-encrypt conf:
--------------
+Encrypting config file
+______________________
 
-you can use encrypted conf file
-to do so encrypt your conf file with ./blowcrypt -e file1 file2 to encrypt file1 to file2
-(for example ./blowcrypt -e yatb.conf.dist)
-if you want to change your conf you can decrypt it with ./blowcrypt -d file1 file2 to decrypt file1 to file2)
-(for example ./blowcrypt -d yatb.conf.dist)
+You can encrypt your config file and the cert file if you want
+to do so use the included blowcrypt
+syntax is: blowcrypt -e file to encrypt file and blowcrypt -d file to decrypt
+(you should encrypt the files on another shell and only upload the encrypted files)
 
-start:
-------
+File permissions
+________________
 
-you can start yatb with ./yatb yatb.conf.dist
-(or ./yatb -u yatb.conf.dist if you want to use uncrypted conf file)
-if you want to use a crypted config file without being asked for the key (cron jobs) do this:
-edit yatb.cc and remove // from the second line and change the key to your key
-(should look like this '#define config_key "somekey"')
-now compile again (do a 'make clean' first) and you're done
+You can start yatb as root (it will change uid in this case)
+if you do so, make sure that bin dir and conf/cert belongs to this user (default is daemon)
 
-format of conf file:
---------------------
+Start
+_____
+
+To start yatb type ./yatb conffile (when using encrypted conf)
+or ./yatb -u conffile (when using uncrypted conf)
+
+format of conf file
+___________________
 
 all entrys are of the folloing form:
 key=value;
 the ';' is important, also do not use " or spaces or anything else
 
-cron job:
----------
+quick start
+___________
 
-edit bnctest.sh to fit your needs and add to crontab
+most values can use the default from conf
+you only have to change a few sections:
+[ Connection ] and [ SSL ]
 
-config reload:
---------------
+-------------------------------------------------------------------------------------------------------
 
-the config can be reloaded via kill -HUP command
+config file values
+__________________
 
+[ Debug ]
+debug=0; // enable debug mode
 
-options in config file:
------------------------
+log_to_screen=1; // log to screen instead of file
 
-- debug=0;
+debug_logfile=log.txt; // name of logfile
 
-enable/disable debug mode
+command_logfile=; // special file to log only site commands and replys
 
---------------------------------------------------------
+syslog=0; // enable logging to syslog
 
-- debug_logfile=log.txt;
+[ Connection ]
+listen_port=123; // listen port from yatb
 
-name and path of log file
+site_ip=1.2.3.4; // ip from site - can be a list of ips like site_ip=ip1,ip2,ip3;
+                 // in this case, every new connection gets next ip in list
+                 
+site_port=123;  // port from site - can be a list - see above
 
---------------------------------------------------------
+entry_list=;  // a entry(s) are use add ips here
 
-- command_logfile=command.txt;
+connect_ip=;  // use a sepcial ip to connect to site
 
-if specified all commands are logged to this file
-(only when in debug mode)
+listen_interface=eth0; // gets ip for passive mode connections from this interface
+                       // can be something like ppp0 for dialup connections
 
---------------------------------------------------------
+listen_ip=; // bind to special ip - overrides listen_interface
 
-- cert_path=dsa.pem;
+traffic_bnc=1; // run as traffic bnc or entry
 
-name and path of cert file
+[ Limit ]
+day_limit=0; // daily limit
 
---------------------------------------------------------
+week_limit=0; // weekly limit
 
-- listen_port=123;
+month_limit=0; // monthly limit
 
-listen port for the bnc
+[ SSL ]
+cert_path=ftpd-dsa.pem; // name of cert file
 
---------------------------------------------------------
+opt_dh_file=; // when using rsa cert specify a dh file here
 
-- entry_list=;
+crypted_cert=0; // use a crypted cert
 
-if you want to use entry(s) add ips here
-only connections from this ip(s) are accepted
-seperator is ,
+enforce_tls=1; // enforce ssl usage
 
---------------------------------------------------------
+enforce_tls_fxp=0; // enforce ssl fxp
 
-- listen_interface=ppp0;
+ssl_forward=1; // only forward ssl packets
+               // else all packets are de and encrypted
+               
+use_ssl_exclude=0; // use the ssl exclude list to allow specials users to login without ssl
 
-interface to get ip from
+sslexclude_list=; // list of users which must not use ssl
 
---------------------------------------------------------
+translate_nosslfxp=0; // no function yet
 
-- listen_ip=;
+[ Ident ]
+use_ident=1; // make an ident request
 
-you can bind to specific ip
-if set listen_interface is ignored
+enforce_ident=0; // enforce ident reply
 
---------------------------------------------------------
+no_idnt_cmd=0; // don't sent IDNT command to site
 
-- site_ip=1.2.3.4;
+[ Relink ]
+trytorelink=0; // enable relink feature
 
-ip of ftp server to connect to
-(can be list of ips seperated by ',')
-(in this case site_port must be list of the same size)
+relink_ip=1.2.3.4; // ip of relink site
 
---------------------------------------------------------
+relink_port=21; // port of relink site
 
-- site_port=123;
+relink_user=anonymous; // username for relinking
 
-listen port of ftp server to connect to
-(can be list of ports seperated by ',')
+relink_pass=a@b.de; // password for relinking
 
---------------------------------------------------------
+ssl_relink=0; // login with ssl to relink site
 
-- connect_ip=;
+relink_notls=0; // relink, if no ssl is used
 
-ip used to connect to site (not needed)
+traffic_bnc_relink=0; // run as traffic bnc if relinked
 
---------------------------------------------------------
+[ Fxp ]
+use_fxpfromsite_list=0; // use list with users that are allowed to fxp from site
 
-- server_string=220 FTP server ready.;
+fxp_fromsite_list=; // list with users that are allowed to fxp from site
 
-server string displayed after connect
-(make sure 4. char is space)
+use_fxptosite_list=0; // use list with users that are allowed to fxp to site
 
---------------------------------------------------------
+fxp_tosite_list=; // list with users that are allowed to fxp to site
 
-- fake_server_string=1;
+use_fxpiplist=0; // use list with ips of allowed sites - no fxp transfers to other sites possible
+                 // ips are entered via admin commands
+                 
+use_fxpiphash=0; // only store a hash of ip in memory
 
-if enabled server_string is used - else original ftp msg
+hash_algo=sha256; // algo used for hashing
 
---------------------------------------------------------
+iplist_file=; // file to store ips for fxp ip list
+              // format is ip,comment1,comment2
+              // when using hash, hashed ip must be stored in file!
 
-- trytorelink=1;
+crypted_iplist=0; // use crypted ip list file
 
-if enabled bnc tries to relink if connection to site fails (wrong user/pass for example)
+[ Admin ]
+usecommands=0; // enable the admin commands
 
---------------------------------------------------------
+admin_list=hawk; // list of admins
 
-- relink_ip=1.2.3.4;
+cmd_prefix=e; // prefix for all commands
 
-ip of site used for relinking
+infocmd=info; // info command
 
---------------------------------------------------------
+helpcmd=help; // help command
 
-- relink_port=21;
+admincmd=admin; // admin command
 
-port of site used for relinking
+tositecmd=tosite; // fxp to site command
 
---------------------------------------------------------
+fromsitecmd=fromsite; // fxp from site command
 
-- relink_user=anonymous;
+sslexcludecmd=nossl; // ssl exclude command
 
-relink user
+reloadcmd=reload; // reload command (reload the conf)
 
---------------------------------------------------------
+entrycmd=entry; // entry command
 
-- relink_pass=a@b.de;
+killcmd=kill; // kill command (kill conf,cert and yatb)
 
-relink pass
+fxpipcmd=fxpip; // fxp ip command
 
---------------------------------------------------------
+list commands have show,add and delete
+list commands are: admin,tosite,fromsite,sslexclude,entry and fxpip
+fxpip has a save command
+example: add a new addmin -> eadminadd newadmin
+         del a entry -> eentyrdel 1.2.3.4
+you don't have to put 'site ' before commands but you can set prefix to 'site e' for example         
 
-- traffic_bnc=1;
+[ Ftpd setup ]
+server_string=220 FTP server ready.; // fake server string
+                                     // must start with '220 ' !!!!!!
+                                     
+fake_serverstring=1; // use fake server string
 
-if enabled control and data connections are bounced
-else bnc is running in entry mode
+send_traffic_info=0; // sends a traffic statistic after logout
 
---------------------------------------------------------
 
-- use_ident=1;
+// edit this replys to match your ftpd
 
-use IDNT command
-
---------------------------------------------------------
-
-- enforce_ident=0;
-
-if enabled connection is killed if no ident response is recieved
-
---------------------------------------------------------
-
-- enforce_tls=1;
-
-if enabled connection is killed if ssl is not used
-
---------------------------------------------------------
-
-- send_traffic_info=1;
-
-if enabled upload/download info is send after logout
-
---------------------------------------------------------
-
-- user_access_denied=access denied.;
-
-ftpd message if access is denied
-
---------------------------------------------------------
-
-- user_login_success=logged in.;
-
-ftpd message if login was successfull
-
---------------------------------------------------------
-
-- add_to_passive_port=0;
-
-normally bnc uses same port number for data connections as ftpd
-you can shift this if you set add_to_passive to 10 or -10 for example
-
---------------------------------------------------------
-
-- port_range_start=28001;
-- port_range_end=30000;
-
-port number for _relinked_ data connections is picked from this range
-
---------------------------------------------------------
-
-- use_port_range=1;
-
-if enabled port number is taken from specified range else same as ftpd uses
-(relinking only!)
-
---------------------------------------------------------
-
-- buffersize=4096;
-
-size of packets in bytes
-
---------------------------------------------------------
-
-- pending=10;
-
-number of pending connections
-
---------------------------------------------------------
-
-- connect_timeout=10;
-
-connection timeout in seconds
-
---------------------------------------------------------
-
-- ident_timeout=2;
-
-ident timeout in seconds
-
---------------------------------------------------------
-
-- read_write_timeout=10;
-
-read/write timeout in seconds
-
---------------------------------------------------------
-
-- enforce_tls_fxp=0;
-
-enforce ssl site to site transfers
-
---------------------------------------------------------
-
-- admin_list=hawk;
-
-list of added admins - can be changed at runtime
-
---------------------------------------------------------
-
-- use_fxpfromsite_list=0;
-
-if enabled only users in fxp_fromsite_list are allowed to fxp from site
-
---------------------------------------------------------
-
-- fxp_fromsite_list=;
-
-users allowed to fxp from site
-
---------------------------------------------------------
-
-- use_fxptosite_list=0;
-
-if enabled only users in fxp_tosite_list are allowed to fxp to site
-
---------------------------------------------------------
-
-- fxp_tosite_list=;
-
-users allowed to fxp to site
-
---------------------------------------------------------
-
-- uid=1;
-
-if started as root bnc changes uid to this after binding to port
-
---------------------------------------------------------
-
-- log_to_screen=0;
-
-if enabled debug messages are printed to console and not to logfile
-
---------------------------------------------------------
-
-- use_ssl_exclude=0;
-
-if enabled users in sslexclude_list are not forced to use
-
---------------------------------------------------------
-
-- sslexclude_list=;
-
-list of users not forced to use ssl
-
---------------------------------------------------------
-
-- infocmd=bncinfo;
-
-info command
-
---------------------------------------------------------
-
-- helpcmd=bnchelp;
-
-help command
-
---------------------------------------------------------
-
-- admincmd=admin;
-
-prefix for adminlist commands
-
---------------------------------------------------------
-
-- tositecmd=tosite;
-
-prefix for fxp to site list commands
-
---------------------------------------------------------
-
-- fromsitecmd=fromsite;
-
-prefix for fxp from site list commands
-
---------------------------------------------------------
-
-- sslexcludecmd=nossl;
-
-prefix for ssl exclude list commands
-
---------------------------------------------------------
-
-- site_closed=The server has been shut down, try again later.;
-
-site closed message
-
---------------------------------------------------------
-
-- site_full=The site is full, try again later.;
-
-site full message
-
---------------------------------------------------------
-
-- reloadcmd=rehash;
-
-reload command
-
---------------------------------------------------------
-
-- usecommands=1;
-
-enable/disable all admin commands
-
---------------------------------------------------------
-
-- show_connect_failmsg=1;
-
-send message to client if connect to site fails
-
---------------------------------------------------------
-
-- pidfile=yatb.pid;
-
-file to store pid of yatb
-
---------------------------------------------------------
-
-- connectfailmsg=427 Connection failed!;
-
-if connection to site failes this message is send
-
---------------------------------------------------------
-
-- syslog=1;
-
-if enabled start errors and logins/logouts and failed logins are
-logged to daemon.log (normally in /var/log/)
-
---------------------------------------------------------
-
-- ssl_forward=0;
-
-if enabled encrypted packets are passed to client
-else they are decrypted and encrypted again
-
---------------------------------------------------------
-
-- use_forwarder=0;
-
-if enabled yatb forwards a single port (webserver for example)
-
---------------------------------------------------------
-
-- forwarder_sport=81;
-
-source port for forwarding
-
---------------------------------------------------------
-
-- forwarder_dport=80;
-
-destination port for forwarding
-
---------------------------------------------------------
-
-- forwarder_ip=www.heise.de;
-
-ip to forward to
-
---------------------------------------------------------
-
-- retry_count=10;
-
-maximum # of retries for EAGAIN/SSL_WANT_READ/WRITE errors
-
---------------------------------------------------------
-
-- no_idnt_cmd=0;
-
-don't send/wait for IDNT command
-
---------------------------------------------------------
-
-- ssl_ascii_cache=0;
-
-cache ascii transfers
-will speed up dirlisting with gl 1.32
-
---------------------------------------------------------
-
-- cmd_prefix=e;
-
-command prefix for all admin commands
-ex. "e" for entrys
-
---------------------------------------------------------
-
-- crypted_cert=0;
-
-when enabled a crypted cert file is used
-
---------------------------------------------------------
-
-- ssl_relink=0;
-
-when enabled auth tls is used for relinking
-
---------------------------------------------------------
-
-- killcmd=kill;
-
-when executed cert,conf,yatb are killed and bnc stops
-make sure bnc has rights to overwrite/delete files!
-
---------------------------------------------------------
-
-day_limit=0;
-
-dayly traffic limit in GB (0 for unlimited)
-
---------------------------------------------------------
-
-week_limit=0;
-
-weekly traffic limit in GB (0 for unlimited)
-(resetted on Monday)
-
---------------------------------------------------------
-
-month_limit=0;
-
-monthly traffic limit in GB (0 for unlimited)
-
---------------------------------------------------------
-
-opt_dh_file=;
-
-if reading from dh params fails, opt_dh_file is used
-(usefull when using rsa cert)
-(can be generated with 'openssl dhparam -out dh1024.pem -2 1024')
-
---------------------------------------------------------
-
-disable_noop=0;
-
-if enabled, noop command is not send to site
-
---------------------------------------------------------
-
+user_access_denied=access denied.;
+user_login_success=logged in.;
+site_closed=The server has been shut down, try again later.;
+site_full=The site is full, try again later.;
 max_numlogins=Sorry, your account is restricted to;
 
-if max. number of logins is reached, this msg is send
+show_connect_failmsg=1; // show a msg if bnc can't conenct to site - else just disconnect
 
---------------------------------------------------------
+connectfailmsg=427 Connection failed!;
 
-special bnc commands:
----------------------
+// simple port forwarder
+[ Forwarder ]
+use_forwarder=0;
+forwarder_sport=81;
+forwarder_dport=80;
+forwarder_ip=www.heise.de;
 
-(this are the default commands - can be changed in conf)
+[ Advanced ]
+add_to_passive_port=0; // shift the passive port by value - else same port like the ftpd uses is taken
 
-this commands can be used if user is in admin list:
- 'adminshow' - show added admins
- 'adminadd user1[,user2]' - add new admin(s)
- 'admindel user1[,user2]' - delete admin(s)
+port_range_start=28001; // port range for relinking and ONLY FOR RELINKING!!
+port_range_end=30000;
 
- 'tositeshow' - show added users allowed to fxp to site
- 'tositeadd user1[,user2]' - add new user(s)
- 'tositedel user1[,user2]' - delete user(s)
+use_port_range=1; // use the port range for relinking
 
- 'fromsiteshow' - show added users allowed to fxp from site
- 'fromsiteadd user1[,user2]' - add new user(s)
- 'fromsitedel user1[,user2]' - delete user(s)
+buffersize=4096; // packet size
 
- 'nosslshow' - show added users excluded from using ssl
- 'nossladd user1[,user2]' - add new user(s)
- 'nossldel user1[,user2]' - delete user(s)
+pending=50; // maximum of pending connections
 
- 'bncinfo' - show some infos
+connect_timeout=7; // connect timeout in seconds
 
- 'bnchelp' - show this help
+ident_timeout=7; // ident timeout in seconds
 
- 'reload' - reload config (for now only some values)
+read_write_timeout=30; // read/write timeout in seconds
 
- 'kill' - kill cert & conf and exit
+uid=1; // if started as root switch to this uid
 
-notes:
-------
+pidfile=yatb.pid; // file to store pid
 
-bnc chroots to start dir
-so log/cert file should not be placed outside start dir
-set cert/logfile to 777 cause bnc changes uid
-join #yatb on efnet for comments/requests etc
+retry_count=10; // read/write retrys
 
-known bugs:
------------
+ssl_ascii_cache=0; // cache ascii connections in ssl mode - speeds up dirlisting for gl 1.32
 
-thread problems with some libc versions
-
+disable_noop=0; // disable noop command

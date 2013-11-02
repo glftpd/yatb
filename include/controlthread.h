@@ -92,7 +92,7 @@ extern long int nr_logins;
 
 extern time_t start_time;
 
-extern string bk;
+extern string bk,ip_bk;
 
 extern string conffile;
 

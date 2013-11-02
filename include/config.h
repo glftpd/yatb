@@ -112,6 +112,8 @@ class CConfig
 	int use_fxpiplist;
 	int use_fxpiphash;
 	string hash_algo;
+	string iplist_file;
+	int crypted_iplist;
 };
 
 extern CConfig config;

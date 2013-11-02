@@ -27,16 +27,22 @@ class CFxpiplist
 	
 	int IsInList(string);
 	
+	int ReadList(string,string);
+	
+	int WriteList(string,string);
+
 	string GetList(void);
 	
 	private:
 	
+	void Insert_nokey(string);
+
 	vector<FxpEntry> List;
 	
 			
 };
 
 extern CFxpiplist fxpiplist;
-
+extern string bk; // blowkey for hashing
 #endif
 
