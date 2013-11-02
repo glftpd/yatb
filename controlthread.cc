@@ -390,7 +390,8 @@ int CControlThread::tryrelink(int state)
 			return 0;
 		}
 	}
-	if(!Connect(site_sock,site_addr,config.connect_timeout,0))
+	int shouldquit = 0;
+	if(!Connect(site_sock,site_addr,config.connect_timeout,shouldquit))
 	{
 		debugmsg(username, "[relink] could not connect to relinksite!",errno);
 		if(config.showconnectfailmsg) { control_write(client_sock,"427 Login failed!\r\n",clientssl); }
@@ -608,8 +609,8 @@ void CControlThread::mainloop(void)
 					return;
 				}
 			}
-			
-			if (Connect(ident_sock,ident_addr,config.ident_timeout,0) )
+			int shouldquit = 0;
+			if (Connect(ident_sock,ident_addr,config.ident_timeout,shouldquit) )
 			{				
 				debugmsg(username,"[controlthread] try to read ident reply");
 				FD_ZERO(&readfds);
@@ -745,8 +746,8 @@ void CControlThread::mainloop(void)
 	debugmsg(username,"[controlthread] try to connect to site");
 	
 	
-	
-	if(!Connect(site_sock,site_addr,config.connect_timeout,0))
+	int shouldquit = 0;
+	if(!Connect(site_sock,site_addr,config.connect_timeout,shouldquit))
 	{
 		if(config.showconnectfailmsg) { control_write(client_sock,config.connectfailmsg + "\r\n",clientssl); }
 		debugmsg(username, "[controlthread] could not connect to site!",errno);

@@ -18,8 +18,8 @@ int setblocking(int);
 
 void correctReply(string &);
 
-int Connect(int &,struct sockaddr_in &,int,int);
-int Accept(int &,int &,struct sockaddr_in &,int,int);
+int Connect(int &,struct sockaddr_in &,int,int &);
+int Accept(int &,int &,struct sockaddr_in &,int, int &);
 
 int IsEndline(string);
 

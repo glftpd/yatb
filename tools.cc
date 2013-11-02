@@ -154,7 +154,7 @@ void correctReply(string &in)
 	in = tmp;
 }
 
-int Connect(int &sock,struct sockaddr_in &adr,int sec,int usec)
+int Connect(int &sock,struct sockaddr_in &adr,int sec,int &shouldquit)
 {
 	if(connect(sock, (struct sockaddr *)&adr, sizeof(adr)) == -1)
 	{
@@ -164,17 +164,28 @@ int Connect(int &sock,struct sockaddr_in &adr,int sec,int usec)
 		}
 	}
 	fd_set writefds;
-	FD_ZERO(&writefds);
-	FD_SET(sock, &writefds);
-	
-	struct timeval tv;
-	tv.tv_sec = sec;
-	tv.tv_usec = usec;
-	if (select(sock+1, NULL, &writefds, NULL, &tv) < 1)
-	{			
-		return 0;
+	for(int i=0; i < sec * 2;i++)
+	{
+		FD_ZERO(&writefds);
+		FD_SET(sock, &writefds);
+		
+		struct timeval tv;
+		tv.tv_sec = 0;
+		tv.tv_usec = 500000;
+		int res = select(sock+1, NULL, &writefds, NULL, &tv);
+		if (res < 0)
+		{			
+			return 0;
+		}
+		else if(res == 0)
+		{
+			if(shouldquit) return 0;
+		}
+		else
+		{
+			break;
+		}
 	}
-	
 	int err;
 	socklen_t errlen = sizeof(err);
 	if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&errlen) == -1)
@@ -188,19 +199,32 @@ int Connect(int &sock,struct sockaddr_in &adr,int sec,int usec)
 	return 1;
 }
 
-int Accept(int &listensock,int &newsock,struct sockaddr_in &adr,int sec,int usec)
+int Accept(int &listensock,int &newsock,struct sockaddr_in &adr,int sec,int &shouldquit)
 {
 	fd_set readfds;
-	FD_ZERO(&readfds);
-	FD_SET(listensock, &readfds);
 	
-	struct timeval tv;
-	tv.tv_sec = sec;
-	tv.tv_usec = usec;
 	
-	if (select(listensock+1, &readfds, NULL, NULL, &tv) < 1)
-	{		
-		return 0;
+	for(int i=0; i < sec * 2;i++)
+	{
+		FD_ZERO(&readfds);
+		FD_SET(listensock, &readfds);
+		struct timeval tv;
+		tv.tv_sec = 0;
+		tv.tv_usec = 500000;
+		
+		int res =  select(listensock+1, &readfds, NULL, NULL, &tv);
+		if (res < 0)
+		{		
+			return 0;
+		}
+		else if(res == 0)
+		{
+			if (shouldquit) return 0;
+		}
+		else
+		{
+			break;
+		}
 	}
 	socklen_t size = sizeof(adr);
 	if ((newsock = accept(listensock,(struct sockaddr *)&adr,&size)) == -1)

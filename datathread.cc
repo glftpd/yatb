@@ -35,7 +35,7 @@ CDataThread::CDataThread(int cpsv, int tt, int pp, int rl, int ussl, int actvcon
 	datalisten_sock = -1;
 	datasite_sock = -1;
 	dataclient_sock = -1;
-	
+	shouldquit = 0;
 	cpsvcmd = cpsv;
 	client_addr = caddr;
 	//using ip from idnt cmd when running with entrys
@@ -66,7 +66,7 @@ CDataThread::~CDataThread()
 void CDataThread::closeconnection(void)
 {
 
-	
+	shouldquit = 1;
 	if (datasite_sock > 0) 
 	{
 		debugmsg(username,"[datathread] close site sock"); 
@@ -434,7 +434,8 @@ void CDataThread::dataloop(void)
 		bind(datasite_sock,(struct sockaddr *)&connect_addr, sizeof(struct sockaddr));
 	}
 	setnonblocking(datasite_sock);
-	if(!Connect(datasite_sock,datasite_addr,config.connect_timeout,0))
+	shouldquit = 0;
+	if(!Connect(datasite_sock,datasite_addr,config.connect_timeout,shouldquit))
 	{
 		debugmsg(username,"[datathread] could not connect site data port",errno);		
 		//controlthread->control_write(controlthread->client_sock,"427 Connect Error/Timeout!\r\n",controlthread->clientssl);
@@ -451,8 +452,8 @@ void CDataThread::dataloop(void)
 
 	if (!activecon)
 	{
-				
-		if(!Accept(datalisten_sock,dataclient_sock,datalisten_addr,config.connect_timeout,0))
+		shouldquit = 0;		
+		if(!Accept(datalisten_sock,dataclient_sock,datalisten_addr,config.connect_timeout,shouldquit))
 		{
 			//controlthread->control_write(controlthread->client_sock,"427 Accept Error/Timeout!\r\n",controlthread->clientssl);
 			debugmsg(username, "[datathread] accept error",errno);				
@@ -575,7 +576,8 @@ void CDataThread::dataloop(void)
 			
 			bind(dataclient_sock,(struct sockaddr *)&connect_addr, sizeof(struct sockaddr));
 		}
-		if(!Connect(dataclient_sock,active_addr,config.connect_timeout,0))
+		shouldquit = 0;
+		if(!Connect(dataclient_sock,active_addr,config.connect_timeout,shouldquit))
 		{
 			//controlthread->control_write(controlthread->client_sock,"427 Connect Error/Timeout!\r\n",controlthread->clientssl);
 			debugmsg(username,"[datathread] fxp connect failed",errno);			

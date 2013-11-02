@@ -29,7 +29,7 @@ class CDataThread
 	
 	int data_write(int,char*,int);
 	int data_read(int,char *,int &);
-	
+	int shouldquit;	
 	int datalisten_sock,datasite_sock,dataclient_sock;
 
 	struct sockaddr_in client_addr;
