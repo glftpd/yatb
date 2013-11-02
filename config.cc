@@ -71,6 +71,7 @@ CConfig::CConfig()
 	retry_count = 0;
 	no_idnt_cmd = 0;
 	ssl_ascii_cache = 0;
+	cmd_prefix = "";
 }
 
 CConfig::~CConfig()
@@ -908,6 +909,17 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "ssl_ascii_cache missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	if ((val=getkey("cmd_prefix",daten)) != "ERROR")
+   	{
+   		cmd_prefix = val;
+   	}
+   	else
+   	{
+   		cout << "cmd_prefix missing\n";
    		
    		return 0;
    	}

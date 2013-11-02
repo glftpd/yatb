@@ -40,13 +40,14 @@ use_fxpfromsite_list=0;
 fxp_fromsite_list=;
 use_fxptosite_list=0;
 fxp_tosite_list=;
-infocmd=bncinfo;
-helpcmd=bnchelp;
+cmd_prefix=e;
+infocmd=info;
+helpcmd=help;
 admincmd=admin;
 tositecmd=tosite;
 fromsitecmd=fromsite;
 sslexcludecmd=nossl;
-reloadcmd=rehash;
+reloadcmd=reload;
 usecommands=1;
 
 [ Ftpd setup ]

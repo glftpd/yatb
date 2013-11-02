@@ -438,6 +438,20 @@ don't send/wait for IDNT command
 
 --------------------------------------------------------
 
+- ssl_ascii_cache=0;
+
+cache ascii transfers
+will speed up dirlisting with gl 1.32
+
+--------------------------------------------------------
+
+- cmd_prefix=e;
+
+command prefix for all admin commands
+ex. "e" for entrys
+
+--------------------------------------------------------
+
 special bnc commands:
 ---------------------
 

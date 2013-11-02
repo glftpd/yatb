@@ -981,34 +981,34 @@ void CControlThread::mainloop(void)
 				}
 			}
 			// bnchelp command
-			else if(config.usecommands && upper(s,config.helpcmd.length()+1).find(upper(config.helpcmd,0),0) != string::npos)
+			else if(config.usecommands && upper(s,config.helpcmd.length()+config.cmd_prefix.length()).find(upper(config.cmd_prefix+config.helpcmd,0),0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
 					stringstream ss;
 					ss << "230- --== yatb help ==--\r\n";
 					ss << "230-\r\n";
-					ss << "230- '" + config.admincmd + "show' - show added admins\r\n";
-					ss << "230- '" + config.admincmd + "add user1[,user2]' - add new admin(s)\r\n";
-					ss << "230- '" + config.admincmd + "del user1[,user2]' - delete admin(s)\r\n";
+					ss << "230- '" + config.cmd_prefix+config.admincmd + "show' - show added admins\r\n";
+					ss << "230- '" + config.cmd_prefix+config.admincmd + "add user1[,user2]' - add new admin(s)\r\n";
+					ss << "230- '" + config.cmd_prefix+config.admincmd + "del user1[,user2]' - delete admin(s)\r\n";
 					ss << "230-\r\n";
-					ss << "230- '" + config.tositecmd + "show' - show added users allowed to fxp to site\r\n";
-					ss << "230- '" + config.tositecmd + "add user1[,user2]' - add new user(s)\r\n";
-					ss << "230- '" + config.tositecmd + "del user1[,user2]' - delete user(s)\r\n";
+					ss << "230- '" + config.cmd_prefix+config.tositecmd + "show' - show added users allowed to fxp to site\r\n";
+					ss << "230- '" + config.cmd_prefix+config.tositecmd + "add user1[,user2]' - add new user(s)\r\n";
+					ss << "230- '" + config.cmd_prefix+config.tositecmd + "del user1[,user2]' - delete user(s)\r\n";
 					ss << "230-\r\n";
-					ss << "230- '" + config.fromsitecmd + "show' - show added users allowed to fxp from site\r\n";
-					ss << "230- '" + config.fromsitecmd + "add user1[,user2]' - add new user(s)\r\n";
-					ss << "230- '" + config.fromsitecmd + "del user1[,user2]' - delete user(s)\r\n";
+					ss << "230- '" + config.cmd_prefix+config.fromsitecmd + "show' - show added users allowed to fxp from site\r\n";
+					ss << "230- '" + config.cmd_prefix+config.fromsitecmd + "add user1[,user2]' - add new user(s)\r\n";
+					ss << "230- '" + config.cmd_prefix+config.fromsitecmd + "del user1[,user2]' - delete user(s)\r\n";
 					ss << "230-\r\n";
-					ss << "230- '" + config.sslexcludecmd + "show' - show added users excluded from using ssl\r\n";
-					ss << "230- '" + config.sslexcludecmd + "add user1[,user2]' - add new user(s)\r\n";
-					ss << "230- '" + config.sslexcludecmd + "del user1[,user2]' - delete user(s)\r\n";
+					ss << "230- '" + config.cmd_prefix+config.sslexcludecmd + "show' - show added users excluded from using ssl\r\n";
+					ss << "230- '" + config.cmd_prefix+config.sslexcludecmd + "add user1[,user2]' - add new user(s)\r\n";
+					ss << "230- '" + config.cmd_prefix+config.sslexcludecmd + "del user1[,user2]' - delete user(s)\r\n";
 					ss << "230-\r\n";
-					ss << "230- '" + config.infocmd + "' - show some infos\r\n";
+					ss << "230- '" + config.cmd_prefix+config.infocmd + "' - show some infos\r\n";
 					ss << "230-\r\n";
-					ss << "230- '" + config.helpcmd + "' - show this help\r\n";
+					ss << "230- '" + config.cmd_prefix+config.helpcmd + "' - show this help\r\n";
 					ss << "230-\r\n";
-					ss << "230- '" + config.reloadcmd + "' - reload config\r\n";
+					ss << "230- '" + config.cmd_prefix+config.reloadcmd + "' - reload config\r\n";
 					ss << "230-\r\n";
 					ss << "230 --== yatb help end ==--\r\n";
 					if (!Write(client_sock,ss.str(),clientssl))
@@ -1026,7 +1026,7 @@ void CControlThread::mainloop(void)
 				}
 			}
 			//bncinfo command
-			else if(config.usecommands && upper(s,config.infocmd.length() + 1).find(upper(config.infocmd,0),0) != string::npos)
+			else if(config.usecommands && upper(s,config.infocmd.length() + config.cmd_prefix.length()).find(upper(config.cmd_prefix+config.infocmd,0),0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
@@ -1172,7 +1172,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			else if (config.usecommands && upper(s,config.reloadcmd.length() + 1).find(upper(config.reloadcmd,0),0) != string::npos)
+			else if (config.usecommands && upper(s,config.reloadcmd.length() + config.cmd_prefix.length()).find(upper(config.cmd_prefix+config.reloadcmd,0),0) != string::npos)
 			{
 				debugmsg(username,"[controlthread] try to reload conf");
 				debugmsg(username,"[controlthread] file: '" + conffile + "' key: '" + bk + "'");
@@ -1204,7 +1204,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			else if (config.usecommands && upper(s,config.admincmd.length() + 5).find(upper(config.admincmd,0) + "SHOW",0) != string::npos)
+			else if (config.usecommands && upper(s,config.admincmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.admincmd,0) + "SHOW",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
@@ -1226,7 +1226,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			else if (config.usecommands && upper(s,config.admincmd.length() + 4).find(upper(config.admincmd,0) + "ADD",0) != string::npos)
+			else if (config.usecommands && upper(s,config.admincmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.admincmd,0) + "ADD",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
@@ -1258,7 +1258,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			else if (config.usecommands && upper(s,config.admincmd.length() + 4).find(upper(config.admincmd,0) + "DEL",0) != string::npos)
+			else if (config.usecommands && upper(s,config.admincmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.admincmd,0) + "DEL",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
@@ -1290,7 +1290,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			else if (config.usecommands && upper(s,config.fromsitecmd.length() + 5).find(upper(config.fromsitecmd,0) + "SHOW",0) != string::npos)
+			else if (config.usecommands && upper(s,config.fromsitecmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.fromsitecmd,0) + "SHOW",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
@@ -1312,7 +1312,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			else if (config.usecommands && upper(s,config.fromsitecmd.length() + 4).find(upper(config.fromsitecmd,0) + "ADD",0) != string::npos)
+			else if (config.usecommands && upper(s,config.fromsitecmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.fromsitecmd,0) + "ADD",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
@@ -1345,7 +1345,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			else if (config.usecommands && upper(s,config.fromsitecmd.length() + 4).find(upper(config.fromsitecmd,0) + "DEL",0) != string::npos)
+			else if (config.usecommands && upper(s,config.fromsitecmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.fromsitecmd,0) + "DEL",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
@@ -1377,7 +1377,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			else if (config.usecommands && upper(s,config.tositecmd.length() + 5).find(upper(config.tositecmd,0) + "SHOW",0) != string::npos)
+			else if (config.usecommands && upper(s,config.tositecmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.tositecmd,0) + "SHOW",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
@@ -1399,7 +1399,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			else if (config.usecommands && upper(s,config.tositecmd.length() + 4).find(upper(config.tositecmd,0) + "ADD",0) != string::npos)
+			else if (config.usecommands && upper(s,config.tositecmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.tositecmd,0) + "ADD",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
@@ -1432,7 +1432,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			else if (config.usecommands && upper(s,config.tositecmd.length() + 4).find(upper(config.tositecmd,0) + "DEL",0) != string::npos)
+			else if (config.usecommands && upper(s,config.tositecmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.tositecmd,0) + "DEL",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
@@ -1464,7 +1464,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			else if (config.usecommands && upper(s,config.sslexcludecmd.length() + 5).find(upper(config.sslexcludecmd,0) + "SHOW",0) != string::npos)
+			else if (config.usecommands && upper(s,config.sslexcludecmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.sslexcludecmd,0) + "SHOW",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
@@ -1486,7 +1486,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			else if (config.usecommands && upper(s,config.sslexcludecmd.length() + 4).find(upper(config.sslexcludecmd,0) + "ADD",0) != string::npos)
+			else if (config.usecommands && upper(s,config.sslexcludecmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.sslexcludecmd,0) + "ADD",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{
@@ -1519,7 +1519,7 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
-			else if (config.usecommands && upper(s,config.sslexcludecmd.length() + 4).find(upper(config.sslexcludecmd,0) + "DEL",0) != string::npos)
+			else if (config.usecommands && upper(s,config.sslexcludecmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.sslexcludecmd,0) + "DEL",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)
 				{

@@ -64,7 +64,22 @@ CLock list_lock,config_lock,globals_lock,sock_lock;
 string bk = "";
 string conffile;
 
-
+void reload(int)
+{
+	debugmsg("SYSTEM","HUP signal - try to reload config");
+	CConfig tmpconf;
+	if (!tmpconf.readconf(conffile,bk))
+	{
+		debugmsg("SYSTEM","failed to reload config");
+		
+	}
+	else
+	{
+		config = tmpconf;
+		debugmsg("SYSTEM","config reloaded");						
+		
+	}
+}
 
 pthread_attr_t threadattr;
 
@@ -236,7 +251,7 @@ int main(int argc,char *argv[])
 	
 		
 	signal(SIGPIPE, SIG_IGN);
-	
+	signal(SIGHUP,reload);
 	
 		
 	int pid = getpid();
