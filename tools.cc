@@ -1248,8 +1248,22 @@ void PrintSock(int sock,string desc)
 	debugmsg("",ss.str());
 }
 
+int GetSock(int &sock)
+{
+	sock_lock.Lock();
+	if((sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
+	{
+		sock = -1;
+		sock_lock.UnLock();
+		return 0;
+	}
+	sock_lock.UnLock();
+	return 1;
+}
+
 int Close(int &sock,string desc)
 {
+	sock_lock.Lock();
 	stringstream ss;
 	ss << "-----SOCKET---- closing " << desc << " : " << sock;
 	debugmsg("",ss.str());
@@ -1258,17 +1272,20 @@ int Close(int &sock,string desc)
 		if(close(sock) != -1)
 		{
 			sock = -1;
+			sock_lock.UnLock();
 			return 1;
 		}
 		else
 		{
 			sock = -1;
+			sock_lock.UnLock();
 			return 0;
 		}
 	}
 	else
 	{
 		sock = -1;
+		sock_lock.UnLock();
 		return 1;
 	}
 }

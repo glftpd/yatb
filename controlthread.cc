@@ -157,7 +157,8 @@ void CControlThread::deletedatathread(void)
 	{	
 		debugmsg(username,"[deletedatathread] set shouldquit=1");
 		datathread->shouldquit = 1;
-		datathread->closeconnection();
+		//only close sockets from datathread in datathread
+		//datathread->closeconnection();
 		debugmsg(username,"[deletedatathread] join datathread");
 				
 		if(pthread_join(datathread->tid,NULL) != 0)
@@ -182,7 +183,7 @@ int CControlThread::tryrelink(int state)
 	
 	
 
-	if ((site_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
+	if (!GetSock(site_sock))
 	{
 		debugmsg(username, "[relink] could not create socket",errno);
 		return 0;
@@ -353,7 +354,7 @@ void CControlThread::mainloop(void)
 	debugmsg(username,"[controlthread] after ident");
 	username = "-AFTER-IDENT-";
 	
-	if ((site_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
+	if (!GetSock(site_sock))
 	{
 		debugmsg(username, "[controlthread] unable to create site sock!",errno);		
 		
@@ -779,7 +780,7 @@ void CControlThread::mainloop(void)
 
 		}
 		// read from client
-		if (FD_ISSET(client_sock, &readfds))
+		else if (FD_ISSET(client_sock, &readfds))
 		{
 			debugmsg(username, "[controlthread] start read from client");		
 			string s;
@@ -1587,7 +1588,11 @@ void CControlThread::mainloop(void)
 			}
 
 		}
-
+		else
+		{
+			debugmsg(username,"[controlthread] fd_isset error",errno);
+			return;
+		}
 	}
 	
 }

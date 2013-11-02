@@ -38,6 +38,7 @@ int ParsePsvCommand(string ,string &, int &);
 int DataWrite(int ,char *,int ,SSL *);
 int DataRead(int  ,char *,int &,SSL *);
 int Close(int &,string);
+int GetSock(int &);
 void PrintSock(int ,string );
 
 string traffic2str(double);

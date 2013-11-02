@@ -88,7 +88,7 @@ void CDataThread::closeconnection(void)
 		}
 	}
 		
-		int tmp = datalisten_sock -1;
+		
 		
 		Close(datalisten_sock,"datalisten_sock");
 		
@@ -96,8 +96,7 @@ void CDataThread::closeconnection(void)
 		
 		Close(datasite_sock,"datasite_sock");		
 		
-		// some ugly hack
-		Close(tmp,"tmp sock");	
+		
 		
 		if (usingssl)
 	{			
@@ -151,13 +150,13 @@ void CDataThread::dataloop(void)
 	#endif
 	
 	// try to connect to site
-	if ((datasite_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
+	if (!GetSock(datasite_sock))
 	{
 		debugmsg(username, "[datathread] unable to create site sock!",errno);		
 		
 		return;
 	}
-	PrintSock(datasite_sock,"datasite_sock");
+	
 	
 	if (config.connect_ip != "")
 	{
@@ -180,13 +179,7 @@ void CDataThread::dataloop(void)
 	
 	
 	
-	if ((dataclient_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
-	{
-		debugmsg(username, "[datathread] unable to create client sock!",errno);		
-		
-		return;
-	}
-	PrintSock(dataclient_sock,"dataclient_sock");
+	
 	// to store client ip from passive connection
 	string clip;
 	int clport;
@@ -195,13 +188,13 @@ void CDataThread::dataloop(void)
 	if(!activecon)
 	{
 		debugmsg(username,"[datathread] passive connection - listen");
-		if ((datalisten_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
+		if (!GetSock(datalisten_sock))
 		{
 			debugmsg(username, "[datathread] unable to create listen sock!",errno);		
 			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
 			return;
 		}
-		PrintSock(datalisten_sock,"datalisten_sock");
+		
 		
 		if (!Bind(datalisten_sock, config.listen_ip, newport))
 		{
@@ -241,6 +234,13 @@ void CDataThread::dataloop(void)
 	// active connection - try to connect
 	else
 	{
+		if (!GetSock(dataclient_sock))
+		{
+			debugmsg(username, "[datathread] unable to create client sock!",errno);		
+			
+			return;
+		}
+		
 		debugmsg(username,"[datathread] active connection");
 		if (config.listen_ip != "")
 		{
@@ -440,7 +440,9 @@ void CDataThread::dataloop(void)
 			debugmsg(username,"[datathread] read timeout",errno);
 			break;
 		}
-
+		// just to make sure - should not happen
+		if(datasite_sock < 0 || dataclient_sock < 0) break;
+		
 		// read from site - send to client
 		if (FD_ISSET(datasite_sock, &data_readfds))
 		{
@@ -463,7 +465,7 @@ void CDataThread::dataloop(void)
 
 		}
 		// read from client - send to site
-		if (FD_ISSET(dataclient_sock, &data_readfds))
+		else if (FD_ISSET(dataclient_sock, &data_readfds))
 		{
 
 			memset(buffer,'\0',1);
@@ -482,6 +484,11 @@ void CDataThread::dataloop(void)
 			
 			
 
+		}
+		else
+		{
+			debugmsg(username,"[datathread] fd_isset error",errno);
+			break;
 		}
 
 	}

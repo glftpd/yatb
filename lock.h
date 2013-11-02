@@ -22,7 +22,7 @@ class CLock
 
 };
 
-extern CLock list_lock,config_lock,globals_lock;
+extern CLock list_lock,config_lock,globals_lock,sock_lock;
 
 
 #endif

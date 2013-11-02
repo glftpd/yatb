@@ -60,7 +60,7 @@ time_t start_time;
 int use_blowconf = 1;
 long *lock_count;
 SSL_CTX *clientsslctx;
-CLock list_lock,config_lock,globals_lock;
+CLock list_lock,config_lock,globals_lock,sock_lock;
 string bk = "";
 string conffile;
 
