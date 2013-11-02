@@ -28,11 +28,12 @@
 #include <cctype>
 #include <list>
 #include <iomanip>
+#include <syslog.h>
 
 using namespace std;
 
-#define version "Yet another traffic bouncer 1.0.8 (c) Hawk/PPX"
-#define builddate "10.03.2005"
+#define version "Yet another traffic bouncer 1.0.9 (c) Hawk/PPX"
+#define builddate "13.03.2005"
 
 
 

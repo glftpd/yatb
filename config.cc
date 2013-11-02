@@ -63,6 +63,7 @@ CConfig::CConfig()
 	showconnectfailmsg = 0;
 	pidfile = "";
 	connectfailmsg = "";
+	syslog = 0;
 }
 
 CConfig::~CConfig()
@@ -824,6 +825,17 @@ int CConfig::readconf(string filename,string key)
    		return 0;
    	}
  		
+ 		if ((val=getkey("syslog",daten)) != "ERROR")
+   	{
+   		syslog = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "syslog missing\n";
+   		
+   		return 0;
+   	}
+   	
  		return 1;
 	}
 

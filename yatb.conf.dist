@@ -56,3 +56,4 @@ usecommands=1;
 showconnectfailmsg=1;
 pidfile=yatb.pid;
 connectfailmsg=427 Connection failed!;
+syslog=1;

@@ -401,6 +401,12 @@ if connection to site failes this message is send
 
 --------------------------------------------------------
 
+- syslog=1;
+
+if enabled start errors and logins/logouts and failed logins are
+logged to daemon.log (normally in /var/log/)
+
+--------------------------------------------------------
 special bnc commands:
 ---------------------
 

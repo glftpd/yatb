@@ -32,12 +32,15 @@ pthread_attr_t threadattr;
 
 int main(int argc,char *argv[])
 {		
+	
 	pthread_attr_init(&threadattr);
   pthread_attr_setdetachstate(&threadattr,PTHREAD_CREATE_DETACHED);
-	cout << version << "\n";
-	cout << "Builddate: " << builddate << "\n";
+	
 	if (argc < 2 || argc > 3)
 	{		
+		cout << version << "\n";
+		cout << "Builddate: " << builddate << "\n";
+		cout << "Using " << SSLeay_version(0) << "\n";
 		cout << "Usage:\n\t yatb configfile\n";
 		cout << "\t or yatb -u configfile for uncrypted conf file\n";
 		return -1;
@@ -47,12 +50,14 @@ int main(int argc,char *argv[])
 	{
 		string t(argv[1]);
 		if (t == "-u")
-		{
-			cout << " - WARNING: - using uncrypted conf!\n";
+		{			
 			use_blowconf = 0;
 		}
 		else
 		{
+			cout << version << "\n";
+			cout << "Builddate: " << builddate << "\n";
+			cout << "Using " << SSLeay_version(0) << "\n";
 			cout << "Usage:\n\t yatb configfile\n";
 			cout << "\t or yatb -u configfile for uncrypted conf file\n";
 			return -1;
@@ -61,7 +66,7 @@ int main(int argc,char *argv[])
 	if (use_blowconf == 1)
 	{
 		conffile = argv[1];
-		cout << "using crypted conf!\n";
+		
 		#ifndef config_key
 			char *k;
 			k = getpass("Enter blowfish key: ");
@@ -91,6 +96,8 @@ int main(int argc,char *argv[])
 	fxptositelist.Insert(config.fxp_tosite_list);
 	sslexcludelist.Insert(config.sslexclude_list);
 	entrylist.Insert(config.entry_list);
+	
+	
 	
 	// fork or exit
 	if (!config.debug || (!config.log_to_screen && config.debug))
@@ -130,31 +137,50 @@ int main(int argc,char *argv[])
 
 	srand(12);
 
-	
+	if(config.syslog)
+	{		
+		 openlog("yatb",LOG_CONS | LOG_PID | LOG_NDELAY, LOG_DAEMON);		
+	}
 	
 	if((listen_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
-		cout << "Unable to create socket!\n";
+		debugmsg("-SYSTEM-","Unable to create socket!");
+		if (config.syslog) 
+		{			
+			syslog(LOG_ERR, "Unable to create socket!");
+		}
 		return -1;
 	}
 	
 	int yes = 1;
 	if (setsockopt(listen_sock,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) == -1)
 	{
-		cout << "setsockopt error!\n";
+		debugmsg("-SYSTEM-","setsockopt error!");
+		if (config.syslog)
+		{ 			
+			syslog(LOG_ERR, "setsockopt error!");
+		}
 		return -1;
 	}
 	
 	if (bind(listen_sock, (struct sockaddr *)&listen_addr, sizeof(struct sockaddr)) == -1)
 	{
-		cout << "Unable to bind to port!\n";
+		debugmsg("-SYSTEM-","Unable to bind to port!");
+		if (config.syslog) 
+		{			
+			syslog(LOG_ERR, "Unable to bind to port!");
+		}
 		return -1;
 	}
 	
 
 	if (listen(listen_sock, config.pending) == -1)
 	{
-		cout << "Unable to listen!\n";
+		debugmsg("-SYSTEM-","Unable to listen!");
+		if (config.syslog) 
+		{			
+			syslog(LOG_ERR, "Unable to listen!");
+		}
 		return -1;
 	}
 	
@@ -162,7 +188,7 @@ int main(int argc,char *argv[])
 	{
 		return -1;
 	}
-	cout << "Using " << SSLeay_version(0) << "\n";
+	
 	
 	//make gethostbyname working after chroot
 	struct sockaddr_in tmpaddr = GetIp("www.glftpd.at",21);
@@ -170,30 +196,22 @@ int main(int argc,char *argv[])
 	char *cwd = getcwd(NULL, 4096);	
 	if (chroot(cwd))
 	{
-		cout << " - WARNING: - Could not chroot to '" << cwd << "' !\n";
+		debugmsg("-SYSTEM-"," - WARNING: - Could not chroot");
+		if (config.syslog) 
+		{			
+			syslog(LOG_ERR, " - WARNING: - Could not chroot" );
+		}
 	}	
 	else
 	{
-		cout << "Chroot to '" << cwd << "'\n";
+		
 		chdir("/");
 	}	
 	free(cwd);
 	
-	
-	
-	
-	
+		
 	signal(SIGPIPE, SIG_IGN);
 	
-	
-	
-	if (config.debug)
-	{
-		cout << "Running in DEBUG mode...\n";
-				
-	}			
-	
-		
 	
 		
 	int pid = getpid();
@@ -201,28 +219,37 @@ int main(int argc,char *argv[])
 	ofstream pidfile(config.pidfile.c_str(), ios::out | ios::trunc);
 	if (!pidfile)
 	{
-		cout << " - WARNING: - Error creating pid file!\n";
+		debugmsg("-SYSTEM-"," - WARNING: - Error creating pid file!");
+		if (config.syslog) 
+		{			
+			syslog(LOG_ERR, " - WARNING: - Error creating pid file!");
+		}
 	}
 	else
 	{
-		cout << "started with pid: " << pid << "\n";
+		
 		pidfile << pid << "\n";
 		pidfile.close();
 	}
 	
 	if(setuid(config.uid) < 0)
 	{
-		cout << " - WARNING: - Could not set uid!\n";
+		debugmsg("-SYSTEM-"," - WARNING: - Could not set uid!");
+		if (config.syslog) 
+		{			
+			syslog(LOG_ERR, " - WARNING: - Could not set uid!");
+		}
 			
 	}
-	else
-	{
-		cout << "Set UID to '" << config.uid << "'\n";
-	}
+	
 	
 	if (getuid() == 0)
 	{
-		cout << "Could not run as root!\n";
+		debugmsg("-SYSTEM-","Could not run as root!");
+		if (config.syslog) 
+		{			
+			syslog(LOG_ERR, "Could not run as root!");
+		}
 		THREAD_cleanup();
 		if (clientsslctx != NULL) { SSL_CTX_free(clientsslctx); }
 		return -1;

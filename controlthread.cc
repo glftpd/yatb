@@ -75,7 +75,12 @@ CControlThread::~CControlThread()
 	list_lock.Lock();
 	conlist.remove(this);
 	list_lock.UnLock();
-	
+	if(config.syslog)
+	{
+		stringstream ss;
+		ss << "user '" << username << "' logged off";
+		syslog(LOG_ERR,ss.str().c_str());
+	}
 	if (usingssl)
 	{
 		
@@ -843,8 +848,7 @@ void CControlThread::mainloop(void)
 			debugmsg(username,"[controlthread] read from site");
 			string s;
 			if(!control_read(site_sock,sitessl,s))
-			{
-				
+			{		
 				
 				return;
 			}
@@ -909,7 +913,12 @@ void CControlThread::mainloop(void)
 					{
 						debugmsg(username,"[controlthread] reply: " + s);
 						debugmsg(username,"[controlthread] user incorrect");
-
+						if(config.syslog)
+						{
+							stringstream ss;
+							ss << "invalid user '" << username << "' tried to login";
+							syslog(LOG_ERR,ss.str().c_str());
+						}
 						if (config.trytorelink)
 						{
 							debugmsg(username,"[controlthread] trying to relink");
@@ -950,6 +959,12 @@ void CControlThread::mainloop(void)
 					
 					if (IsEndline(s) && upper(s,s.length()).find(upper(config.user_login_success,config.user_login_success.length()),0) != string::npos)
 					{
+						if(config.syslog)
+						{
+							stringstream ss;
+							ss << "user '" << username << "' logged in";
+							syslog(LOG_ERR,ss.str().c_str());
+						}
 						gotwelcomemsg++;
 						debugmsg(username,"[controlthread] login successfull");
 						nr_logins++;
@@ -972,6 +987,12 @@ void CControlThread::mainloop(void)
 					}
 					else if (IsEndline(s) && upper(s,s.length()).find(upper(config.site_full,config.site_full.length()),0) != string::npos)
 					{
+						if(config.syslog)
+						{
+							stringstream ss;
+							ss << "user '" << username << "' logged in (site full)";
+							syslog(LOG_ERR,ss.str().c_str());
+						}
 						gotwelcomemsg++;
 						debugmsg(username,"[controlthread] site full");
 						if(!control_write(client_sock,s,clientssl))
@@ -982,6 +1003,12 @@ void CControlThread::mainloop(void)
 					}
 					else if (IsEndline(s) && upper(s,s.length()).find(upper(config.site_closed,config.site_closed.length()),0) != string::npos)
 					{
+						if(config.syslog)
+						{
+							stringstream ss;
+							ss << "user '" << username << "' logged in (site full)";
+							syslog(LOG_ERR,ss.str().c_str());
+						}
 						gotwelcomemsg++;
 						debugmsg(username,"[controlthread] site closed");
 						if(!control_write(client_sock,s,clientssl))
@@ -994,6 +1021,12 @@ void CControlThread::mainloop(void)
 					{
 						if (IsEndline(s))
 						{
+							if(config.syslog)
+							{
+								stringstream ss;
+								ss << "user '" << username << "' failed to log in";
+								syslog(LOG_ERR,ss.str().c_str());
+							}
 							gotwelcomemsg++;
 							debugmsg(username,"[controlthread] login incorrect");
 	
@@ -1117,9 +1150,7 @@ void CControlThread::mainloop(void)
 			debugmsg(username,"[controlthread] read from client");
 			string s;
 			if(!control_read(client_sock,clientssl,s))
-			{
-				
-				
+			{				
 				return;
 			}
 

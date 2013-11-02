@@ -85,6 +85,7 @@ class CConfig
 	int showconnectfailmsg;
 	string pidfile;
 	string connectfailmsg;
+	int syslog;
 };
 
 extern CConfig config;
