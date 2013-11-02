@@ -75,6 +75,7 @@ CConfig::CConfig()
 	cmd_prefix = "";
     ssl_relink = 0;
     killcmd = "";
+    entrycmd = "";
     day_limit = 0;
     week_limit = 0;
     month_limit = 0;
@@ -992,6 +993,17 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "opt_dh_file missing\n";
+   		
+   		ok = 0;
+   	}
+   	
+   	if ((val=getkey("entrycmd",daten)) != "ERROR")
+   	{
+   		entrycmd = val;
+   	}
+   	else
+   	{
+   		cout << "entrycmd missing\n";
    		
    		ok = 0;
    	}

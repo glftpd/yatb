@@ -83,6 +83,7 @@ class CConfig
 	string site_closed;
 	string site_full;
 	string reloadcmd;
+	string entrycmd;
 	string killcmd;
 	int usecommands;
 	int show_connect_failmsg;

@@ -1004,6 +1004,10 @@ void CControlThread::mainloop(void)
 					ss << "230- '" + config.cmd_prefix+config.sslexcludecmd + "add user1[,user2]' - add new user(s)\r\n";
 					ss << "230- '" + config.cmd_prefix+config.sslexcludecmd + "del user1[,user2]' - delete user(s)\r\n";
 					ss << "230-\r\n";
+					ss << "230- '" + config.cmd_prefix+config.entrycmd + "show' - show added entry(s)\r\n";
+					ss << "230- '" + config.cmd_prefix+config.entrycmd + "add entry1[,entry2]' - add new entry(s)\r\n";
+					ss << "230- '" + config.cmd_prefix+config.entrycmd + "del entry1[,entry2]' - delete entry(s)\r\n";
+					ss << "230-\r\n";
 					ss << "230- '" + config.cmd_prefix+config.infocmd + "' - show some infos\r\n";
 					ss << "230-\r\n";
 					ss << "230- '" + config.cmd_prefix+config.helpcmd + "' - show this help\r\n";
@@ -1327,6 +1331,98 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
+			
+			// entry command
+
+			else if (config.usecommands && upper(s,config.entrycmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.entrycmd,0) + "SHOW",0) != string::npos)
+			{
+				if (adminlist.IsInList(username) && !relinked)
+				{
+					stringstream ss;
+					ss << "230- added entry(s): '";
+					ss << entrylist.GetList();
+					
+					ss << "'\r\n230 done.\r\n";
+					if (!Write(client_sock,ss.str(),clientssl))
+					{						
+						return;
+					}
+				}
+				else
+				{
+					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
+					{						
+						return;
+					}
+				}
+			}
+			else if (config.usecommands && upper(s,config.entrycmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.entrycmd,0) + "ADD",0) != string::npos)
+			{
+				if (adminlist.IsInList(username) && !relinked)
+				{
+					unsigned int pos;
+					pos = s.find(" ",0);
+					if (pos != string::npos)
+					{
+						s = s.substr(pos+1,s.length()-pos-3);
+						entrylist.Insert(s);
+						
+						if (!Write(client_sock,"230 entry(s) added.\r\n",clientssl))
+						{							
+							return;
+						}
+					}
+					else
+					{
+						if (!Write(client_sock,"230 no entry to add!\r\n",clientssl))
+						{							
+							return;
+						}
+					}
+				}
+				else
+				{
+					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
+					{						
+						return;
+					}
+				}
+			}
+			else if (config.usecommands && upper(s,config.entrycmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.entrycmd,0) + "DEL",0) != string::npos)
+			{
+				if (adminlist.IsInList(username) && !relinked)
+				{
+					unsigned int pos;
+					pos = s.find(" ",0);
+					if (pos != string::npos)
+					{
+						s = s.substr(pos+1,s.length()-pos-3);
+						entrylist.Remove(s);
+						
+						if (!Write(client_sock,"230 entry(s) removed.\r\n",clientssl))
+						{							
+							return;
+						}
+					}
+					else
+					{
+						if (!Write(client_sock,"230 no entry to remove!\r\n",clientssl))
+						{							
+							return;
+						}
+					}
+				}
+				else
+				{
+					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
+					{						
+						return;
+					}
+				}
+			}
+			
+			// fromsite command
+			
 			else if (config.usecommands && upper(s,config.fromsitecmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.fromsitecmd,0) + "SHOW",0) != string::npos)
 			{
 				if (adminlist.IsInList(username) && !relinked)

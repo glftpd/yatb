@@ -57,6 +57,7 @@ tositecmd=tosite;
 fromsitecmd=fromsite;
 sslexcludecmd=nossl;
 reloadcmd=reload;
+entrycmd=entry;
 killcmd=kill;
 usecommands=1;
 

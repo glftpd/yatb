@@ -1560,7 +1560,7 @@ int Login(int &sock,string ip,int port,string user,string pass,int usessl,SSL **
    }
    else
    {
-   		message = "Login successfull";
+   		message = "socket not successfull";
    }
 	return 1;
 }
