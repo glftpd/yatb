@@ -85,7 +85,12 @@ void reload(int)
 		config = tmpconf;
 		iplist.readlist(config.site_ip,config.site_port);
 		debugmsg("SYSTEM","config reloaded");						
-		
+		//when using entrys disable some options
+		if (config.entry_list != "")
+		{		
+			config.fake_serverstring = 0;
+			config.use_ident = 0;		
+		}
 	}
 }
 

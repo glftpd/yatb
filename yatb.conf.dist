@@ -2,6 +2,7 @@
 debug=0;
 log_to_screen=0;
 debug_logfile=log.txt;
+command_logfile=command.txt;
 syslog=0;
 
 [ Connection ]

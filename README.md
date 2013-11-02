@@ -71,6 +71,13 @@ name and path of log file
 
 --------------------------------------------------------
 
+- command_logfile=command.txt;
+
+if specified all commands are logged to this file
+(only when in debug mode)
+
+--------------------------------------------------------
+
 - cert_path=dsa.pem;
 
 name and path of cert file

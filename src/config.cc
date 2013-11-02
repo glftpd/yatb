@@ -44,6 +44,7 @@ CConfig::CConfig()
 	fxp_tosite_list = "";
 	uid = 0;
 	debug_logfile = "";
+	command_logfile = "";
 	log_to_screen = 0;
 	ssl_forward = 0;
 
@@ -640,6 +641,17 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "debug_logfile missing\n";
+   		
+   		ok = 0;
+   	}
+   	
+   	if ((val=getkey("command_logfile",daten)) != "ERROR")
+   	{
+   		command_logfile = val;
+   	}
+   	else
+   	{
+   		cout << "command_logfile missing\n";
    		
    		ok = 0;
    	}

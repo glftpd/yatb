@@ -158,8 +158,8 @@ void CControlThread::deletedatathread(void)
 	{	
 		debugmsg(username,"[deletedatathread] set shouldquit=1");
 		datathread->setQuit(1);
-		//only close sockets from datathread in datathread
-		//datathread->closeconnection();
+		
+		datathread->closeconnection();
 		debugmsg(username,"[deletedatathread] join datathread");
 				
 		if(pthread_join(datathread->tid,NULL) != 0)
@@ -1215,7 +1215,13 @@ void CControlThread::mainloop(void)
 					else
 					{
 						config = tmpconf;
-						iplist.readlist(config.site_ip,config.site_port);						
+						iplist.readlist(config.site_ip,config.site_port);
+						//when using entrys disable some options
+						if (config.entry_list != "")
+						{		
+							config.fake_serverstring = 0;
+							config.use_ident = 0;		
+						}				
 						if (!Write(client_sock,"230 config reloaded.\r\n",clientssl))
 						{							
 							return;
@@ -1703,10 +1709,12 @@ int CControlThread::Read(int sock,SSL *ssl,string &s)
 		weekcounter.addrecvd(s.length());
 		monthcounter.addrecvd(s.length());
 		debugmsg(username,"\n" + s);
+		cmddebugmsg(username,">> " + s);
 	}
 	else if(sock == site_sock)
 	{
 		debugmsg(username,"\n" + s);
+		cmddebugmsg(username,"<< " + s);
 	}
 	rwlock.UnLock();
 	return 1;

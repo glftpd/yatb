@@ -66,6 +66,7 @@ class CConfig
 	int use_fxptosite_list;
 	int uid;
 	string debug_logfile;
+	string command_logfile;
 	int log_to_screen;
 
 	int ssl_forward;

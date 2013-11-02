@@ -4,6 +4,7 @@
 #include "global.h"
 
 void debugmsg(string ,string ,int err=0);
+void cmddebugmsg(string ,string );
 
 string upper(string str,int length);
 

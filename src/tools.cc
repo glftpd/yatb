@@ -50,6 +50,33 @@ void debugmsg(string un,string s,int err)
 	}
 }
 
+void cmddebugmsg(string un,string s)
+{
+	if (config.debug && config.command_logfile != "")
+	{		
+		config_lock.Lock();
+		time_t rawtime;
+		struct tm * timeinfo;
+
+	  	time ( &rawtime );
+  		timeinfo = localtime ( &rawtime );
+		string t = asctime (timeinfo);
+		t = t.substr(0,t.length() - 1);
+		
+		ofstream dbg_logfile(config.command_logfile.c_str(),ios::out | ios::app);
+		if (dbg_logfile)
+		{
+			dbg_logfile << "[" << un << "," << t << "] " << s << endl ;
+			
+			dbg_logfile.flush();
+			dbg_logfile.close();
+		}		
+		
+		
+		config_lock.UnLock();
+	}
+}
+
 string ltrim( const string &str, const string &whitespace)
 {
 
