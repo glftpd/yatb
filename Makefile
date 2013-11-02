@@ -1,7 +1,7 @@
 CPPFLAGS = -W -Wall -g -I/usr/local/ssl/include -Iinclude
 
-src/.cc.o   :
-	 g++ -c $(CPPFLAGS) $< 
+.cc.o   :
+	 g++ -c $(CPPFLAGS) $< -o $@
 
 all:
 	@echo "To compile yatb type"
@@ -28,11 +28,11 @@ linux-debug-static: src/yatb.o src/forward.o src/counter.o src/controlthread.o s
 	g++ -static -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-static-debug -lssl -lcrypto	
 
 bsd: src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
-	g++ src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -crypto -o bin/yatb; strip bin/yatb
+	g++ src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -pthread -lcrypto -o bin/yatb; strip bin/yatb
 	g++ -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt -lssl -lcrypto; strip bin/blowcrypt
 
 bsd-debug: src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o
-	g++ src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -crypto -o bin/yatb-debug
+	g++ src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -pthread -lcrypto -o bin/yatb-debug
 	g++ -W -Wall -g src/blowcrypt.cc -o bin/blowcrypt-debug -lssl -lcrypto
 
 bsd-static: src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o

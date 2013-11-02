@@ -1,5 +1,7 @@
-// define configfile password here to allow automatic startup
+// define configfile/certfile password here to allow automatic startup
+// this is not secure!!
 //#define config_key "somekey"
+//#define cert_key "somekey"
 
 #include "global.h"
 #include "config.h"
@@ -130,8 +132,7 @@ int main(int argc,char *argv[])
 		#endif
 		
 		#ifdef config_key
-			bk = config_key;
-			memset(config_key, 0,strlen(config_key));
+			bk = config_key;		       
 		#endif
 		
 		if (!config.readconf(conffile,bk))
@@ -150,10 +151,15 @@ int main(int argc,char *argv[])
 	
 	if(config.crypted_cert)
 	{
+	  #ifndef cert_key
 		char *ck;
 		ck = getpass("Enter cert blowfish key: ");
 		cert_bk = ck;
 		memset(ck, 0,strlen(ck));
+	  #endif
+	  #ifdef cert_key
+		cert_bk = cert_key;
+    #endif
 	  
 	}
 	
