@@ -510,9 +510,20 @@ void CControlThread::mainloop(void)
 
 					debugmsg(username,"[controlthread] after user cmd");
 					// wrong user?
+					
 					if (config.enforce_tls)
 					{
-						if (!usingssl && !config.use_ssl_exclude)
+						if(!usingssl && config.relink_notls && config.trytorelink)
+						{
+							debugmsg(username,"[controlthread] trying to relink");
+							if (!tryrelink(1))
+							{
+								
+								
+								return;
+							}
+						}
+						else if (!usingssl && !config.use_ssl_exclude)
 						{
 							if (!Write(client_sock,"427 Use AUTH TLS!\r\n",clientssl))
 							{								
@@ -522,6 +533,7 @@ void CControlThread::mainloop(void)
 							
 							return;
 						}
+						
 					}
 					if (IsEndline(s) && upper(s,s.length()).find(upper(config.user_access_denied,config.user_access_denied.length()),0) != string::npos)
 					{
@@ -533,7 +545,7 @@ void CControlThread::mainloop(void)
 							ss << "invalid user '" << username << "' tried to login";
 							syslog(LOG_ERR,ss.str().c_str());
 						}
-						if (config.trytorelink)
+						if (config.trytorelink && !relinked)
 						{
 							debugmsg(username,"[controlthread] trying to relink");
 							if (!tryrelink(1))

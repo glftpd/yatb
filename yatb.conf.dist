@@ -43,6 +43,7 @@ relink_port=21;
 relink_user=anonymous;
 relink_pass=a@b.de;
 ssl_relink=0;
+relink_notls=0;
 
 [ Admin ]
 admin_list=hawk;

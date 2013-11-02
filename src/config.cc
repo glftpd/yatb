@@ -83,6 +83,7 @@ CConfig::CConfig()
     translate_nosslfxp = 0;
     disable_noop = 0;
     max_numlogins = "";
+	relink_notls = 0;
 }
 
 CConfig::~CConfig()
@@ -1044,6 +1045,17 @@ int CConfig::readconf(string filename,string key)
    		ok = 0;
    	}
    	
+	if ((val=getkey("relink_notls",daten)) != "ERROR")
+   	{
+   		relink_notls = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "relink_notls missing\n";
+   		
+   		ok = 0;
+   	}
+
    	for(unsigned int i=0;i < daten.length();i++)
    	{
    		daten[i] = '0';

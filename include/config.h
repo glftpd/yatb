@@ -47,7 +47,7 @@ class CConfig
 	string user_login_success;
 	string max_numlogins;
 	int add_to_passive_port;
-	
+	int relink_notls;
 	int port_range_start;
 	int port_range_end;
 	int use_port_range;
