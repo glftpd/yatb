@@ -1663,7 +1663,7 @@ int CControlThread::Read(int sock,SSL *ssl,string &s)
 	}
 	else if(sock == site_sock)
 	{
-		
+		debugmsg(username,"\n" + s);
 	}
 	rwlock.UnLock();
 	return 1;

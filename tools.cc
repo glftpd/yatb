@@ -118,11 +118,13 @@ int setnonblocking(int socket)
 	int flags;
 	if((flags = fcntl(socket, F_GETFL, 0)) == -1)
 	{ 
+		debugmsg("SETNONBLOCKING","get flags failed");
 		return 0;
 	}
 	flags |= O_NONBLOCK;
 	if (fcntl(socket, F_SETFL, flags) == -1)
 	{
+		debugmsg("SETNONBLOCKING","set flags failed");
 		return 0;
 	}
 	return 1;
@@ -133,11 +135,13 @@ int setblocking(int socket)
 	int flags;
 	if((flags = fcntl(socket, F_GETFL, 0)) == -1)
 	{ 
+		debugmsg("SETBLOCKING","get flags failed");
 		return 0;
 	}
 	flags &= ~O_NONBLOCK;
 	if (fcntl(socket, F_SETFL, flags) == -1)
 	{
+		debugmsg("SETBLOCKING","set flags failed");
 		return 0;
 	}
 	return 1;
@@ -185,7 +189,7 @@ int Bind(int &sock,string ip,int port)
 	}
 	else
 	{
-		debugmsg("-SYSTEM-","[Bind] bind to any adr");
+		debugmsg("BIND","[Bind] bind to any adr");
 		adr.sin_addr.s_addr = INADDR_ANY;
 		adr.sin_port = htons(port);
 		adr.sin_family = AF_INET;
@@ -193,7 +197,7 @@ int Bind(int &sock,string ip,int port)
 	}
 	if(bind(sock,(struct sockaddr *)&adr, sizeof(struct sockaddr)) != 0)
 	{
-		debugmsg("-SYSTEM-","[Bind] could not bind",errno);
+		debugmsg("BIND","[Bind] could not bind",errno);
 		return 0;
 	}
 	return 1;
@@ -201,13 +205,13 @@ int Bind(int &sock,string ip,int port)
 
 int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 {
-	debugmsg("-SYSTEM-","[Connect] start");
+	debugmsg("CONNECT","[Connect] start");
 	
 	struct sockaddr_in adr;
 	adr = GetIp(host,port);
 	if(!setnonblocking(sock))
 	{
-		debugmsg("-SYSTEM-","[Connect] end(0-0)");
+		debugmsg("CONNECT","[Connect] end(0-0)");
 		return 0;
 	}
 	int rc;
@@ -215,7 +219,7 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 	{
 		if(errno != EINPROGRESS)
 		{
-			debugmsg("-SYSTEM-","[Connect] end(0-1)");
+			debugmsg("CONNECT","[Connect] end(0-1)");
 			return 0;
 		}
 	}
@@ -235,14 +239,14 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 			int res = select(sock+1, &readfds, &writefds, NULL, &tv);
 			if (res < 0)
 			{	
-				debugmsg("-SYSTEM-","[Connect] end(0-2)");		
+				debugmsg("CONNECT","[Connect] end(0-2)");		
 				return 0;
 			}
 			else if(res == 0)
 			{			
 				if(shouldquit == 1) 
 				{
-					debugmsg("-SYSTEM-","[Connect] end(0-3)");
+					debugmsg("CONNECT","[Connect] end(0-3)");
 					return 0;
 				}
 			}
@@ -252,20 +256,20 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 				socklen_t errlen = sizeof(err);
 				if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&errlen) < 0)
 				{
-					debugmsg("-SYSTEM-","[Connect] end(0-4)");
+					debugmsg("CONNECT","[Connect] end(0-4)");
 					return 0;
 				}
 				if(err)
 				{
-					debugmsg("-SYSTEM-","[Connect] end(0-5)");
+					debugmsg("CONNECT","[Connect] end(0-5)");
 					return 0;
 				}
 				if(!SocketOption(sock,SO_KEEPALIVE))
 				{
-					debugmsg("-SYSTEM-", "[Connect] client setsockopt error!",errno);
+					debugmsg("CONNECT", "[Connect] client setsockopt error!",errno);
 					return 0;
 				}
-				debugmsg("-SYSTEM-","[Connect] end(1)");
+				debugmsg("CONNECT","[Connect] end(1)");
 				return 1;
 			}
 		}
@@ -276,20 +280,20 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 		socklen_t errlen = sizeof(err);
 		if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&errlen) < 0)
 		{
-			debugmsg("-SYSTEM-","[Connect] end(0-4)");
+			debugmsg("CONNECT","[Connect] end(0-4)");
 			return 0;
 		}
 		if(err)
 		{
-			debugmsg("-SYSTEM-","[Connect] end(0-5)");
+			debugmsg("CONNECT","[Connect] end(0-5)");
 			return 0;
 		}
 		if(!SocketOption(sock,SO_KEEPALIVE))
 		{
-			debugmsg("-SYSTEM-", "[Connect] client setsockopt error!",errno);
+			debugmsg("CONNECT", "[Connect] client setsockopt error!",errno);
 			return 0;
 		}
-		debugmsg("-SYSTEM-","[Connect] end(1)");
+		debugmsg("CONNECT","[Connect] end(1)");
 		return 1;
 	}
 	
@@ -298,7 +302,7 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 
 int Accept(int &listensock,int &newsock,string &clientip,int &clientport,int sec,int &shouldquit)
 {
-	debugmsg("-SYSTEM-","[Accept] start");
+	debugmsg("ACCEPT","[Accept] start");
 	fd_set readfds;
 	struct sockaddr_in adr;
 	
@@ -321,14 +325,14 @@ int Accept(int &listensock,int &newsock,string &clientip,int &clientport,int sec
 			
 			if (res < 0)
 			{
-				debugmsg("-SYSTEM-","[Accept] end(0-1)");		
+				debugmsg("ACCEPT","[Accept] end(0-1)");		
 				return 0;
 			}
 			else if(res == 0)
 			{
 				if (shouldquit == 1) 
 				{
-					debugmsg("-SYSTEM-","[Accept] end(0-2)");		
+					debugmsg("ACCEPT","[Accept] end(0-2)");		
 					return 0;
 				}
 			}
@@ -349,7 +353,7 @@ int Accept(int &listensock,int &newsock,string &clientip,int &clientport,int sec
 	socklen_t size = sizeof(adr);
 	if ((newsock = accept(listensock,(struct sockaddr *)&adr,&size)) == -1)
 	{
-		debugmsg("-SYSTEM-","[Accept] end(0-3)");		
+		debugmsg("ACCEPT","[Accept] end(0-3)");		
 		return 0;
 	}
 	clientip = inet_ntoa(adr.sin_addr);
@@ -360,10 +364,10 @@ int Accept(int &listensock,int &newsock,string &clientip,int &clientport,int sec
 		}
 	if(!SocketOption(newsock,SO_KEEPALIVE))
 	{
-		debugmsg("-SYSTEM-", "[Accept] client setsockopt error!",errno);
+		debugmsg("ACCEPT", "[Accept] client setsockopt error!",errno);
 		return 0;
 	}
-	debugmsg("-SYSTEM-","[Accept] end(1)");		
+	debugmsg("ACCEPT","[Accept] end(1)");		
 	return 1;
 }
 
@@ -372,7 +376,7 @@ int SocketOption(int &sock,int option)
 	int yes = 1;
 	if (setsockopt(sock,SOL_SOCKET,option,&yes,sizeof(int)) != 0)
 	{
-		debugmsg("-SYSTEM-","setsockopt error!");
+		debugmsg("SOCKETOPTION","setsockopt error!");
 		
 		return 0;
 	}
@@ -491,14 +495,14 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 	{
 		if(!Bind(ident_sock,connectip,0))
 		{				
-			debugmsg("-SYSTEM-","[Ident] could not bind",errno);
+			debugmsg("IDENT","[Ident] could not bind",errno);
 			return 0;
 		}
 	}
 	
 	if (Connect(ident_sock,ip,113,timeout,shouldquit) )
 	{				
-		debugmsg("-SYSTEM-","[Ident] try to read ident reply");
+		debugmsg("IDENT","[Ident] try to read ident reply");
 		if(!setblocking(ident_sock))
 		{
 			close(ident_sock);				
@@ -519,7 +523,7 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 		
 		if (select(ident_sock+1, &readfds, NULL, NULL, &tv) <= 0)
 		{
-			debugmsg("-SYSTEM-", "[Ident] ident select error!",errno);
+			debugmsg("IDENT", "[Ident] ident select error!",errno);
 		}
 		else
 		{
@@ -530,7 +534,7 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 					close(ident_sock);								
 					return 0;					
 				}
-				debugmsg("-SYSTEM-","[Ident] ident: " + ident_reply);
+				debugmsg("IDENT","[Ident] ident: " + ident_reply);
 			}
 			
 		}
@@ -538,7 +542,7 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 	}
 	else
 	{
-		debugmsg("-SYSTEM-","[Ident] could not connect to ident port @"+ip);
+		debugmsg("IDENT","[Ident] could not connect to ident port @"+ip);
 		close(ident_sock);		
 		return 0;		
 	}
@@ -603,7 +607,7 @@ int control_write(int sock,string s,SSL *sslcon)
 		{
 			if (sslcon != NULL)
 			{
-				if(count == config.retry_count) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then x retries
+				if(count == config.retry_count) { debugmsg("CONTROLWRITE","retry count reached"); return 0; } // not more then x retries
 				int err = SSL_get_error(sslcon,n);
 				
 				if (err == SSL_ERROR_WANT_READ) { usleep(2000);count++; continue; }
@@ -691,7 +695,7 @@ int control_read(int sock,SSL *sslcon,string &str)
 			{
 				if (sslcon != NULL)
 				{
-					if(count == config.retry_count) { debugmsg("-SYSTEM-","retry count reached"); return 0; } // not more then x retries
+					if(count == config.retry_count) { debugmsg("CONTROLREAD","retry count reached"); return 0; } // not more then x retries
 					int err = SSL_get_error(sslcon,rc);
 					
 					if (err == SSL_ERROR_WANT_READ) { usleep(2000);count++; continue; }
@@ -736,12 +740,12 @@ int control_read(int sock,SSL *sslcon,string &str)
 
 int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 {
-	debugmsg("-SYSTEM-", "[SslConnect] start");
+	debugmsg("SSLCONNECT", "[SslConnect] start");
 	*sslctx = SSL_CTX_new(TLSv1_client_method());
 	
 	if (*sslctx == NULL)
 	{
-		debugmsg("-SYSTEM-", "[SslConnect] sitesslctx failed!");
+		debugmsg("SSLCONNECT", "[SslConnect] sitesslctx failed!");
 		return 0;
 	}
 	SSL_CTX_set_options(*sslctx,SSL_OP_ALL);
@@ -751,17 +755,18 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 	*ssl = SSL_new(*sslctx);
 	if (*ssl == NULL)
 	{
-		debugmsg("-SYSTEM-", "[SslConnect] site ssl failed!");
+		debugmsg("SSLCONNECT", "[SslConnect] site ssl failed!");
 		return 0;
 	}
 	if(SSL_set_fd(*ssl,sock) == 0)
 	{
-		debugmsg("-SYSTEM-", "[SslConnect] ssl set fd failed!");
+		debugmsg("SSLCONNECT", "[SslConnect] ssl set fd failed!");
+		debugmsg("SSLCONNECT","[SslAccept] " +  (string)ERR_error_string(ERR_get_error(), NULL));
 		return 0;
 	}
-	debugmsg("-SYSTEM-","[SslConnect] try to connect...");
+	debugmsg("SSLCONNECT","[SslConnect] try to connect...");
 	// try for 10 seconds
-	for(int i=0; i <20;i++)
+	for(int i=0; i <200;i++)
 	{
 		int err = SSL_connect(*ssl);
 		if(err == 1)
@@ -773,42 +778,43 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 			int sslerr = SSL_get_error(*ssl, err);
 			if( sslerr == SSL_ERROR_WANT_READ || sslerr == SSL_ERROR_WANT_WRITE || sslerr == SSL_ERROR_WANT_X509_LOOKUP)
 			{
-				// still in progress - wait a half second
-				usleep(500000);
+				
+				usleep(50000);
 			}
 			else
 			{
-				debugmsg("-SYSTEM-", "[SslConnect] TLS Connection failed!");
+				debugmsg("SSLCONNECT", "[SslConnect] TLS Connection failed!");
+				debugmsg("SSLCONNECT","[SslAccept] " +  (string)ERR_error_string(ERR_get_error(), NULL));
 				return 0;
 			}
 		}
 		
 	}
 	
-	debugmsg("-SYSTEM-", "[SslConnect] end");
+	debugmsg("SSLCONNECT", "[SslConnect] end");
 	return 1;
 }
 
 int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx)
 {	
-	debugmsg("-SYSTEM-", "[SslAccept] start");
+	debugmsg("SSLACCEPT", "[SslAccept] start");
 	*ssl = SSL_new(*sslctx);
 	if (*ssl == NULL)
 	{
-		debugmsg("-SYSTEM-", "[SslAccept] clientssl failed!");
+		debugmsg("SSLACCEPT", "[SslAccept] clientssl failed!");
 		return 0;
 	}
 
 	if (SSL_set_fd(*ssl,sock) == 0)
 	{
-		debugmsg("-SYSTEM-","[SslAccept] " +  (string)ERR_error_string(ERR_get_error(), NULL));
+		debugmsg("SSLACCEPT","[SslAccept] " +  (string)ERR_error_string(ERR_get_error(), NULL));
 		return 0;
 	}
 	
 	
 	
-	debugmsg("-SYSTEM-","[SslAccept] try ssl accept");
-	for(int i=0; i <20;i++)
+	debugmsg("SSLACCEPT","[SslAccept] try ssl accept");
+	for(int i=0; i <200;i++)
 	{
 		int err = SSL_accept(*ssl);
 		if(err == 1)
@@ -820,19 +826,20 @@ int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx)
 			int sslerr = SSL_get_error(*ssl, err);
 			if( sslerr == SSL_ERROR_WANT_READ || sslerr == SSL_ERROR_WANT_WRITE || sslerr == SSL_ERROR_WANT_X509_LOOKUP)
 			{
-				// still in progress - wait a half second
-				usleep(500000);
+				
+				usleep(50000);
 			}
 			else
 			{
-				debugmsg("-SYSTEM-", "[SslAccept] TLS Connection failed!");
+				debugmsg("SSLACCEPT", "[SslAccept] TLS Connection failed!");
+				debugmsg("SSLACCEPT","[SslAccept] " +  (string)ERR_error_string(ERR_get_error(), NULL));
 				return 0;
 			}
 		}
 		
 	}
 		
-	debugmsg("-SYSTEM-", "[SslAccept] end");
+	debugmsg("SSLACCEPT", "[SslAccept] end");
 	return 1;
 	
 }
