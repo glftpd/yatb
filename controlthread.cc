@@ -1619,6 +1619,7 @@ int CControlThread::Read(int sock,SSL *ssl,string &s)
 	{
 		localcounter.addrecvd(s.length());
 		totalcounter.addrecvd(s.length());
+		debugmsg(username,"\n" + s);
 	}
 	else if(sock == site_sock)
 	{
@@ -1650,6 +1651,7 @@ int CControlThread::Write(int sock,string s,SSL *ssl)
 	{
 		localcounter.addsend(s.length());
 		totalcounter.addsend(s.length());
+		debugmsg(username,"\n" + s);
 	}
 	else if(sock == site_sock)
 	{

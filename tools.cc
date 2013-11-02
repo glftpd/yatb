@@ -319,6 +319,11 @@ int Accept(int &listensock,int &newsock,string &clientip,int &clientport,int sec
 	}
 	clientip = inet_ntoa(adr.sin_addr);
 	clientport = ntohs(adr.sin_port);
+	if(!SocketOption(newsock,SO_KEEPALIVE))
+	{
+		debugmsg("-SYSTEM-", "[Accept] client setsockopt error!",errno);
+		return 0;
+	}
 	debugmsg("-SYSTEM-","[Accept] end(1)");		
 	return 1;
 }
