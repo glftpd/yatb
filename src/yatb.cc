@@ -265,6 +265,10 @@ int main(int argc,char *argv[])
 		return -1;
 	}
 	
+	if (!ssl_setup())
+	{
+		return -1;
+	}
 	
 	// fork or exit
 	if (!config.debug || (!config.log_to_screen && config.debug))
@@ -338,10 +342,7 @@ int main(int argc,char *argv[])
 		return -1;
 	}
 	
-	if (!ssl_setup())
-	{
-		return -1;
-	}
+	
 		
 	//make gethostbyname working after chroot
 	struct sockaddr_in tmpaddr = GetIp("www.glftpd.com",21);

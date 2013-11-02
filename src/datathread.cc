@@ -584,89 +584,127 @@ void CDataThread::dataloop(void)
 	
 	
 	debugmsg(username,"[datathread] entering dataloop");
-	while (!getQuit())
+	if(config.speed_write)
 	{
-		for(int i=0; i < config.read_write_timeout * 2;i++)
+		if(controlthread->direction == "download")
 		{
-			FD_ZERO(&data_readfds);
-			FD_SET(dataclient_sock,&data_readfds);
-			FD_SET(datasite_sock,&data_readfds);
-			struct timeval tv;
-			tv.tv_sec = 0;
-			tv.tv_usec = 500000;
+			while (!getQuit())
+			{
+				int rc;
+				if(!SRead(datasite_sock,buffer,rc,sitessl))
+				{					
+					break;
+				}			
 				
-			int tmpsock;
-	
-			if (datasite_sock > dataclient_sock)
-			{
-				tmpsock = datasite_sock;
+				if(!SWrite(dataclient_sock,buffer,rc,clientssl))
+				{					
+					break;
+				}
 			}
-			else
-			{
-				tmpsock = dataclient_sock;
-			}
-			
-			if (select(tmpsock+1, &data_readfds, NULL, NULL, &tv) > 1)
-			{
-				break;
-			}
-			if (getQuit()) 
-			{
-				closeconnection();
-				return;
-			}
-		}
-		// just to make sure - should not happen
-		if(datasite_sock < 0 || dataclient_sock < 0) break;
-		
-		// read from site - send to client
-		if (FD_ISSET(datasite_sock, &data_readfds))
-		{
-
-
-			memset(buffer,'\0',1);
-	
-			int rc;
-			if(!Read(datasite_sock,buffer,rc,sitessl))
-			{					
-				break;
-			}
-			
-			
-			if(!Write(dataclient_sock,buffer,rc,clientssl))
-			{					
-				break;
-			}
-	
-
-		}
-		// read from client - send to site
-		else if (FD_ISSET(dataclient_sock, &data_readfds))
-		{
-
-			memset(buffer,'\0',1);
-
-			int rc;
-			if(!Read(dataclient_sock,buffer,rc,clientssl))
-			{					
-				break;
-			}
-			
-			
-			if(!Write(datasite_sock,buffer,rc,sitessl))
-			{				
-				break;
-			}
-			
-			
-
 		}
 		else
 		{
-			debugmsg(username,"[datathread] fd_isset error",errno);
-			break;
+			while (!getQuit())
+			{
+				int rc;
+				if(!SRead(dataclient_sock,buffer,rc,clientssl))
+				{					
+					break;
+				}			
+				
+				if(!SWrite(datasite_sock,buffer,rc,sitessl))
+				{					
+					break;
+				}
+			}
 		}
+	}
+	else
+	{	
+		while (!getQuit())
+		{
+			for(int i=0; i < config.read_write_timeout * 2;i++)
+			{
+				FD_ZERO(&data_readfds);
+				FD_SET(dataclient_sock,&data_readfds);
+				FD_SET(datasite_sock,&data_readfds);
+				struct timeval tv;
+				tv.tv_sec = 0;
+				tv.tv_usec = 500000;
+					
+				int tmpsock;
+		
+				if (datasite_sock > dataclient_sock)
+				{
+					tmpsock = datasite_sock;
+				}
+				else
+				{
+					tmpsock = dataclient_sock;
+				}
+				
+				if (select(tmpsock+1, &data_readfds, NULL, NULL, &tv) > 1)
+				{
+					break;
+				}
+				if (getQuit()) 
+				{
+					closeconnection();
+					return;
+				}
+			}
+			// just to make sure - should not happen
+			if(datasite_sock < 0 || dataclient_sock < 0) break;
+			
+			// read from site - send to client
+			if (FD_ISSET(datasite_sock, &data_readfds))
+			{
 
+
+				memset(buffer,'\0',1);
+		
+				int rc;
+				if(!Read(datasite_sock,buffer,rc,sitessl))
+				{					
+					break;
+				}
+				
+				
+				if(!Write(dataclient_sock,buffer,rc,clientssl))
+				{					
+					break;
+				}
+		
+
+			}
+			// read from client - send to site
+			else if (FD_ISSET(dataclient_sock, &data_readfds))
+			{
+
+				memset(buffer,'\0',1);
+
+				int rc;
+				if(!Read(dataclient_sock,buffer,rc,clientssl))
+				{					
+					break;
+				}
+				
+				
+				if(!Write(datasite_sock,buffer,rc,sitessl))
+				{				
+					break;
+				}
+				
+				
+
+			}
+			else
+			{
+				debugmsg(username,"[datathread] fd_isset error",errno);
+				break;
+			}
+
+		}
 	}
 	
 	debugmsg(username,"[datathread] call close connection");
@@ -721,3 +759,110 @@ int CDataThread::Write(int sock,char *data,int nrbytes,SSL *ssl)
 	return 1;
 }
 
+
+// speed optimized read/write
+int CDataThread::SWrite(int sock,char *data,int nrbytes,SSL *ssl)
+{
+	// no select - using blocking sockets
+	int total = 0;
+	int bytesleft = nrbytes;
+	int rc,len;
+	len = nrbytes;
+	int count = 0;
+	
+	while(total < nrbytes)
+	{
+		if(ssl == NULL)
+		{		
+			rc = send(sock,data+total,bytesleft,0);
+		}
+		else
+		{
+			rc = SSL_write(ssl,data+total,bytesleft);
+		}
+		if(rc > 0)
+		{
+			total += rc;
+			bytesleft -= rc;
+		}
+		else if (rc == 0)
+		{					
+			return 0;
+		}
+		else
+		{
+			if(count == config.retry_count) { return 0; } // not more then x retries
+			if (ssl != NULL)
+			{
+				int err = SSL_get_error(ssl,rc);
+				
+				if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_X509_LOOKUP) 
+				{	
+					count++; 
+					//sleep(1); // wait 1 milisecond
+					continue;
+				}
+				else
+				{							
+					return 0;
+				}
+			}
+			return 0; 
+		}
+	}
+	return 1;
+}
+
+int CDataThread::SRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
+{
+	int count = 0;
+	while(1)
+	{
+			int rc;		
+			if (ssl == NULL)
+			{
+				rc = recv(sock,buffer,config.buffersize,0);
+			}
+			else
+			{
+				rc = SSL_read(ssl,buffer,config.buffersize);
+			}
+	  				
+			if (rc > 0) 
+			{ 
+				nrbytes = rc; 
+				return 1; 
+			}
+			else  if(rc == 0)
+			{	
+				nrbytes=0; 
+				return 0; 
+			}
+			else
+			{	
+				if(count == config.retry_count) { return 0; } // not more then x retries
+				if (ssl != NULL)
+				{
+					int err = SSL_get_error(ssl,rc);
+					
+					if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_X509_LOOKUP) 
+					{
+						count++; 
+						//sleep(1); // wait 1 milisecond
+						continue;
+					}
+					else
+					{
+						return 0;
+					}
+					
+				}
+								
+				nrbytes=0; 
+				return 0; 
+			}
+		}
+  	
+		
+	return 0;
+}

@@ -34,7 +34,8 @@ class CDataThread
 	
 	int Write(int ,char *,int ,SSL *);
 	int Read(int  ,char *,int &,SSL *);
-	
+	int SWrite(int ,char *,int ,SSL *);
+	int SRead(int ,char *,int &,SSL *);
 	SSL *sitessl,*clientssl;
 	SSL_CTX *sitesslctx,*tmpctx;
 	

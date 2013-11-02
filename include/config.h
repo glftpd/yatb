@@ -141,6 +141,7 @@ class CConfig
 	int retry_count;	
 	int ssl_ascii_cache;    
     int disable_noop;	
+	int speed_write;
 
 };
 

@@ -57,6 +57,7 @@ class CControlThread
 	int gotwelcomemsg;
 	int gotpasvcmd;
 	int gotportcmd;
+	int gotauthsslmsg;
 	int sendadminmsg; // store if a admin msg was send
 	int sscn;
 	int cpsvcmd; // ssl fxp

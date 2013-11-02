@@ -51,6 +51,8 @@ void replaceall(string &res, string src, string target)
 CControlThread::CControlThread(int fd,string cip,int cport,string sip,int sport)
 {
 	debugmsg("-SYSTEM-","[konstruktor] start");
+	pthread_attr_t threadattr;
+	pthread_attr_init(&threadattr);
 	pthread_attr_setdetachstate(&threadattr,PTHREAD_CREATE_JOINABLE);
 	client_sock = fd;
 	site_ip = sip;
@@ -72,6 +74,7 @@ CControlThread::CControlThread(int fd,string cip,int cport,string sip,int sport)
 	gotpasvcmd = 0;
 	sslprotp = 0;
 	activecon = 0;
+	gotauthsslmsg = 0;
 	sscn = 0;
 	transfertype = 1; // set to ascii mode
 	usingssl = 0;
@@ -512,9 +515,19 @@ void CControlThread::mainloop(void)
 					if (upper(s,s.length()).find("AUTH TLS SUCCESSFUL",0) != string::npos)
 					{
 						debugmsg(username,"[controlthread] got tls reply");
-						if (!Write(client_sock,s,clientssl))
-						{							
-							return;
+						if(gotauthsslmsg && config.translate_nosslfxp)
+						{
+							if (!Write(client_sock,"234 AUTH SSL successful\r\n",clientssl))
+							{							
+								return;
+							}
+						}
+						else
+						{
+							if (!Write(client_sock,s,clientssl))
+							{							
+								return;
+							}
 						}
 						if (!trytls())
 						{							
@@ -525,10 +538,12 @@ void CControlThread::mainloop(void)
 					{
 						debugmsg(username,"[controlthread] got ssl reply");
 						sslprotp = 1;
+						
 						if (!Write(client_sock,s,clientssl))
 						{							
 							return;
 						}
+						
 						if (!trytls())
 						{							
 							return;
@@ -941,9 +956,20 @@ void CControlThread::mainloop(void)
 			
 			else if (upper(s,9).find("AUTH SSL",0) != string::npos)
 			{
-				if(!Write(site_sock,s,sitessl))
-				{					
-					return;
+				if(config.translate_nosslfxp)
+				{
+					gotauthsslmsg = 1;
+					if(!Write(site_sock,"AUTH TLS\r\n",sitessl))
+					{					
+						return;
+					}
+				}
+				else
+				{
+					if(!Write(site_sock,s,sitessl))
+					{					
+						return;
+					}
 				}
 				debugmsg(username,"[controlthread] auth ssl msg");
 				if (!gotfirstcmd)

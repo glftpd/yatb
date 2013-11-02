@@ -122,6 +122,7 @@ CConfig::CConfig()
 	retry_count = 5;
 	ssl_ascii_cache = 0;
     disable_noop = 0;
+	speed_write = 0;
 
 }
 
@@ -356,7 +357,7 @@ int CConfig::readconf(string filename,string key,int crypted)
 		getentry(retry_count,"retry_count",ok,daten);
 		getentry(ssl_ascii_cache,"ssl_ascii_cache",ok,daten);
 		getentry(disable_noop,"disable_noop",ok,daten);
-
+		getentry(speed_write,"speed_write",ok,daten);
 
 
    		for(int i=0;i < (int)daten.length();i++)
