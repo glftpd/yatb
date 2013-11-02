@@ -26,9 +26,14 @@ CLock list_lock,config_lock,globals_lock;
 string bk = "";
 string conffile;
 
+
+
+pthread_attr_t threadattr;
+
 int main(int argc,char *argv[])
 {		
-	
+	pthread_attr_init(&threadattr);
+  pthread_attr_setdetachstate(&threadattr,PTHREAD_CREATE_DETACHED);
 	cout << version << "\n";
 	cout << "Builddate: " << builddate << "\n";
 	if (argc < 2 || argc > 3)
@@ -86,6 +91,21 @@ int main(int argc,char *argv[])
 	fxptositelist.Insert(config.fxp_tosite_list);
 	sslexcludelist.Insert(config.sslexclude_list);
 	entrylist.Insert(config.entry_list);
+	
+	// fork or exit
+	if (!config.debug || (!config.log_to_screen && config.debug))
+	{	
+		debugmsg("-SYSTEM-","[main] try to run as daemon");		
+    if( daemon(1,1) != 0)
+    {    	
+    	debugmsg("-SYSTEM-","[main] error while forking!",errno);
+    }
+    else
+    {    	
+    	debugmsg("-SYSTEM-","[main] running as daemon now");
+    }
+     
+	}
 	
 	//when using entrys disable some options
 	if (config.entry_list != "")
@@ -174,16 +194,7 @@ int main(int argc,char *argv[])
 	}			
 	
 		
-	// fork or exit
-	if (!config.debug || (!config.log_to_screen && config.debug))
-	{		
-		if(fork())
-		{
-			THREAD_cleanup();
-			if (clientsslctx != NULL) { SSL_CTX_free(clientsslctx); }			
-			return -1;
-		}
-	}
+	
 		
 	int pid = getpid();
 	
@@ -194,6 +205,7 @@ int main(int argc,char *argv[])
 	}
 	else
 	{
+		cout << "started with pid: " << pid << "\n";
 		pidfile << pid << "\n";
 		pidfile.close();
 	}
@@ -238,8 +250,16 @@ int main(int argc,char *argv[])
 				conlist.push_back(tmp);
 			
 				list_lock.UnLock();
-			
-				pthread_create(&tmp->tid,NULL,makethread,tmp);
+				debugmsg("-SYSTEM-","[main] try to start controlthread");
+				if(pthread_create(&tmp->tid,&threadattr,makethread,tmp) != 0)
+				{
+					debugmsg("-SYSTEM-","[main] error creating thread",errno);
+					list_lock.Lock();
+					conlist.remove(tmp);
+					list_lock.UnLock();
+				}
+				
+				
 				debugmsg("-SYSTEM-","[main] list create end");
 			}
 			else

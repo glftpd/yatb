@@ -152,7 +152,10 @@ void CControlThread::deletedatathread(void)
 		debugmsg(username,"[deletedatathread] join datathread");
 		//datathread->closeconnection();
 		
-		pthread_join(datathread->tid,NULL); 
+		if(pthread_join(datathread->tid,NULL) != 0)
+		{
+			debugmsg(username,"[deletedatathread] error joining thread",errno);
+		}
 		debugmsg(username,"[deletedatathread] delete datathread");
 		delete datathread; 
 		datathread = NULL; 
@@ -558,7 +561,7 @@ int CControlThread::trytls(void)
 void CControlThread::mainloop(void)
 {
 	debugmsg(username,"[controlthread] start");
-	pthread_detach(pthread_self());
+	
 	fd_set readfds;
 	if (using_entry)
 	{
@@ -632,19 +635,7 @@ void CControlThread::mainloop(void)
 				struct timeval tv;
 				tv.tv_sec = config.ident_timeout;
 				tv.tv_usec = 0;
-				/*int yes = 1;
-				int flags;
-				if((flags = fcntl(socket, F_GETFL, 0)) < 0)
-				{ 
-					debugmsg(username, "[controlthread] ident getsockopt error!");
-					
-				}
-				flags |= SO_REUSEADDR;
-				if (setsockopt(ident_sock,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) == -1)
-				{
-					debugmsg(username, "[controlthread] ident setsockopt error!");
-
-				}*/
+				
 				if (select(ident_sock+1, &readfds, NULL, NULL, &tv) <= 0)
 				{
 					debugmsg(username, "[controlthread] ident select error!",errno);
@@ -1050,7 +1041,12 @@ void CControlThread::mainloop(void)
 						{							
 							return;
 						}
-						pthread_create(&datathread->tid,NULL,makedatathread,datathread);
+						if(pthread_create(&datathread->tid,NULL,makedatathread,datathread) != 0)
+						{
+							debugmsg(username,"[controlthread] error creating thread!",errno);
+							delete datathread; 
+							datathread = NULL; 
+						}
 						debugmsg(username,"[controlthread] datathread created");
 					}
 					else
@@ -1082,7 +1078,12 @@ void CControlThread::mainloop(void)
 							
 							return;
 						}
-						pthread_create(&datathread->tid,NULL,makedatathread,datathread);
+						if(pthread_create(&datathread->tid,NULL,makedatathread,datathread) != 0)
+						{
+							debugmsg(username,"[controlthread] error creating thread!",errno);
+							delete datathread; 
+							datathread = NULL; 
+						}
 						debugmsg(username,"[controlthread] datathread created");
 					}
 					else

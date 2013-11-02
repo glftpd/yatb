@@ -396,7 +396,7 @@ void CDataThread::dataloop(void)
 		if (bind(datalisten_sock, (struct sockaddr *)&datalisten_addr, sizeof(struct sockaddr)) == -1)
 		{
 			debugmsg(username,"[datathread] Unable to bind to data port!",errno);
-			controlthread->control_write(controlthread->client_sock,"427 Could not bind to dataport!\r\n",controlthread->clientssl);
+			//controlthread->control_write(controlthread->client_sock,"427 Could not bind to dataport!\r\n",controlthread->clientssl);
 				
 			return;
 		}
