@@ -269,6 +269,10 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 					debugmsg("CONNECT", "[Connect] client setsockopt error!",errno);
 					return 0;
 				}
+				if(!setblocking(sock))
+				{				
+					return 0;
+				}
 				debugmsg("CONNECT","[Connect] end(1)");
 				return 1;
 			}
@@ -293,6 +297,10 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 			debugmsg("CONNECT", "[Connect] client setsockopt error!",errno);
 			return 0;
 		}
+		if(!setblocking(sock))
+		{				
+			return 0;
+		}
 		debugmsg("CONNECT","[Connect] end(1)");
 		return 1;
 	}
@@ -300,7 +308,7 @@ int Connect(int &sock,string host,int port,int sec,int &shouldquit)
 	return 0;
 }
 
-int Accept(int &listensock,int &newsock,string &clientip,int &clientport,int sec,int &shouldquit)
+int Accept(int listensock,int &newsock,string &clientip,int &clientport,int sec,int &shouldquit)
 {
 	debugmsg("ACCEPT","[Accept] start");
 	fd_set readfds;
@@ -358,10 +366,10 @@ int Accept(int &listensock,int &newsock,string &clientip,int &clientport,int sec
 	}
 	clientip = inet_ntoa(adr.sin_addr);
 	clientport = ntohs(adr.sin_port);
-	if(!setnonblocking(newsock))
-		{
-			return 0;
-		}
+	if(!setblocking(newsock))
+	{
+		return 0;
+	}
 	if(!SocketOption(newsock,SO_KEEPALIVE))
 	{
 		debugmsg("ACCEPT", "[Accept] client setsockopt error!",errno);
@@ -481,7 +489,7 @@ struct sockaddr_in GetIp(string ip,int port)
 
 int Ident(string ip, int clientport, int listenport, string connectip, string &reply,int timeout)
 {
-	int ident_sock;
+	int ident_sock = -1;
 	int shouldquit = 0;
 	fd_set readfds;
 	string ident_reply;
@@ -496,6 +504,7 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 		if(!Bind(ident_sock,connectip,0))
 		{				
 			debugmsg("IDENT","[Ident] could not bind",errno);
+			Close(ident_sock,"ident_sock");
 			return 0;
 		}
 	}
@@ -505,7 +514,7 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 		debugmsg("IDENT","[Ident] try to read ident reply");
 		if(!setblocking(ident_sock))
 		{
-			close(ident_sock);				
+			Close(ident_sock,"ident_sock");			
 			return 0;
 		}
 		FD_ZERO(&readfds);
@@ -514,7 +523,7 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 		ss << clientport << " , " << listenport << "\r\n";
 		if (!control_write(ident_sock,ss.str(),NULL))
 		{	
-			close(ident_sock);				
+			Close(ident_sock,"ident_sock");				
 			return 0;		
 		}
 		struct timeval tv;
@@ -531,19 +540,19 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 			{	
 				if(!control_read(ident_sock,NULL,ident_reply))
 				{	
-					close(ident_sock);								
+					Close(ident_sock,"ident_sock");								
 					return 0;					
 				}
 				debugmsg("IDENT","[Ident] ident: " + ident_reply);
 			}
 			
 		}
-		close(ident_sock);
+		Close(ident_sock,"ident_sock");
 	}
 	else
 	{
 		debugmsg("IDENT","[Ident] could not connect to ident port @"+ip);
-		close(ident_sock);		
+		Close(ident_sock,"ident_sock");		
 		return 0;		
 	}
 	string idnt,ident_user;
@@ -551,7 +560,7 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 	idnt=idnt.substr(0,idnt.find("\r"));
 	ident_user = trim(idnt);
 	if (ident_user[ident_user.length() - 1] == '\n') { ident_user = ident_user.substr(0,ident_user.length() - 1); }
-	close(ident_sock);		
+	Close(ident_sock,"ident_sock");	
 	reply = ident_user;
 	return 1;
 }
@@ -793,6 +802,10 @@ int control_read(int sock,SSL *sslcon,string &str)
 
 int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 {
+	if(!setnonblocking(sock))
+	{				
+		return 0;
+	}
 	debugmsg("SSLCONNECT", "[SslConnect] start");
 	*sslctx = SSL_CTX_new(TLSv1_client_method());
 	
@@ -845,11 +858,19 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx)
 	}
 	
 	debugmsg("SSLCONNECT", "[SslConnect] end");
+	if(!setblocking(sock))
+	{				
+		return 0;
+	}
 	return 1;
 }
 
 int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx)
 {	
+	if(!setnonblocking(sock))
+	{				
+		return 0;
+	}
 	debugmsg("SSLACCEPT", "[SslAccept] start");
 	*ssl = SSL_new(*sslctx);
 	if (*ssl == NULL)
@@ -891,7 +912,10 @@ int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx)
 		}
 		
 	}
-		
+	if(!setblocking(sock))
+	{				
+		return 0;
+	}	
 	debugmsg("SSLACCEPT", "[SslAccept] end");
 	return 1;
 	
@@ -1215,6 +1239,38 @@ int printsockopt(int sock,string name)
 		debugmsg("SOCKOPT","sock set to blocking");
 	}
 	return 1;
+}
+
+void PrintSock(int sock,string desc)
+{
+	stringstream ss;
+	ss << "-----SOCKET---- " << desc << " : " << sock;
+	debugmsg("",ss.str());
+}
+
+int Close(int &sock,string desc)
+{
+	stringstream ss;
+	ss << "-----SOCKET---- closing " << desc << " : " << sock;
+	debugmsg("",ss.str());
+	if(sock > 0)
+	{		
+		if(close(sock) != -1)
+		{
+			sock = -1;
+			return 1;
+		}
+		else
+		{
+			sock = -1;
+			return 0;
+		}
+	}
+	else
+	{
+		sock = -1;
+		return 1;
+	}
 }
 
 #if defined(__linux__) && defined(__i386__)

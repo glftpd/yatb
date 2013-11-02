@@ -87,15 +87,17 @@ void CDataThread::closeconnection(void)
 		
 		}
 	}
-	
-		debugmsg(username,"[closeconnection] close site sock"); 
-		close(datasite_sock); 
-	
-		debugmsg(username,"[closeconnection] close client sock"); 
-		close(dataclient_sock); 
-	
-		debugmsg(username,"[closeconnection] close listen sock");		
-		close(datalisten_sock); 	
+		
+		int tmp = datalisten_sock -1;
+		
+		Close(datalisten_sock,"datalisten_sock");
+		
+		Close(dataclient_sock,"dataclient_sock");
+		
+		Close(datasite_sock,"datasite_sock");		
+		
+		// some ugly hack
+		Close(tmp,"tmp sock");	
 		
 		if (usingssl)
 	{			
@@ -138,6 +140,7 @@ void CDataThread::dataloop(void)
 {
 	debugmsg(username,"[datathread] dataloop start");
 	
+	
 	#if defined(__linux__) && defined(__i386__)
 	stringstream ss;
 	ss << username << " started datathread " << gettid();
@@ -154,6 +157,7 @@ void CDataThread::dataloop(void)
 		
 		return;
 	}
+	PrintSock(datasite_sock,"datasite_sock");
 	
 	if (config.connect_ip != "")
 	{
@@ -182,7 +186,7 @@ void CDataThread::dataloop(void)
 		
 		return;
 	}
-	
+	PrintSock(dataclient_sock,"dataclient_sock");
 	// to store client ip from passive connection
 	string clip;
 	int clport;
@@ -197,18 +201,23 @@ void CDataThread::dataloop(void)
 			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
 			return;
 		}
-		if(!SocketOption(datalisten_sock,SO_REUSEADDR))
-		{
-			debugmsg(username,"setsockopt error!");
-			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
-			return;
-		}
+		PrintSock(datalisten_sock,"datalisten_sock");
+		
 		if (!Bind(datalisten_sock, config.listen_ip, newport))
 		{
 			debugmsg(username,"Unable to bind to port!");
 			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
 			return ;
 		}
+		
+		if(!SocketOption(datalisten_sock,SO_REUSEADDR))
+		{
+			debugmsg(username,"setsockopt error!");
+			controlthread->Write(controlthread->client_sock,"425 Can't open passive connection\r\n",controlthread->clientssl);
+			return;
+		}
+		
+		
 		if (listen(datalisten_sock, config.pending) == -1)
 		{
 			debugmsg(username,"Unable to listen!");
@@ -220,12 +229,14 @@ void CDataThread::dataloop(void)
 		{								
 			return;
 		}
+		
 		if(!Accept(datalisten_sock,dataclient_sock,clip,clport,config.connect_timeout,shouldquit))
 		{
 			debugmsg(username,"Accept failed!");
 			
 			return ;
 		}
+		
 	}
 	// active connection - try to connect
 	else
@@ -274,14 +285,7 @@ void CDataThread::dataloop(void)
 		}
 	}
 	
-	if(!setblocking(datasite_sock))
-	{
-		return;
-	}
-	if(!setblocking(dataclient_sock))
-	{
-		return;
-	}
+	
 	printsockopt(datasite_sock,"datasite_sock");
 	printsockopt(dataclient_sock,"dataclient_sock");
 	
@@ -455,8 +459,7 @@ void CDataThread::dataloop(void)
 			{					
 				break;
 			}
-			
-				
+	
 
 		}
 		// read from client - send to site
@@ -482,7 +485,7 @@ void CDataThread::dataloop(void)
 		}
 
 	}
-
+	
 	debugmsg(username,"[datathread] call close connection");
 	closeconnection();
 	debugmsg(username,"[datathread] end");

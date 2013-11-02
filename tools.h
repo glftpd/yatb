@@ -20,7 +20,7 @@ int setblocking(int);
 void correctReply(string &);
 
 int Connect(int &,string,int,int,int &);
-int Accept(int &,int &,string &,int &,int, int &);
+int Accept(int ,int &,string &,int &,int, int &);
 int Bind(int &,string,int);
 int SocketOption(int &,int);
 int IsEndline(string);
@@ -37,6 +37,8 @@ int ParsePsvCommand(string ,string &, int &);
 
 int DataWrite(int ,char *,int ,SSL *);
 int DataRead(int  ,char *,int &,SSL *);
+int Close(int &,string);
+void PrintSock(int ,string );
 
 string traffic2str(double);
 

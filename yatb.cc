@@ -16,7 +16,7 @@
 #endif
 
 
-#ifdef SOLARIS
+#if SOLARIS
 int
 daemon(int nochdir, int noclose)
 {
@@ -296,7 +296,7 @@ int main(int argc,char *argv[])
 	
 	while(1)
 	{				
-		int tmp_sock;
+		int tmp_sock = -1;
 		string clientip;
 		int clientport;
 		int shouldquit = 0;

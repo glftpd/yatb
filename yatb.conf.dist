@@ -10,7 +10,7 @@ site_ip=1.2.3.4;
 site_port=123;
 entry_list=;
 connect_ip=;
-listen_interface=ppp0;
+listen_interface=eth0;
 listen_ip=;
 traffic_bnc=1;
 
@@ -18,7 +18,7 @@ traffic_bnc=1;
 cert_path=dsa.pem;
 enforce_tls=1;
 enforce_tls_fxp=0;
-ssl_forward=0;
+ssl_forward=1;
 use_ssl_exclude=0;
 sslexclude_list=;
 
