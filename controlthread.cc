@@ -70,6 +70,8 @@ CControlThread::CControlThread(int fd,string cip,int cport)
 	debugmsg("-SYSTEM-","[konstruktor] end");
 	clientip = cip;
 	clientport = cport;
+	directionset = 0;
+	direction = "";
 }
 
 // destructor
@@ -495,7 +497,8 @@ void CControlThread::mainloop(void)
 		
 		// read from site
 		if (FD_ISSET(site_sock, &readfds))
-		{			
+		{
+			debugmsg(username, "[controlthread] start read from site");	
 			string s;
 			if(!Read(site_sock,sitessl,s))
 			{					
@@ -801,7 +804,8 @@ void CControlThread::mainloop(void)
 		}
 		// read from client
 		if (FD_ISSET(client_sock, &readfds))
-		{			
+		{
+			debugmsg(username, "[controlthread] start read from client");		
 			string s;
 			if(!Read(client_sock,clientssl,s))
 			{
@@ -1570,6 +1574,34 @@ void CControlThread::mainloop(void)
 					}
 				}
 			}
+			else if (upper(s,5).find("STOR",0) != string::npos)
+			{
+				direction = "upload";
+				SetDirection(1);
+				if (!Write(site_sock,s,sitessl))
+				{											
+					return;
+				}				
+			}
+			else if (upper(s,5).find("RETR",0) != string::npos)
+			{
+				direction = "download";
+				SetDirection(1);
+				if (!Write(site_sock,s,sitessl))
+				{											
+					return;
+				}				
+			}
+			else if (upper(s,5).find("LIST",0) != string::npos)
+			{
+				direction = "download";
+				SetDirection(1);
+				if (!Write(site_sock,s,sitessl))
+				{											
+					return;
+				}				
+			}
+			
 			else
 			{
 				if (!Write(site_sock,s,sitessl))
@@ -1700,5 +1732,21 @@ int CControlThread::Write(int sock,string s,SSL *ssl)
 	}
 	rwlock.UnLock();
 	return 1;
+}
+
+int CControlThread::DirectionSet(void)
+{
+	int tmp;
+	directionlock.Lock();
+	tmp = directionset;
+	directionlock.UnLock();
+	return tmp;
+}
+
+void CControlThread::SetDirection(int d)
+{	
+	directionlock.Lock();
+	directionset = d;
+	directionlock.UnLock();
 }
 

@@ -284,6 +284,12 @@ void CDataThread::dataloop(void)
 	}
 	printsockopt(datasite_sock,"datasite_sock");
 	printsockopt(dataclient_sock,"dataclient_sock");
+	while(!controlthread->DirectionSet())
+	{
+		if(shouldquit) return;
+	}
+	
+	debugmsg(username,"[datathread] direction: " + controlthread->direction);
 	
 	// check ssl/fxp settings
 	if(!activecon)
@@ -319,6 +325,22 @@ void CDataThread::dataloop(void)
 				else
 				{
 					controlthread->Write(controlthread->client_sock,"427 Use SSL!\r\n",controlthread->clientssl);
+					return;
+				}
+			}
+			if(controlthread->direction == "download")
+			{
+				if(config.use_fxpfromsite_list && !fxpfromsitelist.IsInList(username))
+				{
+					controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+					return;
+				}
+			}
+			if(controlthread->direction == "upload")
+			{
+				if(config.use_fxptosite_list && !fxptositelist.IsInList(username))
+				{
+					controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
 					return;
 				}
 			}
@@ -360,6 +382,22 @@ void CDataThread::dataloop(void)
 					return;
 				}
 			}
+			if(controlthread->direction == "download")
+			{
+				if(config.use_fxpfromsite_list && !fxpfromsitelist.IsInList(username))
+				{
+					controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+					return;
+				}
+			}
+			if(controlthread->direction == "upload")
+			{
+				if(config.use_fxptosite_list && !fxptositelist.IsInList(username))
+				{
+					controlthread->Write(controlthread->client_sock,"427 FXP not allowed!\r\n",controlthread->clientssl);
+					return;
+				}
+			}
 		}
 			
 	}
@@ -393,7 +431,7 @@ void CDataThread::dataloop(void)
 		if (select(tmpsock+1, &data_readfds, NULL, NULL, &tv) < 1)
 		{
 			debugmsg(username,"[datathread] read timeout",errno);
-			return;
+			break;
 		}
 
 		// read from site - send to client

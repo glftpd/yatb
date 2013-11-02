@@ -79,4 +79,3 @@ clean:
 	@(rm -f yatb blowcrypt yatb-static blowcrypt-static yatb-debug blowcrypt-debug yatb-static-debug blowcrypt-static-debug *.o)
 	@(echo "Clean succesful")
 	
-	

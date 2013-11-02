@@ -18,7 +18,8 @@ class CControlThread
 
 	CControlThread(int,string,int);
 	~CControlThread();
-	
+	int DirectionSet(void); //returns 1 if transfer direction is set
+	void SetDirection(int); 
 	
 
 	private:
@@ -38,11 +39,12 @@ class CControlThread
 	int trytls(void);
 
 	int tryrelink(int);
-
+	int directionset;
+	string direction;
 	string CreatePsvCommand(int);
 	
 	CCounter localcounter;
-	CLock rwlock;
+	CLock rwlock,directionlock;
 	
 	int client_sock,site_sock; //connection sockets
 	int datalisten_sock,datasite_sock,dataclient_sock; // data connections sockets

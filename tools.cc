@@ -611,7 +611,7 @@ int control_write(int sock,string s,SSL *sslcon)
 				int err = SSL_get_error(sslcon,n);
 				
 				if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_X509_LOOKUP) 
-				{ 
+				{
 					debugmsg("CONTROLWRITE","want read/write error");
 					fd_set data_writefds;
 					FD_ZERO(&data_writefds);
@@ -635,15 +635,17 @@ int control_write(int sock,string s,SSL *sslcon)
 						return 0;
 					} 
 				}
+				else
+				{
+					debugmsg("CONTROLWRITE","SSL error",errno);
+					return 0;
+				}
 				
 				
-			}
-			else
-			{
-				if (errno == EAGAIN) { usleep(2000);count++; continue; }
 			}
 			
-			break;
+			debugmsg("CONTROLWRITE","write error",errno);
+			return 0;
 		}
 		total += n;
 		bytesleft -= n;
@@ -733,6 +735,7 @@ int control_read(int sock,SSL *sslcon,string &str)
 						if (select(sock+1, NULL, &data_writefds, NULL, &tv) < 1)
 						{
 							debugmsg("CONTROLREAD"," write timeout",errno);
+							delete [] buffer;
 							return 0;
 						}
 						if (FD_ISSET(sock, &data_writefds))
@@ -743,16 +746,20 @@ int control_read(int sock,SSL *sslcon,string &str)
 						else
 						{
 							debugmsg("CONTROLREAD"," fd isser error",errno);
+							delete [] buffer;
 							return 0;
 						} 
+					}
+					else
+					{
+						debugmsg("CONTROLWRITE","SSL error",errno);
+						delete [] buffer;
+						return 0;
 					}
 					
 					
 				}
-				else
-				{
-					if (errno == EAGAIN) { usleep(2000);count++; continue; }
-				}
+				debugmsg("CONTROLWRITE","read error",errno);
 				delete [] buffer;
 				return 0;
 			}
@@ -1057,14 +1064,15 @@ int DataWrite(int sock,char *data,int nrbytes,SSL *ssl)
 								return 0;
 							}
 						}
+						else
+						{
+							debugmsg("DATAWRITE","SSL error",errno);
+							return 0;
+						}
 							
 						
 					}
-					else
-					{
-						debugmsg("DATAWRITE","eagain error");
-						if (errno == EAGAIN) { usleep(2000);count++; continue; }
-					}
+					
 					debugmsg("DATAWRITE","[data_write] error!",errno);  
 					return 0; 
 				}
@@ -1116,7 +1124,7 @@ int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 					int err = SSL_get_error(ssl,rc);
 					
 					if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_X509_LOOKUP) 
-					{ 
+					{
 						debugmsg("DATAREAD","want read/write error");
 						fd_set data_readfds;
 						FD_ZERO(&data_readfds);
@@ -1140,14 +1148,14 @@ int DataRead(int sock ,char *buffer,int &nrbytes,SSL *ssl)
 							return 0;
 						}
 					}
-					
+					else
+					{
+						debugmsg("DATAREAD","SSL error",errno);
+						return 0;
+					}
 					
 				}
-				else
-				{
-					debugmsg("DATAREAD","eagain error");
-					if (errno == EAGAIN) { usleep(2000);count++; continue; }
-				}
+				
 				debugmsg("-SYSTEM-","[data_read] error!"); 
 				nrbytes=0; 
 				return 0; 
