@@ -2,6 +2,7 @@
 #define __DATATHREAD_H
 
 #include "global.h"
+#include "lock.h"
 
 class CControlThread;
 
@@ -15,11 +16,15 @@ class CDataThread
 	
 	pthread_t tid; // thread id
 	
-	int shouldquit;	
+	int getQuit(void);
+	void setQuit(int);
+		
 	void closeconnection();
 	
 	private:
 	
+	CLock quitlock;	
+	int shouldquit;
 	friend void *makedatathread(void *pData);
 	
 	void dataloop(void);

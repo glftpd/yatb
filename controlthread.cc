@@ -156,7 +156,7 @@ void CControlThread::deletedatathread(void)
 	if (datathread != NULL) 
 	{	
 		debugmsg(username,"[deletedatathread] set shouldquit=1");
-		datathread->shouldquit = 1;
+		datathread->setQuit(1);
 		//only close sockets from datathread in datathread
 		//datathread->closeconnection();
 		debugmsg(username,"[deletedatathread] join datathread");

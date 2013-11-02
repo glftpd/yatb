@@ -17,6 +17,7 @@ class CConfig
 	
 	~CConfig();
 	
+	
 	int readconf(string, string);
 	
 	int debug;

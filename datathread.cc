@@ -26,6 +26,23 @@ void *makedatathread(void* pData)
 	return NULL;
 }
 
+int CDataThread::getQuit(void)
+{
+	int tmp;
+	quitlock.Lock();
+	tmp = shouldquit;
+	quitlock.UnLock();
+	return tmp;
+}
+
+
+void CDataThread::setQuit(int q)
+{
+	quitlock.Lock();
+	shouldquit = q;
+	quitlock.UnLock();
+}
+
 CDataThread::CDataThread(int cpsv, int tt, int pp, int rl, int ussl, int actvcon, string usrname, string cip, string pip, string aip,int pport, int aport, int nport, CControlThread *ct,string pcmd)
 {
 	debugmsg(username,"[datathread] constructor start");
@@ -170,7 +187,8 @@ void CDataThread::dataloop(void)
 	}
 	
 	debugmsg(username,"[datathread] try to connect to site");
-	if(!Connect(datasite_sock,passiveip,passiveport,config.connect_timeout,shouldquit))
+	int tmpshouldquit = getQuit();
+	if(!Connect(datasite_sock,passiveip,passiveport,config.connect_timeout,tmpshouldquit))
 	{
 		
 		debugmsg(username, "[datathread] could not connect to site!",errno);
@@ -222,8 +240,8 @@ void CDataThread::dataloop(void)
 		{								
 			return;
 		}
-		
-		if(!Accept(datalisten_sock,dataclient_sock,clip,clport,config.connect_timeout,shouldquit))
+		tmpshouldquit = getQuit();
+		if(!Accept(datalisten_sock,dataclient_sock,clip,clport,config.connect_timeout,tmpshouldquit))
 		{
 			debugmsg(username,"Accept failed!");
 			
@@ -253,7 +271,8 @@ void CDataThread::dataloop(void)
 			}
 		}
 		debugmsg(username,"[datathread] active connect to: " + activeip);
-		if(!Connect(dataclient_sock,activeip,activeport,config.connect_timeout,shouldquit))
+		tmpshouldquit = getQuit();
+		if(!Connect(dataclient_sock,activeip,activeport,config.connect_timeout,tmpshouldquit))
 		{			
 			debugmsg(username, "[datathread] could not connect to client!",errno);
 			return;
@@ -299,7 +318,7 @@ void CDataThread::dataloop(void)
 	debugmsg(username,"[datathread] wait for direction start");
 	while(!controlthread->DirectionSet())
 	{
-		if(shouldquit) return;
+		if(getQuit()) return;
 	}
 	debugmsg(username,"[datathread] wait for direction end");
 	
@@ -421,7 +440,7 @@ void CDataThread::dataloop(void)
 	
 	
 	debugmsg(username,"[datathread] entering dataloop");
-	while (!shouldquit)
+	while (!getQuit())
 	{
 		for(int i=0; i < config.read_write_timeout * 2;i++)
 		{
@@ -447,7 +466,7 @@ void CDataThread::dataloop(void)
 			{
 				break;
 			}
-			if (shouldquit) 
+			if (getQuit()) 
 			{
 				closeconnection();
 				return;

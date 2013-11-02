@@ -2,7 +2,7 @@
 debug=0;
 log_to_screen=0;
 debug_logfile=log.txt;
-syslog=1;
+syslog=0;
 
 [ Connection ]
 listen_port=123;
@@ -28,7 +28,7 @@ enforce_ident=0;
 no_idnt_cmd=0;
 
 [ Relink ]
-trytorelink=1;
+trytorelink=0;
 relink_ip=1.2.3.4;
 relink_port=21;
 relink_user=anonymous;
@@ -73,9 +73,9 @@ port_range_start=28001;
 port_range_end=30000;
 use_port_range=1;
 buffersize=4096;
-pending=10;
+pending=50;
 connect_timeout=10;
-ident_timeout=2;
+ident_timeout=3;
 read_write_timeout=15;
 uid=1;
 pidfile=yatb.pid;
