@@ -493,7 +493,7 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 	int shouldquit = 0;
 	fd_set readfds;
 	string ident_reply;
-	
+	reply = "*";
 	if((ident_sock = socket(AF_INET,SOCK_STREAM,0)) == -1)
 	{
 		return 0;
@@ -532,7 +532,7 @@ int Ident(string ip, int clientport, int listenport, string connectip, string &r
 		
 		if (select(ident_sock+1, &readfds, NULL, NULL, &tv) <= 0)
 		{
-			debugmsg("IDENT", "[Ident] ident select error!",errno);
+			debugmsg("IDENT", "[Ident] ident timeout!",errno);
 		}
 		else
 		{

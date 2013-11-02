@@ -29,7 +29,7 @@ class CConfig
 	string listen_ip;
 	string server_string;
 	
-	int fake_server_string;
+	int fake_serverstring;
 	int trytorelink;
 	int traffic_bnc;
 	

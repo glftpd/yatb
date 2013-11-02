@@ -11,7 +11,7 @@ CConfig::CConfig()
 	listen_interface = "";
 	listen_ip = "";
 	server_string  = "";
-	fake_server_string = 0;
+	fake_serverstring = 0;
 	trytorelink = 0;
 	traffic_bnc = 0;	
 	use_ident = 0;
@@ -171,7 +171,7 @@ int CConfig::readconf(string filename,string key)
 	 		delete [] bufferout;
 		}    
 		
- 		
+ 	int ok = 1;	
  		
    	string val;
 
@@ -194,7 +194,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "debug missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
 		
@@ -206,7 +206,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "use_fxpfromsite_list missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 		
    	if ((val=getkey("site_port",daten)) != "ERROR")
@@ -217,7 +217,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "site_port missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
    	if ((val=getkey("site_ip",daten)) != "ERROR")
@@ -228,7 +228,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "site_ip missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 		
 		if ((val=getkey("entry_list",daten)) != "ERROR")
@@ -239,7 +239,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "entry_list missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 		
 		if ((val=getkey("connect_ip",daten)) != "ERROR")
@@ -250,7 +250,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "connect_ip missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 		
    	if ((val=getkey("cert_path",daten)) != "ERROR")
@@ -261,7 +261,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "cert_path missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 		
 		if ((val=getkey("fxp_fromsite_list",daten)) != "ERROR")
@@ -272,7 +272,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "fxp_fromsite_list missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 		
  		if ((val=getkey("listen_interface",daten)) != "ERROR")
@@ -283,7 +283,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "listen_interface missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 		
 		if ((val=getkey("listen_ip",daten)) != "ERROR")
@@ -294,7 +294,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "listen_ip missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 		
 		
@@ -306,18 +306,18 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "server_string missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
- 		if ((val=getkey("fake_server_string",daten)) != "ERROR")
+ 		if ((val=getkey("fake_serverstring",daten)) != "ERROR")
     {
-   		fake_server_string = atoi(val.c_str());
+   		fake_serverstring = atoi(val.c_str());
    	}
    	else
    	{
-   		cout << "fake_server missing\n";
+   		cout << "fake_serverstring missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("trytorelink",daten)) != "ERROR")
@@ -328,7 +328,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "trytorelink missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("traffic_bnc",daten)) != "ERROR")
@@ -339,7 +339,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "traffic_bnc missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("enforce_tls_fxp",daten)) != "ERROR")
@@ -350,7 +350,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "enforce_tls_fxp missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
 
@@ -362,7 +362,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "use_ident missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
 		if ((val=getkey("enforce_ident",daten)) != "ERROR")
@@ -373,7 +373,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "enforce_ident missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("enforce_tls",daten)) != "ERROR")
@@ -384,7 +384,7 @@ int CConfig::readconf(string filename,string key)
 	 	{
 	 		cout << "enforce_tls missing\n";
 	 		
-	 		return 0;
+	 		ok = 0;
 	 	}
 
  		if ((val=getkey("send_traffic_info",daten)) != "ERROR")
@@ -395,7 +395,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "send_traffic_info missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("relink_ip",daten)) != "ERROR")
@@ -406,7 +406,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "relink_ip missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("relink_port",daten)) != "ERROR")
@@ -417,7 +417,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "relink_port missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("relink_user",daten)) != "ERROR")
@@ -428,7 +428,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "relink_user missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("relink_pass",daten)) != "ERROR")
@@ -439,7 +439,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "relink_pass missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("user_access_denied",daten)) != "ERROR")
@@ -450,7 +450,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "user_access_denied\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("user_login_success",daten)) != "ERROR")
@@ -461,7 +461,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "user_login_success\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("add_to_passive_port",daten)) != "ERROR")
@@ -472,7 +472,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "add_to_passive_port missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("add_to_passive_port",daten)) != "ERROR")
@@ -483,7 +483,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "add_to_passive_port missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("port_range_start",daten)) != "ERROR")
@@ -494,7 +494,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "port_range_start missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("port_range_end",daten)) != "ERROR")
@@ -505,7 +505,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "port_range_end missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("use_port_range",daten)) != "ERROR")
@@ -516,7 +516,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "use_port_range missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 	
 
@@ -528,7 +528,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "buffersize missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("buffersize",daten)) != "ERROR")
@@ -539,7 +539,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "buffersize missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("pending",daten)) != "ERROR")
@@ -550,7 +550,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "pending missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  		if ((val=getkey("connect_timeout",daten)) != "ERROR")
@@ -561,7 +561,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "connect_timeout missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
    	if ((val=getkey("ident_timeout",daten)) != "ERROR")
@@ -572,7 +572,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "ident_timeout missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
    	if ((val=getkey("read_write_timeout",daten)) != "ERROR")
@@ -583,7 +583,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "read_write_timeout missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
  
@@ -595,7 +595,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "admin_list missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 		
 		if ((val=getkey("use_fxptosite_list",daten)) != "ERROR")
@@ -606,7 +606,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "use_fxptosite_list missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 		
 		if ((val=getkey("fxp_tosite_list",daten)) != "ERROR")
@@ -617,7 +617,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "fxp_tosite_list missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 		
 		
@@ -629,7 +629,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "uid missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	
@@ -641,7 +641,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "debug_logfile missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 		
 		if ((val=getkey("log_to_screen",daten)) != "ERROR")
@@ -652,7 +652,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "log_to_screen missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 		 		 		
    	
@@ -664,7 +664,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "use_ssl_exclude missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
  		
  		if ((val=getkey("sslexclude_list",daten)) != "ERROR")
@@ -675,7 +675,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "sslexclude_list missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
  		
 
@@ -687,7 +687,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "infocmd missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
  		
  		if ((val=getkey("helpcmd",daten)) != "ERROR")
@@ -698,7 +698,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "helpcmd missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
  		
  		if ((val=getkey("admincmd",daten)) != "ERROR")
@@ -709,7 +709,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "admincmd missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
  		
  	if ((val=getkey("tositecmd",daten)) != "ERROR")
@@ -720,7 +720,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "tositecmd missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("killcmd",daten)) != "ERROR")
@@ -731,7 +731,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "killcmd missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
  		
  	if ((val=getkey("fromsitecmd",daten)) != "ERROR")
@@ -742,7 +742,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "fromsitecmd missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
  		
  		if ((val=getkey("sslexcludecmd",daten)) != "ERROR")
@@ -753,7 +753,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "sslexcludecmd missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
  		
  		if ((val=getkey("site_closed",daten)) != "ERROR")
@@ -764,7 +764,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "site_closed missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
  		
  		if ((val=getkey("site_full",daten)) != "ERROR")
@@ -775,7 +775,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "site_full missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
  		
  		if ((val=getkey("reloadcmd",daten)) != "ERROR")
@@ -786,7 +786,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "reloadcmd missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
  		
  		if ((val=getkey("usecommands",daten)) != "ERROR")
@@ -797,7 +797,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "usecommands missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("show_connect_failmsg",daten)) != "ERROR")
@@ -808,7 +808,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "show_connect_failmsg missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("pidfile",daten)) != "ERROR")
@@ -819,7 +819,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "pidfile missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
  		
  		if ((val=getkey("connectfailmsg",daten)) != "ERROR")
@@ -830,7 +830,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "connectfailmsg missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
  		
  		if ((val=getkey("syslog",daten)) != "ERROR")
@@ -841,7 +841,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "syslog missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("ssl_forward",daten)) != "ERROR")
@@ -852,7 +852,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "ssl_forward missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("use_forwarder",daten)) != "ERROR")
@@ -863,7 +863,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "use_forwarder missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("forwarder_sport",daten)) != "ERROR")
@@ -874,7 +874,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "forwarder_sport missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("forwarder_dport",daten)) != "ERROR")
@@ -885,7 +885,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "forwarder_dport missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("forwarder_ip",daten)) != "ERROR")
@@ -896,7 +896,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "forwarder_ip missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("retry_count",daten)) != "ERROR")
@@ -907,7 +907,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "retry_count missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("no_idnt_cmd",daten)) != "ERROR")
@@ -918,7 +918,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "no_idnt_cmd missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("ssl_ascii_cache",daten)) != "ERROR")
@@ -929,7 +929,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "ssl_ascii_cache missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("cmd_prefix",daten)) != "ERROR")
@@ -940,7 +940,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "cmd_prefix missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("crypted_cert",daten)) != "ERROR")
@@ -951,7 +951,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "crypted_cert missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
 
     if ((val=getkey("ssl_relink",daten)) != "ERROR")
@@ -962,7 +962,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "ssl_relink missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("day_limit",daten)) != "ERROR")
@@ -973,7 +973,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "day_limit missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("week_limit",daten)) != "ERROR")
@@ -984,7 +984,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "week_limit missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("month_limit",daten)) != "ERROR")
@@ -995,7 +995,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "month_limit missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	if ((val=getkey("opt_dh_file",daten)) != "ERROR")
@@ -1006,7 +1006,7 @@ int CConfig::readconf(string filename,string key)
    	{
    		cout << "opt_dh_file missing\n";
    		
-   		return 0;
+   		ok = 0;
    	}
    	
    	for(unsigned int i=0;i < daten.length();i++)
@@ -1014,7 +1014,8 @@ int CConfig::readconf(string filename,string key)
    		daten[i] = '0';
    	}
 		
- 		return 1;
+ 		if (ok == 1) return 1;
+ 		else return 0;
 	}
 
 }

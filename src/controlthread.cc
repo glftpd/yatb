@@ -412,7 +412,7 @@ void CControlThread::mainloop(void)
 	}
 		
 	
-	if (!config.fake_server_string )
+	if (!config.fake_serverstring )
 	{
 		if (!Write(client_sock,serverwelcomemsg,clientssl))
 		{			

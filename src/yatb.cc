@@ -238,7 +238,7 @@ int main(int argc,char *argv[])
 	//when using entrys disable some options
 	if (config.entry_list != "")
 	{		
-		config.fake_server_string = 0;
+		config.fake_serverstring = 0;
 		config.use_ident = 0;		
 	}
 	
