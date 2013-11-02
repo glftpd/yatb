@@ -851,18 +851,38 @@ void CControlThread::mainloop(void)
 			{
 				debugmsg(username,"[controlthread] prot p msg");
 				if (usingssl) { sslprotp = 1; }
-				if(!Write(site_sock,s,sitessl))
-				{					
-					return;
+				if(relinked)
+				{
+					if(!Write(client_sock,"200 Protection set to Private\r\n",clientssl))
+					{					
+						return;
+					}
+				}
+				else
+				{
+					if(!Write(site_sock,s,sitessl))
+					{					
+						return;
+					}
 				}
 			}
 			else if (upper(s,7).find("PROT C",0) != string::npos)
 			{
 				debugmsg(username,"[controlthread] prot c msg");
 				sslprotp = 0;
-				if(!Write(site_sock,s,sitessl))
-				{					
-					return;
+				if(relinked)
+				{
+					if(!Write(client_sock,"200 Protection set to Clear\r\n",clientssl))
+					{					
+						return;
+					}
+				}
+				else
+				{
+					if(!Write(site_sock,s,sitessl))
+					{					
+						return;
+					}
 				}
 
 			}
@@ -1230,7 +1250,8 @@ void CControlThread::mainloop(void)
 						adminlist.Insert(config.admin_list);
 						fxpfromsitelist.Insert(config.fxp_fromsite_list);
 						fxptositelist.Insert(config.fxp_tosite_list);
-						sslexcludelist.Insert(config.sslexclude_list);			
+						sslexcludelist.Insert(config.sslexclude_list);		
+						entrylist.Insert(config.entry_list);	
 						if (!Write(client_sock,"230 config reloaded.\r\n",clientssl))
 						{							
 							return;

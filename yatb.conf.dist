@@ -29,6 +29,7 @@ enforce_tls_fxp=0;
 ssl_forward=1;
 use_ssl_exclude=0;
 sslexclude_list=;
+translate_nosslfxp=0;
 
 [ Ident ]
 use_ident=1;

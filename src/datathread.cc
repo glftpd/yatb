@@ -286,7 +286,7 @@ void CDataThread::dataloop(void)
 	if(!config.ssl_forward) debugmsg(username, "[datathread] not using ssl forward");
 	
 	// ssl stuff
-	if((!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink))
+	if((!config.ssl_forward && usingssl && sslprotp && !relinked) || (relinked && config.ssl_relink))
 	{
 		if(!SslConnect(datasite_sock,&sitessl,&sitesslctx))
 		{
@@ -295,12 +295,30 @@ void CDataThread::dataloop(void)
 		}
 	}
 	
-	if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink))
+	if(!cpsvcmd)
 	{
-		if(!SslAccept(dataclient_sock,&clientssl,&clientsslctx))
+		debugmsg(username,"[datathread] no cpsv command");
+		if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink) || (!relinked && usingssl && !sslprotp && config.translate_nosslfxp))
 		{
-			debugmsg(username, "[datathread] ssl accept failed",errno);
-			return;
+			debugmsg(username,"[datathread] client ssl accept");
+			if(!SslAccept(dataclient_sock,&clientssl,&clientsslctx))
+			{
+				debugmsg(username, "[datathread] ssl accept failed",errno);
+				return;
+			}
+		}
+	}
+	else
+	{
+		debugmsg(username,"[datathread] cpsv command");
+		if((usingssl && relinked && sslprotp) || (!config.ssl_forward && usingssl && sslprotp) || (relinked && config.ssl_relink) || (!relinked && usingssl && !sslprotp && config.translate_nosslfxp))
+		{
+			debugmsg(username,"[datathread] client ssl connect");
+			if(!SslConnect(dataclient_sock,&clientssl,&clientsslctx))
+			{
+				debugmsg(username, "[datathread] ssl connect failed",errno);
+				return;
+			}
 		}
 	}
 	if(transfertype == 1)

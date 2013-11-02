@@ -95,6 +95,7 @@ void reload(int)
 		fxpfromsitelist.Insert(config.fxp_fromsite_list);
 		fxptositelist.Insert(config.fxp_tosite_list);
 		sslexcludelist.Insert(config.sslexclude_list);
+		entrylist.Insert(config.entry_list);
 	}
 }
 

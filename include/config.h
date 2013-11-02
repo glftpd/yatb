@@ -104,6 +104,7 @@ class CConfig
     double week_limit;
     double month_limit;
     string opt_dh_file;
+    int translate_nosslfxp;
 };
 
 extern CConfig config;

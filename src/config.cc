@@ -80,6 +80,7 @@ CConfig::CConfig()
     week_limit = 0;
     month_limit = 0;
     opt_dh_file = "";
+    translate_nosslfxp = 0;
 }
 
 CConfig::~CConfig()
@@ -1004,6 +1005,17 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "entrycmd missing\n";
+   		
+   		ok = 0;
+   	}
+   	
+   	if ((val=getkey("translate_nosslfxp",daten)) != "ERROR")
+   	{
+   		translate_nosslfxp = atoi(val.c_str());
+   	}
+   	else
+   	{
+   		cout << "translate_nosslfxp missing\n";
    		
    		ok = 0;
    	}
