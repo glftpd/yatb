@@ -77,6 +77,7 @@ CConfig::CConfig()
     day_limit = 0;
     week_limit = 0;
     month_limit = 0;
+    opt_dh_file = "";
 }
 
 CConfig::~CConfig()
@@ -993,6 +994,17 @@ int CConfig::readconf(string filename,string key)
    	else
    	{
    		cout << "month_limit missing\n";
+   		
+   		return 0;
+   	}
+   	
+   	if ((val=getkey("opt_dh_file",daten)) != "ERROR")
+   	{
+   		opt_dh_file = val;
+   	}
+   	else
+   	{
+   		cout << "opt_dh_file missing\n";
    		
    		return 0;
    	}

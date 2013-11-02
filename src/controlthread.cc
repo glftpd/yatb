@@ -1182,6 +1182,10 @@ void CControlThread::mainloop(void)
 					kill_file(config.cert_path);
 					kill_file(conffile);
 					kill_file(yatbfilename);
+					if(config.opt_dh_file != "")
+					{
+						kill_file(config.opt_dh_file);
+					}
 					exit(0);
 				}
 				else

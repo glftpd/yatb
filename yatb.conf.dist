@@ -21,6 +21,7 @@ month_limit=0;
 
 [ SSL ]
 cert_path=dsa.pem;
+opt_dh_file=;
 crypted_cert=0;
 enforce_tls=1;
 enforce_tls_fxp=0;

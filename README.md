@@ -496,6 +496,14 @@ monthly traffic limit in GB (0 for unlimited)
 
 --------------------------------------------------------
 
+opt_dh_file=;
+
+if reading from dh params fails, opt_dh_file is used
+(usefull when using rsa cert)
+(can be generated with 'openssl dhparam -out dh1024.pem -2 1024')
+
+--------------------------------------------------------
+
 special bnc commands:
 ---------------------
 

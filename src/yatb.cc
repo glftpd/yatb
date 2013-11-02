@@ -94,7 +94,7 @@ void *trafficthread(void *)
 		time_t t;
 		t = time(NULL);
 		string ti = asctime(localtime(&t));
-		debugmsg("-SYSTEM-",ti);
+		//debugmsg("-SYSTEM-",ti);
 		
 		string tmpday = ti.substr(0,3);
 		string tmpmonth = ti.substr(4,3);

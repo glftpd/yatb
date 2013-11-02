@@ -847,7 +847,8 @@ int ssl_setup()
 		}
 	}
 	
-	if (SSL_CTX_use_certificate_file(clientsslctx,certfile.c_str(),SSL_FILETYPE_PEM) <= 0)
+	debugmsg("-SYSTEM-", "try to load cert file");
+	if (SSL_CTX_use_certificate_chain_file(clientsslctx,certfile.c_str()) <= 0)
 	{
 		if(config.syslog)
 		{
@@ -856,16 +857,20 @@ int ssl_setup()
 		debugmsg("-SYSTEM-", "error loading cert file!");
 		return 0;
 	}
-	if (SSL_CTX_use_PrivateKey_file(clientsslctx, certfile.c_str(), SSL_FILETYPE_PEM) <=0 )
+	else 
 	{
-		if(config.syslog)
+		debugmsg("-SYSTEM-", "try to load private key");
+		if (SSL_CTX_use_PrivateKey_file(clientsslctx, certfile.c_str(), SSL_FILETYPE_PEM) <=0 )
 		{
-			syslog(LOG_ERR, "error loading private key!");
+			if(config.syslog)
+			{
+				syslog(LOG_ERR, "error loading private key!");
+			}
+			debugmsg("-SYSTEM-", "error loading private key!");
+			return 0;
 		}
-		debugmsg("-SYSTEM-", "error loading private key!");
-		return 0;
 	}
-	
+	debugmsg("-SYSTEM-", "try to load dh params");
 	FILE *fp = fopen(certfile.c_str(), "r");
 	if (fp == NULL) 
 	{ 
@@ -874,7 +879,30 @@ int ssl_setup()
 	}
 	globaldh = PEM_read_DHparams(fp, NULL, NULL, NULL);
 	fclose(fp);
-
+	if(globaldh == NULL)
+	{
+		debugmsg("-SYSTEM-", "read dh params failed");
+		if(config.opt_dh_file != "")
+		{
+			debugmsg("-SYSTEM-", "trying to read opt dh file");
+			FILE *fp = fopen(config.opt_dh_file.c_str(), "r");
+			if (fp == NULL) 
+			{ 
+				debugmsg("SYSTEM","could not open opt dh file"); 
+				return 0;
+			}
+			globaldh = PEM_read_DHparams(fp, NULL, NULL, NULL);
+			fclose(fp);
+			if(globaldh == NULL)
+			{
+				debugmsg("-SYSTEM-", "read opt dh params failed");
+			}
+		}
+		else
+		{
+			return 0;
+		}
+	}
     if(config.crypted_cert)
     {
         if(!kill_file(certfile))
@@ -882,7 +910,7 @@ int ssl_setup()
             debugmsg("SYSTEM","error deleting tmp cert"); 
         }
     }
-    
+    debugmsg("-SYSTEM-", "try to check private key");
 	if ( !SSL_CTX_check_private_key(clientsslctx))
 	{
 		if(config.syslog)

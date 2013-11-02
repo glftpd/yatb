@@ -101,6 +101,7 @@ class CConfig
     double day_limit;
     double week_limit;
     double month_limit;
+    string opt_dh_file;
 };
 
 extern CConfig config;
