@@ -1,4 +1,5 @@
-CPPFLAGS = -W -Wall -g -I/usr/local/ssl/include -Iinclude
+#CPPFLAGS = -W -Wall -g -I/usr/local/ssl/include -Iinclude
+CPPFLAGS = -W -Wall -O2 -I/usr/local/ssl/include -Iinclude
 
 .cc.o   :
 	 g++ -c $(CPPFLAGS) $< -o $@
