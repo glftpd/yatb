@@ -1290,6 +1290,7 @@ int control_write(int sock,string s,SSL *sslcon)
 			
 			return 0;
 		}
+		n = 0;
 		if (FD_ISSET(sock,&writefds))
 		{
 			if (!sslcon)
