@@ -1330,7 +1330,7 @@ int control_write(int sock,string s,SSL *sslcon)
 					}
 					else
 					{
-						debugmsg("CONTROLWRITE"," fd isser error",errno);
+						debugmsg("CONTROLWRITE"," fd isset error",errno);
 						return 0;
 					} 
 				}
