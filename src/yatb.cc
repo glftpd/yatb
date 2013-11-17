@@ -71,6 +71,7 @@ string cert_bk="",ip_bk="",fpwl_bk="";
 string conffile,yatbfilename;
 string lastday="",lastmonth="";
 int lastweek = 0;
+sem_t iptmutex;
 
 
 void reload(int)
@@ -433,6 +434,9 @@ int main(int argc,char *argv[])
 		debugmsg("-SYSTEM-","could not create traffic control thread");
 	}
 	
+	
+	sem_init(&iptmutex, 0, 1);
+
 	while(1)
 	{				
 		int tmp_sock = -1;

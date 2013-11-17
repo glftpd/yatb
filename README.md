@@ -92,6 +92,11 @@ listen_ip=; // bind to special ip - overrides listen_interface
 
 traffic_bnc=1; // run as traffic bnc or entry
 
+use_iptables=1; // use iptables rules for traffic bnc (you need to chmod +s /sbin/iptables)
+
+ipt_port_in_start=10000; // port range to use for incoming traffic in when PORT is issued
+ipt_port_in_end=20000; // PASV will use the port assigned by the FTP
+
 [ Limit ]
 day_limit=0; // daily limit
 

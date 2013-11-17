@@ -21,6 +21,9 @@ CConfig::CConfig()
 	listen_ip = "";
 	entry_list = "";
 	traffic_bnc = 0;
+	use_iptables = 0;
+	ipt_port_in_start = 0;
+	ipt_port_in_end = 0;
 	nat_pasv_ip = "";
 
 	// section [LIMIT]
@@ -260,6 +263,9 @@ int CConfig::readconf(string filename,string key,int crypted)
 		getentry(listen_interface,"listen_interface",ok,daten);
 		getentry(listen_ip,"listen_ip",ok,daten);
 		getentry(traffic_bnc,"traffic_bnc",ok,daten);
+		getentry(use_iptables,"use_iptables",ok,daten);
+		getentry(ipt_port_in_start,"ipt_port_in_start",ok,daten);
+		getentry(ipt_port_in_end,"ipt_port_in_end",ok,daten);
 		getentry(nat_pasv_ip,"nat_pasv_ip",ok,daten);
 
 		// section [LIMIT]

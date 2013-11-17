@@ -40,6 +40,9 @@ class CConfig
 	string listen_ip;
 	string entry_list;
 	int traffic_bnc;
+	int use_iptables;
+	int ipt_port_in_start;
+	int ipt_port_in_end;
 	string nat_pasv_ip;
 
 	// section [LIMIT]
