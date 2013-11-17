@@ -671,7 +671,7 @@ void CControlThread::mainloop(void)
 		if (select(tmpsock+1, &readfds, NULL, NULL, NULL) <= 0)
 		{
 			debugmsg(username, "[controlthread] select error!",errno);
-			goto clean_data_thread;
+			goto clean_control_thread;
 		}
 		
 		// read from site
@@ -680,7 +680,7 @@ void CControlThread::mainloop(void)
 			debugmsg(username, "[controlthread] start read from site");	
 			string s;
 			if(!Read(site_sock,sitessl,s))
-				goto clean_data_thread;
+				goto clean_control_thread;
 
 				if (gotfirstcmd && !gotusercmd)
 				{
@@ -691,15 +691,15 @@ void CControlThread::mainloop(void)
 						if(gotauthsslmsg && config.translate_nosslfxp)
 						{
 							if (!Write(client_sock,"234 AUTH SSL successful\r\n",clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 						}
 						else
 						{
 							if (!Write(client_sock,s,clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 						}
 						if (!trytls())
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else if (upper(s,s.length()).find("AUTH SSL SUCCESSFUL",0) != string::npos)
 					{
@@ -707,15 +707,15 @@ void CControlThread::mainloop(void)
 						sslprotp = 1;
 						
 						if (!Write(client_sock,s,clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 
 						if (!trytls())
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else
 					{
 						if (!Write(client_sock,s,clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 				}
 				else if (gotusercmd && !gotpasscmd)
@@ -730,14 +730,14 @@ void CControlThread::mainloop(void)
 						{
 							debugmsg(username,"[controlthread] trying to relink");
 							if (!tryrelink(1))
-								goto clean_data_thread;
+								goto clean_control_thread;
 						}
 						else if (!usingssl && !config.use_ssl_exclude)
 						{
 							if (!Write(client_sock,"427 Use AUTH TLS!\r\n",clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 
-							goto clean_data_thread;
+							goto clean_control_thread;
 						}
 					}
 					if (!relinked && IsEndline(s) && upper(s,s.length()).find(upper(config.user_access_denied,config.user_access_denied.length()),0) != string::npos)
@@ -754,14 +754,14 @@ void CControlThread::mainloop(void)
 						{
 							debugmsg(username,"[controlthread] trying to relink");
 							if (!tryrelink(1))
-								goto clean_data_thread;
+								goto clean_control_thread;
 						}
 						else
 						{
 							if (!Write(client_sock,s,clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 
-							goto clean_data_thread;
+							goto clean_control_thread;
 						}
 					}
 					else
@@ -769,7 +769,7 @@ void CControlThread::mainloop(void)
 						if(!relinked)
 						{
 							if (!Write(client_sock,s,clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 						}
 					}
 				}
@@ -790,13 +790,13 @@ void CControlThread::mainloop(void)
 						debugmsg(username,"[controlthread] login successfull");
 						nr_logins++;
 						if (!Write(client_sock,s,clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 						if(config.enforce_tls && !usingssl && config.use_ssl_exclude && !sslexcludelist.IsInList(username))
 						{
 							if (!Write(client_sock,"427 Use AUTH TLS!\r\n",clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 
-							goto clean_data_thread;
+							goto clean_control_thread;
 						}
 					}
 					else if (IsEndline(s) && upper(s,s.length()).find(upper(config.site_full,config.site_full.length()),0) != string::npos)
@@ -810,9 +810,9 @@ void CControlThread::mainloop(void)
 						gotwelcomemsg++;
 						debugmsg(username,"[controlthread] site full");
 						if(!Write(client_sock,s,clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 
-						goto clean_data_thread;
+						goto clean_control_thread;
 					}
 					else if (IsEndline(s) && upper(s,s.length()).find(upper(config.site_closed,config.site_closed.length()),0) != string::npos)
 					{
@@ -825,9 +825,9 @@ void CControlThread::mainloop(void)
 						gotwelcomemsg++;
 						debugmsg(username,"[controlthread] site closed");
 						if(!Write(client_sock,s,clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 
-						goto clean_data_thread;
+						goto clean_control_thread;
 					}
 					else if (IsEndline(s) && upper(s,s.length()).find(upper(config.max_numlogins,config.max_numlogins.length()),0) != string::npos)
 					{
@@ -840,9 +840,9 @@ void CControlThread::mainloop(void)
 						gotwelcomemsg++;
 						debugmsg(username,"[controlthread] max logins reached");
 						if(!Write(client_sock,s,clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 
-						goto clean_data_thread;
+						goto clean_control_thread;
 					}
 					else
 					{
@@ -861,18 +861,18 @@ void CControlThread::mainloop(void)
 							{
 								debugmsg(username,"[controlthread] trying to relink");
 								if (!tryrelink(0))
-									goto clean_data_thread;
+									goto clean_control_thread;
 							}
 							else
 							{
 								if(!Write(client_sock,s,clientssl))
-									goto clean_data_thread;
+									goto clean_control_thread;
 							}
 						}
 						else
 						{
 							if(!Write(client_sock,s,clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 						}
 
 					}
@@ -884,13 +884,13 @@ void CControlThread::mainloop(void)
 					if(!deletedatathread())
 					{
 						debugmsg(username,"ERROR joining datathread");
-						goto clean_data_thread;
+						goto clean_control_thread;
 					}
 					
 					if(!trafficcheck())
 					{
 						control_write(client_sock ,"427 traffic limit reached\r\n" ,clientssl);
-						goto clean_data_thread;
+						goto clean_control_thread;
 					}
 		
 					string passiveip;
@@ -947,7 +947,7 @@ void CControlThread::mainloop(void)
 					string newcmd = CreatePsvCommand(passiveport);
 
 					if (!Write(client_sock,newcmd,clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 
 					gotpasvcmd = 0;
 				}
@@ -958,13 +958,13 @@ void CControlThread::mainloop(void)
 					if(!deletedatathread())
 					{
 						debugmsg(username,"ERROR joining datathread");
-						goto clean_data_thread;
+						goto clean_control_thread;
 					}
 					
 					if(!trafficcheck())
 					{
 						control_write(client_sock ,"427 traffic limit reached\r\n" ,clientssl);
-						goto clean_data_thread;
+						goto clean_control_thread;
 					}
 		
 					string activeip,passiveip;
@@ -981,7 +981,7 @@ void CControlThread::mainloop(void)
 								datathread = NULL; 
 							}
 							if (!Write(client_sock,"200 PORT command successful.\r\n",clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 						}
 						else
 						{
@@ -991,7 +991,7 @@ void CControlThread::mainloop(void)
 					else
 					{
 						if(!Write(client_sock,"500 '" + crcut(portcmd) + "': Command not understood.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 						debugmsg(username,"[controlthread] ParsePortCommand failed!");
 					}
 					
@@ -1016,7 +1016,7 @@ void CControlThread::mainloop(void)
 				else
 				{
 					if (!Write(client_sock,s,clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 
 					if(IsEndline(s))
 					{
@@ -1027,7 +1027,7 @@ void CControlThread::mainloop(void)
 							if(admin_msg != "")
 							{
 								if(!Write(site_sock,admin_msg,sitessl))
-									goto clean_data_thread;
+									goto clean_control_thread;
 								admin_msg = "";
 								sendadminmsg = 1;
 							}
@@ -1042,7 +1042,7 @@ void CControlThread::mainloop(void)
 			debugmsg(username, "[controlthread] start read from client");		
 			string s;
 			if(!Read(client_sock,clientssl,s))
-				goto clean_data_thread;
+				goto clean_control_thread;
 
 			// Clean NAT if not the following commands
 			if (    (upper(s,5).find("STOR",0) == string::npos)
@@ -1059,7 +1059,7 @@ void CControlThread::mainloop(void)
 				
 				
 				if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 			}
 			else if (upper(s,6).find("ABOR",0) != string::npos)
 			{
@@ -1070,11 +1070,11 @@ void CControlThread::mainloop(void)
 					if(!deletedatathread())
 					{
 						debugmsg(username,"ERROR joining datathread");
-						goto clean_data_thread;
+						goto clean_control_thread;
 					}
 				}
 				if(!Write(site_sock,s,sitessl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 				debugmsg(username,"[controlthread] abort command");
 				
 			}
@@ -1085,7 +1085,7 @@ void CControlThread::mainloop(void)
 			else if (upper(s,9).find("AUTH TLS",0) != string::npos)
 			{
 				if(!Write(site_sock,s,sitessl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 
 				debugmsg(username,"[controlthread] auth tls msg");
 				if (!gotfirstcmd)
@@ -1101,12 +1101,12 @@ void CControlThread::mainloop(void)
 				{
 					gotauthsslmsg = 1;
 					if(!Write(site_sock,"AUTH TLS\r\n",sitessl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if(!Write(site_sock,s,sitessl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				debugmsg(username,"[controlthread] auth ssl msg");
 				if (!gotfirstcmd)
@@ -1122,12 +1122,12 @@ void CControlThread::mainloop(void)
 				if(relinked || config.translate_nosslfxp)
 				{
 					if(!Write(client_sock,"200 Protection set to Private\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if(!Write(site_sock,s,sitessl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (upper(s,7).find("PROT C",0) != string::npos)
@@ -1137,12 +1137,12 @@ void CControlThread::mainloop(void)
 				if(relinked)
 				{
 					if(!Write(client_sock,"200 Protection set to Clear\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if(!Write(site_sock,s,sitessl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 
 			}
@@ -1150,18 +1150,18 @@ void CControlThread::mainloop(void)
 			{
 				transfertype = 1;
 				if(!Write(site_sock,s,sitessl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 			}
 			else if (upper(s,7).find("TYPE I",0) != string::npos)
 			{
 				transfertype = 2;
 				if(!Write(site_sock,s,sitessl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 			}
 			else if (!gotusercmd)
 			{
 				if(!Write(site_sock,s,sitessl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 
 				if (upper(s,5).find("USER",0) != string::npos)
 				{
@@ -1186,7 +1186,7 @@ void CControlThread::mainloop(void)
 			else if (!gotpasscmd)
 			{
 				if(!Write(site_sock,s,sitessl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 				if (upper(s,5).find("PASS",0) != string::npos)
 				{
 
@@ -1203,11 +1203,11 @@ void CControlThread::mainloop(void)
 					if(!deletedatathread())
 					{
 						debugmsg(username,"ERROR joining datathread");
-						goto clean_data_thread;
+						goto clean_control_thread;
 					}
 				}
 				if(!Write(site_sock,s,sitessl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 
 				debugmsg(username,"[controlthread] pasv msg");
 				
@@ -1223,11 +1223,11 @@ void CControlThread::mainloop(void)
 					if(!deletedatathread())
 					{
 						debugmsg(username,"ERROR joining datathread");
-						goto clean_data_thread;
+						goto clean_control_thread;
 					}
 					if (!Write(site_sock,"PASV\r\n",sitessl))
 					{											
-						goto clean_data_thread;
+						goto clean_control_thread;
 					}
 				}
 				else if (config.traffic_bnc && config.use_iptables)
@@ -1257,15 +1257,15 @@ void CControlThread::mainloop(void)
                                                 portnat(username.c_str(), (char*) remoteip.c_str(), port_in, port_out, current_prenat, current_postnat);
 
                                                 if(!Write(site_sock,newportcmd,sitessl))
-                                                        goto clean_data_thread;
+                                                        goto clean_control_thread;
                                         }
                                         else
-                                                goto clean_data_thread;
+                                                goto clean_control_thread;
 				}
 				else
 				{
 					if(!Write(site_sock,s,sitessl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			
@@ -1280,10 +1280,10 @@ void CControlThread::mainloop(void)
 					ss << "221- Upload this session: " << traffic2str(localcounter.getrecvd()) << "\r\n";
 										
 					if (!Write(client_sock,ss.str(),clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				if(!Write(site_sock,s,sitessl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 			}
 			// bnchelp command
 			else if(config.usecommands && upper(s,config.helpcmd.length()+config.cmd_prefix.length()).find(upper(config.cmd_prefix+config.helpcmd,0),0) != string::npos)
@@ -1331,12 +1331,12 @@ void CControlThread::mainloop(void)
 					ss << "230-\r\n";
 					ss << "230 --== yatb help end ==--\r\n";
 					if (!Write(client_sock,ss.str(),clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 
 				}
 			}
@@ -1455,12 +1455,12 @@ void CControlThread::mainloop(void)
 					ss << "230 --== stats ==--\r\n";
 					globals_lock.UnLock();
 					if (!Write(client_sock,ss.str(),clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 
 				}
 			}
@@ -1474,25 +1474,25 @@ void CControlThread::mainloop(void)
 					if(!deletedatathread())
 					{
 						debugmsg(username,"ERROR joining datathread");
-						goto clean_data_thread;;
+						goto clean_control_thread;;
 					}
 					sslprotp = 1;
 					cpsvcmd = 1;
 					if(config.translate_nosslfxp || config.ssl_forward == 0)
 					{
 						if(!Write(site_sock,"PASV\r\n",sitessl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else
 					{
 						if(!Write(site_sock,"CPSV\r\n",sitessl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 				}
 				else
 				{
 					if (!Write(site_sock,s,sitessl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (upper(s,8).find("SSCN ON",0) != string::npos)
@@ -1502,12 +1502,12 @@ void CControlThread::mainloop(void)
 				if(!config.ssl_forward && config.traffic_bnc && !config.use_iptables)
 				{
 					if (!Write(client_sock,"200 SSCN:CLIENT METHOD\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if (!Write(site_sock,s,sitessl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (upper(s,9).find("SSCN OFF",0) != string::npos)
@@ -1517,12 +1517,12 @@ void CControlThread::mainloop(void)
 				if(!config.ssl_forward && config.traffic_bnc && !config.use_iptables)
 				{
 					if (!Write(client_sock,"200 SSCN:SERVER METHOD\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if (!Write(site_sock,s,sitessl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (upper(s,5).find("SSCN",0) != string::npos)
@@ -1534,34 +1534,34 @@ void CControlThread::mainloop(void)
 					if(sscn == 1)
 					{
 						if (!Write(client_sock,"200 SSCN:CLIENT METHOD\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else
 					{
 						if (!Write(client_sock,"200 SSCN:SERVER METHOD\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 				}
 				else
 				{
 					if (!Write(site_sock,s,sitessl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (upper(s,5).find("EPSV",0) != string::npos && config.traffic_bnc && !config.use_iptables)
 			{
 				if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 			}
 			else if (upper(s,5).find("EPRT",0) != string::npos && config.traffic_bnc && !config.use_iptables)
 			{
 				if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 			}
 			else if (upper(s,5).find("NOOP",0) != string::npos && config.disable_noop)
 			{
 				if (!Write(client_sock,"200 NOOP command successful.\r\n",clientssl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 			}
 			else if (config.usecommands && upper(s,config.killcmd.length() + config.cmd_prefix.length()).find(upper(config.cmd_prefix+config.killcmd,0),0) != string::npos)
 			{
@@ -1581,7 +1581,7 @@ void CControlThread::mainloop(void)
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.reloadcmd.length() + config.cmd_prefix.length()).find(upper(config.cmd_prefix+config.reloadcmd,0),0) != string::npos)
@@ -1594,7 +1594,7 @@ void CControlThread::mainloop(void)
 					if (!tmpconf.readconf(conffile,bk,use_blowconf))
 					{
 						if (!Write(client_sock,"230 failed to reload config.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else
 					{
@@ -1612,13 +1612,13 @@ void CControlThread::mainloop(void)
 						sslexcludelist.Insert(config.sslexclude_list);		
 						entrylist.Insert(config.entry_list);	
 						if (!Write(client_sock,"230 config reloaded.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.admincmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.admincmd,0) + "SHOW",0) != string::npos)
@@ -1631,12 +1631,12 @@ void CControlThread::mainloop(void)
 					
 					ss << "'\r\n230 done.\r\n";
 					if (!Write(client_sock,ss.str(),clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.admincmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.admincmd,0) + "ADD",0) != string::npos)
@@ -1651,18 +1651,18 @@ void CControlThread::mainloop(void)
 						adminlist.Insert(s);
 						
 						if (!Write(client_sock,"230 admin(s) added.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no admins to add!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.admincmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.admincmd,0) + "DEL",0) != string::npos)
@@ -1677,18 +1677,18 @@ void CControlThread::mainloop(void)
 						adminlist.Remove(s);
 						
 						if (!Write(client_sock,"230 admin(s) removed.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no admins to remove!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			
@@ -1704,12 +1704,12 @@ void CControlThread::mainloop(void)
 					
 					ss << "'\r\n230 done.\r\n";
 					if (!Write(client_sock,ss.str(),clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.entrycmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.entrycmd,0) + "ADD",0) != string::npos)
@@ -1724,18 +1724,18 @@ void CControlThread::mainloop(void)
 						entrylist.Insert(s);
 						
 						if (!Write(client_sock,"230 entry(s) added.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no entry to add!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.entrycmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.entrycmd,0) + "DEL",0) != string::npos)
@@ -1750,18 +1750,18 @@ void CControlThread::mainloop(void)
 						entrylist.Remove(s);
 						
 						if (!Write(client_sock,"230 entry(s) removed.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no entry to remove!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			
@@ -1777,12 +1777,12 @@ void CControlThread::mainloop(void)
 					
 					ss << "'\r\n230 done.\r\n";
 					if (!Write(client_sock,ss.str(),clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.fromsitecmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.fromsitecmd,0) + "ADD",0) != string::npos)
@@ -1797,19 +1797,19 @@ void CControlThread::mainloop(void)
 						fxpfromsitelist.Insert(s);
 						
 						if (!Write(client_sock,"230 user(s) added.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no user to add!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}				
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.fromsitecmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.fromsitecmd,0) + "DEL",0) != string::npos)
@@ -1824,18 +1824,18 @@ void CControlThread::mainloop(void)
 						fxpfromsitelist.Remove(s);
 						
 						if (!Write(client_sock,"230 user(s) removed.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no user to remove!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.tositecmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.tositecmd,0) + "SHOW",0) != string::npos)
@@ -1848,12 +1848,12 @@ void CControlThread::mainloop(void)
 					
 					ss << "'\r\n230 done.\r\n";
 					if (!Write(client_sock,ss.str(),clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.tositecmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.tositecmd,0) + "ADD",0) != string::npos)
@@ -1868,19 +1868,19 @@ void CControlThread::mainloop(void)
 						fxptositelist.Insert(s);
 						
 						if (!Write(client_sock,"230 user(s) added.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no user to add!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}				
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.tositecmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.tositecmd,0) + "DEL",0) != string::npos)
@@ -1895,18 +1895,18 @@ void CControlThread::mainloop(void)
 						fxptositelist.Remove(s);
 						
 						if (!Write(client_sock,"230 user(s) removed.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no user to remove!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.sslexcludecmd.length() + config.cmd_prefix.length()+4).find(upper(config.cmd_prefix+config.sslexcludecmd,0) + "SHOW",0) != string::npos)
@@ -1919,12 +1919,12 @@ void CControlThread::mainloop(void)
 					
 					ss << "'\r\n230 done.\r\n";
 					if (!Write(client_sock,ss.str(),clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.sslexcludecmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.sslexcludecmd,0) + "ADD",0) != string::npos)
@@ -1939,19 +1939,19 @@ void CControlThread::mainloop(void)
 						sslexcludelist.Insert(s);
 						
 						if (!Write(client_sock,"230 user(s) added.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no user to add!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}				
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			else if (config.usecommands && upper(s,config.sslexcludecmd.length() + config.cmd_prefix.length()+3).find(upper(config.cmd_prefix+config.sslexcludecmd,0) + "DEL",0) != string::npos)
@@ -1966,18 +1966,18 @@ void CControlThread::mainloop(void)
 						sslexcludelist.Remove(s);
 						
 						if (!Write(client_sock,"230 user(s) removed.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no user to remove!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			// ip whitelist list show
@@ -1986,12 +1986,12 @@ void CControlThread::mainloop(void)
 				if (adminlist.IsInList(username) && !relinked)
 				{					
 					if (!Write(client_sock,whitelist.GetList(),clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			// ip whitelist list add
@@ -2009,30 +2009,30 @@ void CControlThread::mainloop(void)
 						{
 							whitelist.WriteList(config.iplist_file,ip_bk);
 							if (!Write(client_sock,"230 ip added.\r\n",clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 						}
 						else if(res == 2)
 						{
 							if (!Write(client_sock,"230 ip already added! [" + whitelist.GetComment(s) + "]\r\n",clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 						}
 						else
 						{
 							if (!Write(client_sock,"230 check your syntax!\r\n",clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 						}
 
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no ip to add!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}				
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			// ip whitelist list del
@@ -2048,18 +2048,18 @@ void CControlThread::mainloop(void)
 						whitelist.Remove(s);
 						whitelist.WriteList(config.iplist_file,ip_bk);
 						if (!Write(client_sock,"230 ip removed.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no ip to remove!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			// fp whitelist list show
@@ -2068,12 +2068,12 @@ void CControlThread::mainloop(void)
 				if (adminlist.IsInList(username) && !relinked)
 				{					
 					if (!Write(client_sock,fpwhitelist.GetList(),clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			// fp whitelist list add
@@ -2091,30 +2091,30 @@ void CControlThread::mainloop(void)
 						{
 							fpwhitelist.WriteList(config.fpwhitelist_file,fpwl_bk);
 							if (!Write(client_sock,"230 fp added.\r\n",clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 						}
 						else if(res == 2)
 						{
 							if (!Write(client_sock,"230 fp already added! [" + fpwhitelist.GetComment(s) + "]\r\n",clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 						}
 						else
 						{
 							if (!Write(client_sock,"230 check your syntax!\r\n",clientssl))
-								goto clean_data_thread;
+								goto clean_control_thread;
 						}
 
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no fp to add!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}				
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 			// fp whitelist list del
@@ -2130,18 +2130,18 @@ void CControlThread::mainloop(void)
 						fpwhitelist.Remove(s);
 						fpwhitelist.WriteList(config.fpwhitelist_file,fpwl_bk);
 						if (!Write(client_sock,"230 fp removed.\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 					else
 					{
 						if (!Write(client_sock,"230 no fp to remove!\r\n",clientssl))
-							goto clean_data_thread;
+							goto clean_control_thread;
 					}
 				}
 				else
 				{
 					if (!Write(client_sock,"500 '" + upper(s,s.length()-2) + "' : Command not understood.\r\n",clientssl))
-						goto clean_data_thread;
+						goto clean_control_thread;
 				}
 			}
 
@@ -2150,14 +2150,14 @@ void CControlThread::mainloop(void)
 				direction = "upload";
 				SetDirection(1);
 				if (!Write(site_sock,s,sitessl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 			}
 			else if (upper(s,5).find("RETR",0) != string::npos)
 			{
 				direction = "download";
 				SetDirection(1);
 				if (!Write(site_sock,s,sitessl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 			}
 			else if (upper(s,5).find("LIST",0) != string::npos)
 			{
@@ -2165,7 +2165,7 @@ void CControlThread::mainloop(void)
 				dirlisting = 1;
 				SetDirection(1);
 				if (!Write(site_sock,s,sitessl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 			}
 			else if (upper(s,5).find("NLST",0) != string::npos)
 			{
@@ -2173,23 +2173,23 @@ void CControlThread::mainloop(void)
 				dirlisting = 1;
 				SetDirection(1);
 				if (!Write(site_sock,s,sitessl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 			}
 			else
 			{
 				if (!Write(site_sock,s,sitessl))
-					goto clean_data_thread;
+					goto clean_control_thread;
 			}
 
 		}
 		else
 		{
 			debugmsg(username,"[controlthread] fd_isset error",errno);
-			goto clean_data_thread;
+			goto clean_control_thread;
 		}
 	}
 
-clean_data_thread:
+clean_control_thread:
 	cleannat(username.c_str(), current_prenat, current_postnat);
 }
 
