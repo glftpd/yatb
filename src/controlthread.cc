@@ -341,7 +341,7 @@ string getexternalip()
 	if(config.nat_pasv_ip != "")
 	{
 		struct sockaddr_in adr;
-		adr = GetIp(config.nat_pasv_ip,0);              
+		adr = GetIp(config.nat_pasv_ip,0);
 		tmpip = inet_ntoa(adr.sin_addr);
 	}
 	else if (config.listen_ip != "") 
@@ -416,13 +416,13 @@ static int executecmd(char* command)
 
 static void delnat(const char* username, char* nat)
 {
-        char command[512];
+	char command[512];
 
-        sprintf(command, "/sbin/iptables -t nat -D %s",nat);
+	sprintf(command, "/sbin/iptables -t nat -D %s",nat);
 
 #ifdef DEBUG_IPTABLES
 	int ret = executecmd(command);
-        fprintf(stderr, "%s [%-10s] DEL: \"%s\" (%d,%d)\n", getdate(), username, command, ret&0xFFFF, (ret&0xFFFF0000)>>16);
+	fprintf(stderr, "%s [%-10s] DEL: \"%s\" (%d,%d)\n", getdate(), username, command, ret&0xFFFF, (ret&0xFFFF0000)>>16);
 	fflush(stderr);
 #else
 	executecmd(command);
@@ -438,8 +438,8 @@ static void insertnat(const char* username, char* nat)
 
 #ifdef DEBUG_IPTABLES
 	int ret = executecmd(command);
-        fprintf(stderr, "%s [%-10s] ADD: \"%s\" (%d,%d)\n", getdate(), username, command, ret&0xFFFF, (ret&0xFFFF0000)>>16);
-        fflush(stderr);
+	fprintf(stderr, "%s [%-10s] ADD: \"%s\" (%d,%d)\n", getdate(), username, command, ret&0xFFFF, (ret&0xFFFF0000)>>16);
+	fflush(stderr);
 #else
 	executecmd(command);
 #endif
@@ -455,7 +455,7 @@ static void cleannat(const char* username, char* prenat, char* postnat)
 	if (postnat[0] != 0)
 		delnat(username, postnat);
 
-        prenat[0] = 0;
+	prenat[0] = 0;
 	postnat[0] = 0;
 
 	sem_post (&iptmutex);
@@ -476,9 +476,9 @@ static void portnat(const char* username, char* ip, int port_in, int port_out, c
 	}
 
 	sprintf(prenat, "PREROUTING -p tcp -d %s --dport %d -j DNAT --to-destination %s:%d",
-                       config.listen_ip.c_str(), port_in, ip, port_out);
+			config.listen_ip.c_str(), port_in, ip, port_out);
 	sprintf(postnat, "POSTROUTING -p tcp -d %s --dport %d -j SNAT --to-source %s",
-                       ip, port_out, config.listen_ip.c_str());
+		ip, port_out, config.listen_ip.c_str());
 
 	insertnat(username, prenat);
 	insertnat(username, postnat);
@@ -1236,9 +1236,9 @@ void CControlThread::mainloop(void)
 					int port_in;
 					int port_out;
 
-                                        if (ParsePortCommand(portcmd, remoteip, port_out))
-                                        {
-                                                char newportcmd[512];
+					if (ParsePortCommand(portcmd, remoteip, port_out))
+					{
+						char newportcmd[512];
 
 						port_in = config.ipt_port_in_start + portcnt;
 						if (port_in == config.ipt_port_in_end)
@@ -1248,19 +1248,19 @@ void CControlThread::mainloop(void)
 
 						string extip=getexternalip();
 
-                                                sprintf(newportcmd, "PORT %s,%d,%d\n", extip.c_str(), port_in>>8, port_in&0xff);
-                                                for (int i=0; i<(int)strlen(newportcmd); i++)
-                                                        if (newportcmd[i] == '.')
-                                                                newportcmd[i] = ',';
+						sprintf(newportcmd, "PORT %s,%d,%d\n", extip.c_str(), port_in>>8, port_in&0xff);
+						for (int i=0; i<(int)strlen(newportcmd); i++)
+							if (newportcmd[i] == '.')
+								newportcmd[i] = ',';
 
 						cleannat(username.c_str(), current_prenat, current_postnat);
-                                                portnat(username.c_str(), (char*) remoteip.c_str(), port_in, port_out, current_prenat, current_postnat);
+						portnat(username.c_str(), (char*) remoteip.c_str(), port_in, port_out, current_prenat, current_postnat);
 
-                                                if(!Write(site_sock,newportcmd,sitessl))
-                                                        goto clean_control_thread;
-                                        }
-                                        else
-                                                goto clean_control_thread;
+						if(!Write(site_sock,newportcmd,sitessl))
+							goto clean_control_thread;
+					}
+					else
+						goto clean_control_thread;
 				}
 				else
 				{
