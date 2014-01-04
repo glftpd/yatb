@@ -854,7 +854,7 @@ int ssl_setup()
 	SSL_CTX_set_mode(connectsslctx,SSL_MODE_AUTO_RETRY);
 	
 	SSL_CTX_set_default_verify_paths(clientsslctx);
-	SSL_CTX_set_options(clientsslctx,SSL_OP_ALL);
+	SSL_CTX_set_options(clientsslctx, SSL_OP_SINGLE_DH_USE | SSL_OP_SINGLE_ECDH_USE | SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_NO_SSLv2 /*SSL_OP_ALL*/);
 	SSL_CTX_set_mode(clientsslctx,SSL_MODE_AUTO_RETRY);
 
 	string certfile = "certtmp";
@@ -955,7 +955,23 @@ int ssl_setup()
 	SSL_CTX_set_session_cache_mode(connectsslctx,SSL_SESS_CACHE_OFF);
 
 	SSL_CTX_set_tmp_dh_callback(clientsslctx, tmp_dh_cb);
-	
+
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+            /* OpenSSL >= 1.0.2 automatically handles ECDH temporary key parameter
+               selection. */
+            SSL_CTX_set_ecdh_auto(ssl_ctx, 1);
+#else
+        {
+            EC_KEY *ecdh = NULL;
+            ecdh = EC_KEY_new_by_curve_name(NID_secp521r1);
+            if (ecdh == NULL) {
+                debugmsg("-SYSTEM-", "unable to generate temp ec dh curve");
+                return 0;
+            }
+            SSL_CTX_set_tmp_ecdh(clientsslctx, ecdh);
+            EC_KEY_free(ecdh);
+        }	
+#endif
 
 	if(!THREAD_setup())
 	{
