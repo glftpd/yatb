@@ -13,6 +13,7 @@ class CIplist
 	
 	int readlist(string,string);
 	void getip(string &,int &);
+	void setipdown(string, int);
 	CIplist();
 	~CIplist();
 	
@@ -22,9 +23,7 @@ class CIplist
 	vector<CIp> List;
 	vector<string> ip_list;
 	vector<string> port_list;
-	unsigned int counter;
 	CLock lock;
-	
 };
 
 

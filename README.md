@@ -77,7 +77,7 @@ syslog=0; // enable logging to syslog
 listen_port=123; // listen port from yatb
 
 site_ip=1.2.3.4; // ip from site - can be a list of ips like site_ip=ip1,ip2,ip3;
-                 // in this case, every new connection gets next ip in list
+                 // in this case, other ips are used as failover
                  
 site_port=123;  // port from site - can be a list - see above
 

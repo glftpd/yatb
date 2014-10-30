@@ -70,7 +70,6 @@ int CIplist::readlist(string iplist,string portlist)
 		debugmsg("IPLIST","empty list!");
 		return 0;
 	}
-	counter = 0;
 	debugmsg("IPLIST","adding ips to list");
 	for(int i=0; i < (int)ip_list.size();i++)
 	{
@@ -100,11 +99,27 @@ void CIplist::getip(string &ip,int &port)
 	debugmsg("IPLIST","get ip start");
 	stringstream cc;
 	lock.Lock();
+	int working_ip_idx = -1;
+	for (unsigned int i=0; i<List.size(); i++)
+	{
+		if (List[i].working)
+		{
+			working_ip_idx=i;
+			break;
+		}
+	}
+	// No working IP ? Reset and retry
+	if (working_ip_idx == -1)
+	{
+		debugmsg("IPLIST", "resetting status");
+		for (unsigned int i=0; i<List.size(); i++)
+			List[i].working=1;
+		working_ip_idx=0;
+	}
+
 	CIp tmp;
-	tmp = List[counter];
-	cc << counter << ",";
-	counter++;
-	if (counter == List.size()) counter = 0;
+	tmp = List[working_ip_idx];
+	cc << working_ip_idx << ",";
 	ip = tmp.ip;
 	port = tmp.port;
 	cc << ip << "," << port;
@@ -113,4 +128,19 @@ void CIplist::getip(string &ip,int &port)
 	debugmsg("IPLIST","get ip end");
 }
 
+void CIplist::setipdown(string ip, int port)
+{
+	debugmsg("IPLIST","set ip down start");
+	lock.Lock();
+	for (unsigned int i=0; i<List.size(); i++)
+	{
+		if (!strcmp(ip.c_str(), List[i].ip.c_str()) && port == List[i].port)
+		{
+			debugmsg("IPLIST","disabling " + ip);
+			List[i].working = 0;
+		}
+	}
 
+	lock.UnLock();
+	debugmsg("IPLIST","set ip down end");
+}

@@ -8,7 +8,7 @@
 #include "whitelist.h"
 #include "fpwhitelist.h"
 
-#define DEBUG_IPTABLES
+#undef DEBUG_IPTABLES
 
 unsigned int portcnt = 0;
 extern sem_t iptmutex;
@@ -370,7 +370,6 @@ string getexternalip()
 	return tmpip;
 }
 
-#ifdef DEBUG_IPTABLES
 char* getdate()
 {
 	time_t current_time;
@@ -391,7 +390,6 @@ char* getdate()
 
 	return c_time_string;
 }
-#endif
 
 static int executecmd(char* command)
 {
@@ -473,6 +471,12 @@ static void portnat(const char* username, char* ip, int port_in, int port_out, c
 #endif
 		sem_post (&iptmutex);
 		return;
+	}
+
+	if ( port_in != port_out )
+	{
+		fprintf(stderr, "%s [%-10s] active transfer with %s\n", getdate(), username, ip);
+		fflush(stderr);
 	}
 
 	sprintf(prenat, "PREROUTING -p tcp -d %s --dport %d -j DNAT --to-destination %s:%d",
@@ -560,11 +564,18 @@ void CControlThread::mainloop(void)
 	}		
 	
 	debugmsg(username,"[controlthread] try to connect to site");
+
+	fprintf(stderr, "%s [%-10s] connecting to site using IP %s\n", getdate(), username.c_str(), site_ip.c_str());
 			
 	if(!Connect(site_sock,site_ip,site_port,config.connect_timeout,shouldquit))
 	{
 		if(config.show_connect_failmsg) { Write(client_sock,config.connectfailmsg + "\r\n",clientssl); }
 		debugmsg(username, "[controlthread] could not connect to site!",errno);
+
+		// IP is not working
+		fprintf(stderr, "%s [%-10s] IP %s is not responding, setting it as down \n", getdate(), username.c_str(), site_ip.c_str());
+		iplist.setipdown(site_ip, site_port);
+
 		return;
 	}
 	
