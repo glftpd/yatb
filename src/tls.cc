@@ -854,7 +854,7 @@ int ssl_setup()
 	SSL_CTX_set_mode(connectsslctx,SSL_MODE_AUTO_RETRY);
 	
 	SSL_CTX_set_default_verify_paths(clientsslctx);
-	SSL_CTX_set_options(clientsslctx, SSL_OP_SINGLE_DH_USE | SSL_OP_SINGLE_ECDH_USE | SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_NO_SSLv2 /*SSL_OP_ALL*/);
+	SSL_CTX_set_options(clientsslctx, SSL_OP_SINGLE_DH_USE | SSL_OP_SINGLE_ECDH_USE | SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 /*SSL_OP_ALL*/);
 	SSL_CTX_set_mode(clientsslctx,SSL_MODE_AUTO_RETRY);
 
 	string certfile = "certtmp";
