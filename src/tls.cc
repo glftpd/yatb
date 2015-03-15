@@ -950,11 +950,14 @@ int ssl_setup()
 		debugmsg("-SYSTEM-", "key invalid");
 		return 0;
 	}
-	
-	SSL_CTX_set_session_cache_mode(clientsslctx,SSL_SESS_CACHE_OFF);
-	SSL_CTX_set_session_cache_mode(connectsslctx,SSL_SESS_CACHE_OFF);
+    std::string sessionId("yatb");
+    	
+    SSL_CTX_set_session_cache_mode(clientsslctx,SSL_SESS_CACHE_SERVER);
+    SSL_CTX_set_session_id_context(clientsslctx,(const unsigned char*)sessionId.c_str(),sessionId.size());
+    
+    SSL_CTX_set_session_cache_mode(connectsslctx,SSL_SESS_CACHE_OFF);
 
-	SSL_CTX_set_tmp_dh_callback(clientsslctx, tmp_dh_cb);
+    SSL_CTX_set_tmp_dh_callback(clientsslctx, tmp_dh_cb);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L
             /* OpenSSL >= 1.0.2 automatically handles ECDH temporary key parameter
