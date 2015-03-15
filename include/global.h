@@ -9,6 +9,7 @@
 #include <openssl/rand.h>
 #include <openssl/err.h>
 #include <openssl/sha.h>
+#include <openssl/engine.h>
 #include <fstream>
 #include <pthread.h>
 #include <sstream>
