@@ -838,7 +838,7 @@ int ssl_setup()
 		}
 		return 0;
 	}
-	connectsslctx = 	SSL_CTX_new(SSLv23_client_method());
+	connectsslctx =	SSL_CTX_new(SSLv23_client_method());
 	if (connectsslctx == NULL)
 	{
 		debugmsg("-SYSTEM-", "error connectcreating ctx");
@@ -959,7 +959,7 @@ int ssl_setup()
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L
             /* OpenSSL >= 1.0.2 automatically handles ECDH temporary key parameter
                selection. */
-            SSL_CTX_set_ecdh_auto(ssl_ctx, 1);
+            SSL_CTX_set_ecdh_auto(clientsslctx, 1);
 #else
         {
             EC_KEY *ecdh = NULL;
