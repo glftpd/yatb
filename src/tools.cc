@@ -1639,7 +1639,7 @@ int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit, string ciphe
 			}
 			else
 			{
-				debugmsg("SSLACCEPT","[SslAccept] unknown error end(0-3)");		
+				debugmsg("SSLACCEPT","[SslAccept] "+(string)ERR_error_string(ERR_get_error(), NULL));
 				return 0;
 			}
 						
