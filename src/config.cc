@@ -30,7 +30,6 @@ CConfig::CConfig()
 
 	// section [SSL]
 	cert_path = "ftpd-dsa.pem";
-	opt_dh_file = "";
 	crypted_cert = 0;
 	enforce_tls = 0;
 	enforce_tls_fxp = 0;	
@@ -38,8 +37,8 @@ CConfig::CConfig()
 	use_ssl_exclude = 0;
 	sslexclude_list = "";
 	translate_nosslfxp = 0;
-	control_cipher = "ALL:!ADH:!EXP";
-	data_cipher = "ALL:!ADH:!EXP";
+	control_cipher = "HIGH+EECDH:HIGH+EDH";
+	data_cipher = "HIGH+EECDH:HIGH+EDH";
 
 	// section [IDENT]
 	use_ident = 1;
@@ -269,7 +268,6 @@ int CConfig::readconf(string filename,string key,int crypted)
 
 		// section [SSL]
 		getentry(cert_path,"cert_path",ok,daten);
-		getentry(opt_dh_file,"opt_dh_file",ok,daten);
 		getentry(crypted_cert,"crypted_cert",ok,daten);
 		getentry(enforce_tls,"enforce_tls",ok,daten);
 		getentry(enforce_tls_fxp,"enforce_tls_fxp",ok,daten);

@@ -49,7 +49,6 @@ class CConfig
 
 	// section [SSL]
 	string cert_path;
-	string opt_dh_file;
     int translate_nosslfxp;
 	int ssl_forward;
 	int use_ssl_exclude;

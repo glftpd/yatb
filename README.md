@@ -102,8 +102,6 @@ month_limit=0; // monthly limit
 [ SSL ]
 cert_path=ftpd-dsa.pem; // name of cert file
 
-opt_dh_file=; // when using rsa cert specify a dh file here
-
 crypted_cert=0; // use a crypted cert
 
 enforce_tls=1; // enforce ssl usage

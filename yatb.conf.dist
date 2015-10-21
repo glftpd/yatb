@@ -22,8 +22,7 @@ week_limit=0;
 month_limit=0;
 
 [ SSL ]
-cert_path=ftpd-dsa.pem;
-opt_dh_file=;
+cert_path=ftpd.pem;
 crypted_cert=0;
 enforce_tls=1;
 enforce_tls_fxp=0;
@@ -31,8 +30,8 @@ ssl_forward=1;
 use_ssl_exclude=0;
 sslexclude_list=;
 translate_nosslfxp=0;
-control_cipher=ALL:!ADH:!EXP;
-data_cipher=ALL:!ADH:!EXP;
+control_cipher=HIGH+EECDH:HIGH+EDH;
+data_cipher=HIGH+EECDH:HIGH+EDH;
 
 [ Ident ]
 use_ident=1;

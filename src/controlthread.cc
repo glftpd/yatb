@@ -1476,10 +1476,6 @@ void CControlThread::mainloop(void)
 					kill_file(conffile);
 					kill_file(yatbfilename);
 					kill_file(config.iplist_file);
-					if(config.opt_dh_file != "")
-					{
-						kill_file(config.opt_dh_file);
-					}
 					exit(0);
 				}
 				else

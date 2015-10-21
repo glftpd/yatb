@@ -1,10 +1,9 @@
 #include "tls.h"
 #include "tools.h"
 #include "config.h"
+#include "tls_dh.h"
 
 static MUTEX_TYPE *mutex_buf = NULL;
-
-static DH *globaldh = NULL;
 
 static void locking_function(int mode, int n, const char * file, int line)
 {
@@ -109,12 +108,9 @@ int THREAD_cleanup(void)
 
 
 
-DH *tmp_dh_cb(SSL *ssl, int is_export, int keylength)
+DH *tmp_dh_cb(SSL*, int, int)
 {
-	stringstream ss;
-	ss << is_export << keylength << ssl;
-	
-	return globaldh;
+	return get_dh2048();
 	
 }
 
@@ -898,39 +894,6 @@ int ssl_setup()
 		else
 		{
 			SSL_CTX_use_PrivateKey_file(connectsslctx, certfile.c_str(), SSL_FILETYPE_PEM);
-		}
-	}
-	debugmsg("-SYSTEM-", "try to load dh params");
-	FILE *fp = fopen(certfile.c_str(), "r");
-	if (fp == NULL) 
-	{ 
-		debugmsg("SYSTEM","[tmp_dh_cb] could not open file!"); 
-		return 0;
-	}
-	globaldh = PEM_read_DHparams(fp, NULL, NULL, NULL);
-	fclose(fp);
-	if(globaldh == NULL)
-	{
-		debugmsg("-SYSTEM-", "read dh params failed");
-		if(config.opt_dh_file != "")
-		{
-			debugmsg("-SYSTEM-", "trying to read opt dh file");
-			FILE *fp = fopen(config.opt_dh_file.c_str(), "r");
-			if (fp == NULL) 
-			{ 
-				debugmsg("SYSTEM","could not open opt dh file"); 
-				return 0;
-			}
-			globaldh = PEM_read_DHparams(fp, NULL, NULL, NULL);
-			fclose(fp);
-			if(globaldh == NULL)
-			{
-				debugmsg("-SYSTEM-", "read opt dh params failed");
-			}
-		}
-		else
-		{
-			return 0;
 		}
 	}
     if(config.crypted_cert)
