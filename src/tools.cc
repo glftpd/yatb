@@ -1574,8 +1574,9 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit,string ciphe
 			}
 			else
 			{
-				debugmsg("SSLCONNECT", "[SslConnect] TLS Connection failed!");
-				debugmsg("SSLCONNECT","[SslConnect] " +  (string)ERR_error_string(ERR_get_error(), NULL));
+			        stringstream ss;
+			        ss<<"[SslConnect] TLS Connection failed! Error : "<< sslerr << " Description :" << ERR_error_string(sslerr, NULL);
+				debugmsg("SSLCONNECT", ss.str());
 				return 0;
 			}
 		}
@@ -1639,7 +1640,9 @@ int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit, string ciphe
 			}
 			else
 			{
-				debugmsg("SSLACCEPT","[SslAccept] "+(string)ERR_error_string(ERR_get_error(), NULL));
+			        stringstream ss;
+			        ss<<"[SslAccept] TLS Connection failed! Error : "<< sslerr << " Description :" << ERR_error_string(sslerr, NULL);
+				debugmsg("SSLACCEPT", ss.str());
 				return 0;
 			}
 						
