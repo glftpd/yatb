@@ -3,6 +3,7 @@
 #define _MULTI_THREADED
 #include <iostream>
 #include <string>
+#include <string.h>
 #include <algorithm>
 #include <vector>
 #include <openssl/ssl.h>
