@@ -2114,7 +2114,6 @@ int decrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
 	int outlen = s;
 
 	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-	EVP_CIPHER_CTX_init(ctx);
     EVP_CipherInit_ex(ctx, EVP_bf_cfb(), NULL, NULL, NULL,ipos );
     EVP_CIPHER_CTX_set_key_length(ctx, key.length());
     EVP_CipherInit_ex(ctx, NULL, NULL,(unsigned char*)key.c_str(), ivec,ipos );
@@ -2124,10 +2123,10 @@ int decrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
 		return 0;
 	}
 
- 	EVP_CIPHER_CTX_cleanup(ctx);
- 	for (int i=0;i < (int)key.length();i++) { key[i] = '0'; }
  	EVP_CIPHER_CTX_free(ctx);
-        return 1;
+        
+        for (int i=0;i < (int)key.length();i++) { key[i] = '0'; }
+ 	return 1;
 }
 
 int encrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
@@ -2137,7 +2136,6 @@ int encrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
 	int outlen = s;
 
 	EVP_CIPHER_CTX* ctx =  EVP_CIPHER_CTX_new();
-	EVP_CIPHER_CTX_init(ctx);
         EVP_EncryptInit_ex(ctx, EVP_bf_cfb(), NULL, NULL, NULL );
         EVP_CIPHER_CTX_set_key_length(ctx, key.length());
         EVP_EncryptInit_ex(ctx, NULL, NULL, (unsigned char*)key.c_str(), ivec );
@@ -2147,7 +2145,6 @@ int encrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
 		return 0;
 	}
 
- 	EVP_CIPHER_CTX_cleanup(ctx);
  	EVP_CIPHER_CTX_free(ctx);
  	
  	for (int i=0;i < (int)key.length();i++) { key[i] = '0'; }
@@ -2365,11 +2362,9 @@ string hash(string text,string algo)
 		debugmsg("-HASH-","Error getting hash algo");
 		return text;
 	}
-	EVP_MD_CTX_init(mdctx);
     EVP_DigestInit_ex(mdctx, md, NULL);
     EVP_DigestUpdate(mdctx, text.c_str(), text.length());    
     EVP_DigestFinal_ex(mdctx, md_value, &md_len);
-    EVP_MD_CTX_cleanup(mdctx);
     EVP_MD_CTX_destroy(mdctx);
 	for(k = 0; k < md_len; k++)
 	{
@@ -2395,11 +2390,9 @@ int filehash(string filename,string algo,string &result)
 		delete [] data;		
 		return 0;
 	}
-	EVP_MD_CTX_init(mdctx);
     EVP_DigestInit_ex(mdctx, md, NULL);
     EVP_DigestUpdate(mdctx, data, size);    
     EVP_DigestFinal_ex(mdctx, md_value, &md_len);
-    EVP_MD_CTX_cleanup(mdctx);
     EVP_MD_CTX_destroy(mdctx);
 	for(k = 0; k < md_len; k++)
 	{
