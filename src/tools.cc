@@ -2354,7 +2354,7 @@ int trafficcheck(void)
 string hash(string text,string algo)
 {
 	stringstream res;
-	EVP_MD_CTX mdctx;
+	EVP_MD_CTX* mdctx = EVP_MD_CTX_create();
     const EVP_MD *md;    
     unsigned char md_value[EVP_MAX_MD_SIZE];
     unsigned int md_len, k;
@@ -2365,11 +2365,12 @@ string hash(string text,string algo)
 		debugmsg("-HASH-","Error getting hash algo");
 		return text;
 	}
-	EVP_MD_CTX_init(&mdctx);
-    EVP_DigestInit_ex(&mdctx, md, NULL);
-    EVP_DigestUpdate(&mdctx, text.c_str(), text.length());    
-    EVP_DigestFinal_ex(&mdctx, md_value, &md_len);
-    EVP_MD_CTX_cleanup(&mdctx);
+	EVP_MD_CTX_init(mdctx);
+    EVP_DigestInit_ex(mdctx, md, NULL);
+    EVP_DigestUpdate(mdctx, text.c_str(), text.length());    
+    EVP_DigestFinal_ex(mdctx, md_value, &md_len);
+    EVP_MD_CTX_cleanup(mdctx);
+    EVP_MD_CTX_destroy(mdctx);
 	for(k = 0; k < md_len; k++)
 	{
 		res << hex << (int)md_value[k];		
@@ -2384,7 +2385,7 @@ int filehash(string filename,string algo,string &result)
 	unsigned char *data;
 	readfile(filename,&data,size);
 	stringstream res;
-	EVP_MD_CTX mdctx;
+	EVP_MD_CTX* mdctx = EVP_MD_CTX_create();
     const EVP_MD *md;    
     unsigned char md_value[EVP_MAX_MD_SIZE];
     unsigned int md_len, k;
@@ -2394,11 +2395,12 @@ int filehash(string filename,string algo,string &result)
 		delete [] data;		
 		return 0;
 	}
-	EVP_MD_CTX_init(&mdctx);
-    EVP_DigestInit_ex(&mdctx, md, NULL);
-    EVP_DigestUpdate(&mdctx, data, size);    
-    EVP_DigestFinal_ex(&mdctx, md_value, &md_len);
-    EVP_MD_CTX_cleanup(&mdctx);
+	EVP_MD_CTX_init(mdctx);
+    EVP_DigestInit_ex(mdctx, md, NULL);
+    EVP_DigestUpdate(mdctx, data, size);    
+    EVP_DigestFinal_ex(mdctx, md_value, &md_len);
+    EVP_MD_CTX_cleanup(mdctx);
+    EVP_MD_CTX_destroy(mdctx);
 	for(k = 0; k < md_len; k++)
 	{
 		res << hex << (int)md_value[k];		
