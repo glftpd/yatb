@@ -2113,19 +2113,20 @@ int decrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
 	int ipos = 0;
 	int outlen = s;
 
-	EVP_CIPHER_CTX ctx;
-	EVP_CIPHER_CTX_init(&ctx);
-    EVP_CipherInit_ex(&ctx, EVP_bf_cfb(), NULL, NULL, NULL,ipos );
-    EVP_CIPHER_CTX_set_key_length(&ctx, key.length());
-    EVP_CipherInit_ex(&ctx, NULL, NULL,(unsigned char*)key.c_str(), ivec,ipos );
+	EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+	EVP_CIPHER_CTX_init(ctx);
+    EVP_CipherInit_ex(ctx, EVP_bf_cfb(), NULL, NULL, NULL,ipos );
+    EVP_CIPHER_CTX_set_key_length(ctx, key.length());
+    EVP_CipherInit_ex(ctx, NULL, NULL,(unsigned char*)key.c_str(), ivec,ipos );
 
-	if(!EVP_CipherUpdate(&ctx, dataout, &outlen, datain, s))
+	if(!EVP_CipherUpdate(ctx, dataout, &outlen, datain, s))
 	{
 		return 0;
 	}
 
- 	EVP_CIPHER_CTX_cleanup(&ctx);
+ 	EVP_CIPHER_CTX_cleanup(ctx);
  	for (int i=0;i < (int)key.length();i++) { key[i] = '0'; }
+ 	EVP_CIPHER_CTX_free(ctx);
         return 1;
 }
 
@@ -2135,18 +2136,20 @@ int encrypt(string key,unsigned char *datain,unsigned char *dataout,int s)
 	memset(ivec, 0,8);
 	int outlen = s;
 
-	EVP_CIPHER_CTX ctx;
-	EVP_CIPHER_CTX_init(&ctx);
-        EVP_EncryptInit_ex(&ctx, EVP_bf_cfb(), NULL, NULL, NULL );
-        EVP_CIPHER_CTX_set_key_length(&ctx, key.length());
-        EVP_EncryptInit_ex(&ctx, NULL, NULL, (unsigned char*)key.c_str(), ivec );
+	EVP_CIPHER_CTX* ctx =  EVP_CIPHER_CTX_new();
+	EVP_CIPHER_CTX_init(ctx);
+        EVP_EncryptInit_ex(ctx, EVP_bf_cfb(), NULL, NULL, NULL );
+        EVP_CIPHER_CTX_set_key_length(ctx, key.length());
+        EVP_EncryptInit_ex(ctx, NULL, NULL, (unsigned char*)key.c_str(), ivec );
 
-	if(!EVP_EncryptUpdate(&ctx, dataout, &outlen, datain, s))
+	if(!EVP_EncryptUpdate(ctx, dataout, &outlen, datain, s))
 	{
 		return 0;
 	}
 
- 	EVP_CIPHER_CTX_cleanup(&ctx);
+ 	EVP_CIPHER_CTX_cleanup(ctx);
+ 	EVP_CIPHER_CTX_free(ctx);
+ 	
  	for (int i=0;i < (int)key.length();i++) { key[i] = '0'; }
         return 1;
 }
