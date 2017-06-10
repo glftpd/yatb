@@ -105,7 +105,7 @@ int CWhitelist::IsInList(string s)
 	string tmp;
 	if(config.use_fxpiphash)
 	{		
-		tmp = hash(bk+s,config.hash_algo);
+		tmp = ::hash(bk+s,config.hash_algo);
 	}
 	else
 	{
@@ -126,7 +126,7 @@ string CWhitelist::GetComment(string s)
 	string tmp;
 	if(config.use_fxpiphash)
 	{		
-		tmp = hash(bk+s,config.hash_algo);
+		tmp = ::hash(bk+s,config.hash_algo);
 	}
 	else
 	{
@@ -155,7 +155,7 @@ void CWhitelist::Remove(string s)
 		}
 		else
 		{
-			tmp = hash(bk+s,config.hash_algo);
+			tmp = ::hash(bk+s,config.hash_algo);
 		}
 	}
 	else
@@ -187,7 +187,7 @@ int CWhitelist::Insert(string s)
 		if(IsInList(s.substr(0,pos))) { return 2; }
 		if(config.use_fxpiphash)
 		{			
-			ip = hash(bk+s.substr(0,pos),config.hash_algo);			
+			ip = ::hash(bk+s.substr(0,pos),config.hash_algo);			
 		}
 		else
 		{

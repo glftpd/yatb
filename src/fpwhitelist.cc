@@ -1,6 +1,5 @@
 #include "fpwhitelist.h"
 
-
 CFpWhitelist::CFpWhitelist()
 {
 	
@@ -18,7 +17,7 @@ int CFpWhitelist::CheckIp(string fp, string ip,string &msg)
 	if(config.use_fxpiphash)
 	{
 		// use hash of ip?
-		tmp = hash(bk+ip,config.hash_algo);
+		tmp = ::hash(bk+ip,config.hash_algo);
 	}
 	else
 	{
