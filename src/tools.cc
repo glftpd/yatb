@@ -1570,7 +1570,31 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit,string ciphe
 					return 0;
 				}
 				debugmsg("SSLCONNECT", "[SslConnect] want read");
-				usleep(50000);
+				fd_set data_writefds, data_readfds;
+				FD_ZERO(&data_readfds);
+				FD_SET(sock,&data_readfds);
+				FD_ZERO(&data_writefds);
+				FD_SET(sock,&data_writefds);
+				struct timeval tv;
+				tv.tv_sec = 50;
+				tv.tv_usec = 0;
+				if (select(sock+1, &data_readfds, &data_writefds, NULL, &tv) < 1)
+				{
+					continue;
+				}
+				if (FD_ISSET(sock, &data_writefds))
+				{
+					continue; 
+				} else
+				if (FD_ISSET(sock, &data_readfds))
+				{
+					continue; 
+				}
+				else
+				{
+					debugmsg("SSLCONNECT"," fd isset error",errno);
+					return 0;
+				}
 			}
 			else
 			{
@@ -1636,7 +1660,32 @@ int SslAccept(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit, string ciphe
 					debugmsg("SSLACCEPT","[SslAccept] end(0-2)");		
 					return 0;
 				}
-				usleep(50000);
+				debugmsg("SSLCONNECT", "[SslAccept] want read/write");
+				fd_set data_writefds, data_readfds;
+				FD_ZERO(&data_readfds);
+				FD_SET(sock,&data_readfds);
+				FD_ZERO(&data_writefds);
+				FD_SET(sock,&data_writefds);
+				struct timeval tv;
+				tv.tv_sec = 50;
+				tv.tv_usec = 0;
+				if (select(sock+1, &data_readfds, &data_writefds, NULL, &tv) < 1)
+				{
+					continue;
+				}
+				if (FD_ISSET(sock, &data_writefds))
+				{
+					continue; 
+				} else
+				if (FD_ISSET(sock, &data_readfds))
+				{
+					continue; 
+				}
+				else
+				{
+					debugmsg("SSLACCEPT"," fd isset error",errno);
+					return 0;
+				}
 			}
 			else
 			{
