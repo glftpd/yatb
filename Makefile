@@ -4,9 +4,6 @@ CPPFLAGS = -W -Wall -O2 -I/usr/local/ssl/include -Iinclude
 .cc.o   :
 	 g++ -c $(CPPFLAGS) $< -o $@
 
-include/tls_dh.h :
-	openssl dhparam -noout -C 2048 >>include/tls_dh.h
-	
 all:
 	@echo "To compile yatb type"
 	@echo "  - 'make linux' (linux-debug,linux-static,linux-debug-static) to compile under linux"
@@ -14,6 +11,9 @@ all:
 	@echo "  - or 'make cygwin' (cygwin-debug,cygwin-static,cygwin-debug-static) to compile under cygwin"
 	@echo "  - or 'make solaris' (solaris-debug,solaris-static,solaris-debug-static) to compile under solaris"
 	@echo "  - or 'make clean'"
+
+include/tls_dh.h :
+	openssl dhparam -noout -C 2048 >>include/tls_dh.h
 
 linux: include/tls_dh.h src/fpwhitelist.o src/whitelist.o src/iplist.o src/yatb.o src/forward.o src/counter.o src/controlthread.o src/datathread.o src/config.o src/tls.o src/stringlist.o src/tools.o src/lock.o src/blowcrypt.o src/bnccheck.o src/getfp.o
 	g++ src/fpwhitelist.o src/whitelist.o src/iplist.o src/yatb.o src/forward.o src/counter.o src/config.o src/controlthread.o src/datathread.o src/tls.o src/stringlist.o src/tools.o src/lock.o -lssl -lpthread -lcrypto -o bin/yatb; strip bin/yatb

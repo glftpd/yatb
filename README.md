@@ -20,8 +20,6 @@ _____
 
 Now copy a cert file (ftpd-dsa.pem) to bin directory
 Also copy yatb.conf.dist to bin dir
-If you have a rsa cert, you will need a dh file
-(can be generated with 'openssl dhparam -out dh1024.pem -2 1024')
 
 Encrypting config file
 ______________________

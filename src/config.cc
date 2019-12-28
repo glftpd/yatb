@@ -29,7 +29,7 @@ CConfig::CConfig()
     month_limit = 0;
 
 	// section [SSL]
-	cert_path = "ftpd-dsa.pem";
+	cert_path = "ftpd-rsa.pem";
 	crypted_cert = 0;
 	enforce_tls = 0;
 	enforce_tls_fxp = 0;	

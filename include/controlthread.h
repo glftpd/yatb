@@ -36,6 +36,7 @@ class CControlThread
 	void mainloop(void);
 		
 	int Read(int ,SSL *,string &);
+	int TryRead(int ,SSL *,string &);
 	int Write(int ,string ,SSL *);
 	
 	int trytls(void);

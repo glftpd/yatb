@@ -174,7 +174,9 @@ CControlThread::~CControlThread()
 		}
 		
 		debugmsg(username, "[controlthread] free ssl error queue");
+#if (OPENSSL_VERSION_NUMBER <  0x10100000)
 		ERR_remove_state(0);
+#endif
 	}
 	
 	
@@ -521,7 +523,9 @@ void CControlThread::mainloop(void)
 		{
 			debugmsg(username, "[controlthread] start read from site");	
 			string s;
-			if(!Read(site_sock,sitessl,s))
+			int res = TryRead(site_sock,sitessl,s);
+			if (res==2) {debugmsg(username, "[controlthread] start read from site - empty"); continue;}
+			if(!res)
 			{					
 				return;
 			}
@@ -917,7 +921,9 @@ void CControlThread::mainloop(void)
 		{
 			debugmsg(username, "[controlthread] start read from client");		
 			string s;
-			if(!Read(client_sock,clientssl,s))
+			int res=TryRead(client_sock,clientssl,s);
+			if (res == 2) continue;
+			if(!res)
 			{
 				return;
 			}
@@ -2326,6 +2332,49 @@ int CControlThread::Read(int sock,SSL *ssl,string &s)
 	return 1;
 }
 
+int CControlThread::TryRead(int sock,SSL *ssl,string &s)
+{
+	rwlock.Lock();
+	if(sock == client_sock)
+	{
+		debugmsg(username,"[TryControlRead] read from client");
+	}
+	else if(sock == site_sock)
+	{
+		debugmsg(username,"[TryControlRead] read from site");
+	}
+	
+	int res=control_read(sock ,ssl,s);
+	//nothing to read
+	if (res==2) {
+ 	 rwlock.UnLock();
+	 return 2;
+	}
+	if(!res)
+	{
+		debugmsg(username,"[TryControlRead] read failed");
+		rwlock.UnLock();
+		return 0;
+	}
+	if(sock == client_sock)
+	{
+		localcounter.addrecvd(s.length());
+		totalcounter.addrecvd(s.length());
+		daycounter.addrecvd(s.length());
+		weekcounter.addrecvd(s.length());
+		monthcounter.addrecvd(s.length());
+		debugmsg(username,"\n" + s);
+		cmddebugmsg(username,">> " + s);
+	}
+	else if(sock == site_sock)
+	{
+		debugmsg(username,"\n" + s);
+		cmddebugmsg(username,"<< " + s);
+	}
+	rwlock.UnLock();
+	return 1;
+}
+
 
 int CControlThread::Write(int sock,string s,SSL *ssl)
 {
@@ -2340,7 +2389,7 @@ int CControlThread::Write(int sock,string s,SSL *ssl)
 	}
 	
 	//------------- hotfix start ---------------
-	if(sock == client_sock && config.traffic_bnc)
+	if(sock == client_sock && config.traffic_bnc && !config.debug)
 	{		
 		if(s.find(_site_ip,0) != string::npos)
 		{

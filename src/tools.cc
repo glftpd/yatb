@@ -1424,8 +1424,12 @@ int control_read(int sock,SSL *sslcon,string &str)
 					int err = SSL_get_error(sslcon,rc);
 					
 					if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_X509_LOOKUP) 
-					{ 
-						debugmsg("CONTROLREAD","want read/write error");
+					{
+//						if (trying) {
+							delete [] buffer;
+							return 2; 
+//						}
+/*						debugmsg("CONTROLREAD","want read/write error");
 						fd_set data_writefds;
 						FD_ZERO(&data_writefds);
 						FD_SET(sock,&data_writefds);
@@ -1449,7 +1453,7 @@ int control_read(int sock,SSL *sslcon,string &str)
 							delete [] buffer;
 							return 0;
 						} 
-					}
+*/					}
 					else
 					{
 						debugmsg("CONTROLWRITE","SSL error",errno);
@@ -1529,7 +1533,7 @@ int SslConnect(int &sock,SSL **ssl,SSL_CTX **sslctx,int &shouldquit,string ciphe
 		}
 		SSL_CTX_set_default_verify_paths(*sslctx);
 		SSL_CTX_set_options(*sslctx,SSL_OP_ALL);
-		SSL_CTX_set_mode(*sslctx,SSL_MODE_AUTO_RETRY);
+		SSL_CTX_clear_mode(*sslctx,SSL_MODE_AUTO_RETRY);
 		SSL_CTX_set_session_cache_mode(*sslctx,SSL_SESS_CACHE_OFF);			
 	}
 	*ssl = SSL_new(*sslctx);

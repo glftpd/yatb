@@ -12,7 +12,9 @@
 #include "fpwhitelist.h"
 
 #ifndef SOLARIS
-#define SOLARIS (defined(sun) && (defined(__svr4__) || defined(__SVR4)))
+#if (defined(sun) && (defined(__svr4__) || defined(__SVR4)))
+#define SOLARIS
+#endif
 #endif
 
 

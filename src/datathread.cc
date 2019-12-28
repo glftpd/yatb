@@ -150,7 +150,9 @@ void CDataThread::closeconnection(void)
 		}
 		
 		debugmsg(username, "[closeconnection] free ssl error queue");
+#if (OPENSSL_VERSION_NUMBER <  0x10100000)
 		ERR_remove_state(0);
+#endif
 	}
 	debugmsg(username, "[closeconnection] end");
 }
