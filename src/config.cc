@@ -132,7 +132,7 @@ CConfig::~CConfig()
 {
 }
 
-string CConfig::getkey(string name,string data)
+string CConfig::getkey(string name,const string& data)
 {
 	string value = "ERROR";
 	int start,end;
@@ -141,23 +141,23 @@ string CConfig::getkey(string name,string data)
 	start = tmp.find(name,0);
 	if (start == (int)string::npos)
 	{
-		for (int i=0;i<(int)data.length();i++) { data[i] = '0'; }
+		return value;
+	}
+	if (start > 0 && data[start-1]  == '#')
+	{
 		return value;
 	}
 	end = tmp.find(";",start);
 	if (end == (int)string::npos)
 	{
-		for (int i=0;i<(int)data.length();i++) { data[i] = '0'; }
 		return value;
 	}
 	value = tmp.substr(start + name.length(),end-start-name.length());
-	for (int i=0;i<(int)data.length();i++) { data[i] = '0'; }
-	
 	return value;
 }
 
 // read conf entry of type string
-void CConfig::getentry(string &i,string s,int &ok,string daten)
+void CConfig::getentry(string &i,string s,int &ok,const string& daten)
 {
 	string val;
 	if ((val=getkey(s,daten)) != "ERROR")
@@ -173,7 +173,7 @@ void CConfig::getentry(string &i,string s,int &ok,string daten)
 }
 
 // read conf entry of type int
-void CConfig::getentry(int &i,string s,int &ok,string daten)
+void CConfig::getentry(int &i,string s,int &ok,const string& daten)
 {
 	string val;
 	if ((val=getkey(s,daten)) != "ERROR")
@@ -189,7 +189,7 @@ void CConfig::getentry(int &i,string s,int &ok,string daten)
 }
 
 // read conf entry of type double
-void CConfig::getentry(double &i,string s,int &ok, string daten)
+void CConfig::getentry(double &i,string s,int &ok,const string& daten)
 {
 	string val;
 	if ((val=getkey(s,daten)) != "ERROR")
@@ -243,7 +243,7 @@ int CConfig::readconf(string filename,string key,int crypted)
 		
  		int ok = 1;	// store if all vars could be read
 	 	
-		// section [DEBUG
+		// section [DEBUG]
 		getentry(debug,"debug",ok,daten);
 		getentry(log_to_screen,"log_to_screen",ok,daten);
 		getentry(debug_logfile,"debug_logfile",ok,daten);

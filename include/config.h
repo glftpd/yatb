@@ -9,10 +9,10 @@ class CConfig
 {
 	private:
 	
-	string getkey(string, string);
-	void getentry(string &,string,int&,string);
-	void getentry(int &,string,int&,string);
-	void getentry(double &,string,int&,string);
+	string getkey(string, const string&);
+	void getentry(string &,string,int&,const string&);
+	void getentry(int &,string,int&,const string&);
+	void getentry(double &,string,int&,const string&);
 
 	public:
 	
