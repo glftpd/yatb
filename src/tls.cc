@@ -1,7 +1,6 @@
 #include "tls.h"
 #include "tools.h"
 #include "config.h"
-#include "tls_dh.h"
 
 static MUTEX_TYPE *mutex_buf = NULL;
 
@@ -107,12 +106,6 @@ int THREAD_cleanup(void)
 }
 
 
-
-DH *tmp_dh_cb(SSL*, int, int)
-{
-	return get_dh2048();
-	
-}
 
 int decrypt_cert(string tmpcert)
 {
@@ -920,24 +913,9 @@ int ssl_setup()
     
     SSL_CTX_set_session_cache_mode(connectsslctx,SSL_SESS_CACHE_OFF);
 
-    SSL_CTX_set_tmp_dh_callback(clientsslctx, tmp_dh_cb);
+    SSL_CTX_set_dh_auto(clientsslctx, true);
 
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
-            /* OpenSSL >= 1.0.2 automatically handles ECDH temporary key parameter
-               selection. */
-            SSL_CTX_set_ecdh_auto(clientsslctx, 1);
-#else
-        {
-            EC_KEY *ecdh = NULL;
-            ecdh = EC_KEY_new_by_curve_name(NID_secp521r1);
-            if (ecdh == NULL) {
-                debugmsg("-SYSTEM-", "unable to generate temp ec dh curve");
-                return 0;
-            }
-            SSL_CTX_set_tmp_ecdh(clientsslctx, ecdh);
-            EC_KEY_free(ecdh);
-        }	
-#endif
+    SSL_CTX_set_ecdh_auto(clientsslctx, 1);
 
 	if(!THREAD_setup())
 	{

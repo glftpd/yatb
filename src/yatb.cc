@@ -152,10 +152,7 @@ pthread_attr_t threadattr;
 
 int main(int argc,char *argv[])
 {		
-	ENGINE_load_builtin_engines();
-	ENGINE_register_all_complete();
-	SSL_load_error_strings();
-	SSL_library_init();
+	OPENSSL_init_ssl(OPENSSL_INIT_ENGINE_ALL_BUILTIN, NULL);
 	pthread_attr_init(&threadattr);
   pthread_attr_setdetachstate(&threadattr,PTHREAD_CREATE_DETACHED);
 	
